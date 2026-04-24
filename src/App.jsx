@@ -112,6 +112,7 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dokSearch, setDokSearch] = useState("");
   const [dokFilter, setDokFilter] = useState("Semua");
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
   // Security & Session
   const APP_SECRET = "BAPPERIDA_SECURE_TOKEN_2026";
@@ -304,8 +305,13 @@ export default function App() {
     document.head.appendChild(link);
 
     const onScroll = () => setScrolled(window.scrollY > 60);
+    const onResize = () => setIsMobile(window.innerWidth < 1024);
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
 
   return (
@@ -758,28 +764,28 @@ export default function App() {
             <div style={{ position: "absolute", top: 130, bottom: 65, left: "50%", width: 3, background: "#CBD5E1", zIndex: 0, transform: "translateX(-50%)" }} />
 
             {/* --- LEVEL 1: KEPALA BADAN --- */}
-            <div style={{ zIndex: 20, marginBottom: 80 }}>
-              <div className="card" style={{ padding: 0, width: 340, display: "flex", overflow: "hidden", border: "none", boxShadow: "0 20px 50px rgba(0,0,0,0.15)", background: "white" }}>
-                <div style={{ width: 110, height: 130, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <User size={56} color={C.navyLight} style={{ opacity: 0.5 }} />
-                </div>
+            <div style={{ zIndex: 20, marginBottom: isMobile ? 40 : 80 }}>
+              <div className="card" style={{ padding: 0, width: isMobile ? 280 : 340, display: "flex", overflow: "hidden", border: "none", boxShadow: "0 20px 50px rgba(0,0,0,0.15)", background: "white" }}>
+                <div style={{ width: isMobile ? 80 : 110, height: isMobile ? 110 : 130, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <User size={isMobile ? 40 : 56} color={C.navyLight} style={{ opacity: 0.5 }} />
                 <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                  <div style={{ background: `linear-gradient(135deg, ${C.navy}, #00A3FF)`, color: "white", padding: "12px 14px", fontWeight: 800, fontSize: 13, textAlign: "center", textTransform: "uppercase", letterSpacing: "0.08em" }}>Kepala Badan</div>
-                  <div style={{ padding: 15, textAlign: "center", flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                    <div style={{ fontSize: 13, fontWeight: 900, color: C.navy, lineHeight: 1.3 }}>CHARLES HERMANA WERU, S.SOS</div>
-                    <div style={{ fontSize: 10, color: C.textLight, marginTop: 6, fontWeight: 500 }}>NIP. 19721102 200112 1 001</div>
+                  <div style={{ background: `linear-gradient(135deg, ${C.navy}, #00A3FF)`, color: "white", padding: "8px 12px", fontWeight: 800, fontSize: isMobile ? 11 : 13, textAlign: "center", textTransform: "uppercase", letterSpacing: "0.08em" }}>Kepala Badan</div>
+                  <div style={{ padding: 10, textAlign: "center", flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                    <div style={{ fontSize: isMobile ? 11 : 13, fontWeight: 900, color: C.navy, lineHeight: 1.3 }}>CHARLES HERMANA WERU, S.SOS</div>
+                    <div style={{ fontSize: isMobile ? 9 : 10, color: C.textLight, marginTop: 4, fontWeight: 500 }}>NIP. 19721102 200112 1 001</div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* --- LEVEL 2: SEKRETARIS & JABATAN --- */}
-            <div style={{ width: "100%", maxWidth: 1100, position: "relative", display: "flex", justifyContent: "center", gap: 0, marginBottom: 110 }}>
-              {/* Horizontal Connector Bar (Matches center of branches exactly) */}
-              <div style={{ position: "absolute", top: 0, left: "calc(25% - 10px)", right: "calc(25% - 10px)", height: 3, background: "#CBD5E1", zIndex: 1 }} />
-
+            <div style={{ width: "100%", maxWidth: 1100, position: "relative", display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "center" : "flex-start", justifyContent: "center", gap: isMobile ? 40 : 0, marginBottom: isMobile ? 40 : 110 }}>
+              {!isMobile && (
+                <div style={{ position: "absolute", top: 0, left: "calc(25% - 10px)", right: "calc(25% - 10px)", height: 3, background: "#CBD5E1", zIndex: 1 }} />
+              )}
+              
               {/* Left Branch: Kelompok Jabatan */}
-              <div style={{ width: "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ width: isMobile ? "100%" : "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {/* Vertical line connecting to horizontal bar */}
                 <div style={{ width: 3, height: 40, background: "#CBD5E1", zIndex: 2 }} />
                 <div className="card" style={{ padding: 0, width: 290, border: `1px solid #F1F5F9`, boxShadow: "0 8px 25px rgba(0,0,0,0.05)", overflow: "hidden", background: "white", zIndex: 10 }}>
@@ -795,24 +801,23 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Center Spacer for Spine */}
-              <div style={{ width: 40 }} />
+              {!isMobile && <div style={{ width: 40 }} />}
 
               {/* Right Branch: Sekretariat Stack */}
-              <div style={{ width: "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ width: isMobile ? "100%" : "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {/* Vertical line connecting to horizontal bar */}
                 <div style={{ width: 3, height: 40, background: "#CBD5E1", zIndex: 2 }} />
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0 }}>
                   {/* Sekretaris */}
                   <div className="card" style={{ padding: 0, width: 300, display: "flex", overflow: "hidden", border: "none", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", background: "white", zIndex: 10 }}>
                     <div style={{ width: 85, height: 110, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <User size={40} color={C.navyLight} style={{ opacity: 0.5 }} />
+                      <User size={36} color={C.navyLight} style={{ opacity: 0.5 }} />
                     </div>
                     <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                      <div style={{ background: `linear-gradient(135deg, #1A527A, #00A3FF)`, color: "white", padding: "8px 12px", fontWeight: 700, fontSize: 11.5, textAlign: "center", textTransform: "uppercase" }}>Sekretaris</div>
+                      <div style={{ background: `linear-gradient(135deg, #1A527A, #00A3FF)`, color: "white", padding: "8px 12px", fontWeight: 700, fontSize: 11, textAlign: "center", textTransform: "uppercase" }}>Sekretaris</div>
                       <div style={{ padding: 10, textAlign: "center", flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                        <div style={{ fontSize: 11.5, fontWeight: 800, color: C.navy, lineHeight: 1.3 }}>IMANUEL M. KALEGOTANA, ST., M.SI</div>
-                        <div style={{ fontSize: 9.5, color: C.textLight, marginTop: 4 }}>NIP. 19800315 200501 1 011</div>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: C.navy, lineHeight: 1.3 }}>IMANUEL M. KALEGOTANA, ST., M.SI</div>
+                        <div style={{ fontSize: 9, color: C.textLight, marginTop: 4 }}>NIP. 19800315 200501 1 011</div>
                       </div>
                     </div>
                   </div>
@@ -823,13 +828,13 @@ export default function App() {
                   {/* Sub Bagian */}
                   <div className="card" style={{ padding: 0, width: 300, display: "flex", overflow: "hidden", border: `1px solid #F1F5F9`, boxShadow: "0 6px 20px rgba(0,0,0,0.04)", background: "white", zIndex: 10 }}>
                     <div style={{ width: 85, height: 110, background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <User size={38} color={C.navyLight} style={{ opacity: 0.4 }} />
+                      <User size={34} color={C.navyLight} style={{ opacity: 0.4 }} />
                     </div>
                     <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                      <div style={{ background: "#F1F5F9", color: C.navy, padding: "10px 12px", fontWeight: 700, fontSize: 10, textAlign: "center", textTransform: "uppercase", borderBottom: "1px solid #E5E7EB", minHeight: 45, display: "flex", alignItems: "center", justifyContent: "center" }}>Sub Bagian Umum & Kepegawaian</div>
+                      <div style={{ background: "#F1F5F9", color: C.navy, padding: "10px 12px", fontWeight: 700, fontSize: 9.5, textAlign: "center", textTransform: "uppercase", borderBottom: "1px solid #E5E7EB", minHeight: 45, display: "flex", alignItems: "center", justifyContent: "center" }}>Sub Bagian Umum & Kepegawaian</div>
                       <div style={{ padding: 10, textAlign: "center", flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: C.navy }}>YOHANES B. PATI MAKIN, SE</div>
-                        <div style={{ fontSize: 9, color: C.textLight, marginTop: 4 }}>NIP. 19701126 200904 1 001</div>
+                        <div style={{ fontSize: 10.5, fontWeight: 700, color: C.navy }}>YOHANES B. PATI MAKIN, SE</div>
+                        <div style={{ fontSize: 8.5, color: C.textLight, marginTop: 4 }}>NIP. 19701126 200904 1 001</div>
                       </div>
                     </div>
                   </div>
@@ -838,11 +843,12 @@ export default function App() {
             </div>
 
             {/* --- LEVEL 3: BIDANG-BIDANG --- */}
-            <div style={{ width: "100%", maxWidth: 1350, position: "relative", marginBottom: 100 }}>
-              {/* Wide Horizontal Connector Bar (Ends exactly at first and last node center) */}
-              <div style={{ position: "absolute", top: 0, left: "calc(10% - 8px)", right: "calc(10% - 8px)", height: 3, background: "#CBD5E1", zIndex: 1 }} />
+            <div style={{ width: "100%", maxWidth: isMobile ? 500 : 1350, position: "relative", marginBottom: isMobile ? 40 : 100 }}>
+              {!isMobile && (
+                <div style={{ position: "absolute", top: 0, left: "calc(10% - 8px)", right: "calc(10% - 8px)", height: 3, background: "#CBD5E1", zIndex: 1 }} />
+              )}
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 20, paddingTop: 50 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(5, 1fr)", gap: 20, paddingTop: isMobile ? 20 : 50 }}>
                 {[
                   { title: "Bidang Pemerintahan & Pembangunan Manusia", name: "FIKA MARTIANA, SET", nip: "19860308 201001 2 032" },
                   { title: "Bidang Perencanaan Pengendalian & Evaluasi", name: "JACKSON UBULELE DADE, SE., M.ACC", nip: "19910529 201403 1 002" },
@@ -852,17 +858,17 @@ export default function App() {
                 ].map((b, i) => (
                   <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
                     {/* Vertical Connector connecting to horizontal bar */}
-                    <div style={{ width: 3, height: 50, background: "#CBD5E1", position: "absolute", top: -50, left: "50%", transform: "translateX(-50%)", zIndex: 2 }} />
+                    <div style={{ width: 3, height: isMobile ? 30 : 50, background: "#CBD5E1", position: "absolute", top: isMobile ? -30 : -50, left: "50%", transform: "translateX(-50%)", zIndex: 2 }} />
 
-                    <div className="card" style={{ padding: 0, width: "100%", display: "flex", flexDirection: "column", overflow: "hidden", border: "none", boxShadow: "0 12px 35px rgba(0,0,0,0.1)", height: "100%", background: "white", zIndex: 10 }}>
-                      <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1A527A)`, color: "white", padding: "12px 14px", fontWeight: 800, fontSize: 10.5, textAlign: "center", textTransform: "uppercase", minHeight: 65, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1.3 }}>{b.title}</div>
+                    <div className="card" style={{ padding: 0, width: isMobile ? 280 : "100%", display: "flex", flexDirection: "column", overflow: "hidden", border: "none", boxShadow: "0 12px 35px rgba(0,0,0,0.1)", height: "100%", background: "white", zIndex: 10 }}>
+                      <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1A527A)`, color: "white", padding: "12px 14px", fontWeight: 800, fontSize: isMobile ? 9.5 : 10.5, textAlign: "center", textTransform: "uppercase", minHeight: isMobile ? 55 : 65, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1.3 }}>{b.title}</div>
                       <div style={{ display: "flex", flex: 1 }}>
-                        <div style={{ width: 65, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <User size={32} color={C.navyLight} style={{ opacity: 0.5 }} />
+                        <div style={{ width: isMobile ? 55 : 65, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <User size={isMobile ? 24 : 32} color={C.navyLight} style={{ opacity: 0.5 }} />
                         </div>
-                        <div style={{ flex: 1, padding: 12, textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                          <div style={{ fontSize: 11, fontWeight: 900, color: C.navy, lineHeight: 1.3 }}>{b.name}</div>
-                          <div style={{ fontSize: 9, color: C.textLight, marginTop: 5 }}>NIP. {b.nip}</div>
+                        <div style={{ flex: 1, padding: 10, textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                          <div style={{ fontSize: isMobile ? 10 : 11, fontWeight: 900, color: C.navy, lineHeight: 1.3 }}>{b.name}</div>
+                          <div style={{ fontSize: isMobile ? 8.5 : 9, color: C.textLight, marginTop: 4 }}>NIP. {b.nip}</div>
                         </div>
                       </div>
                     </div>
@@ -877,7 +883,7 @@ export default function App() {
               <div style={{ width: 3, height: 80, background: "#CBD5E1", position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", zIndex: 1 }} />
 
               <div style={{ height: 80 }} />
-              <div className="card" style={{ background: `linear-gradient(135deg, #00A3FF, #0077FF)`, color: "white", padding: "20px 90px", fontWeight: 900, fontSize: 32, boxShadow: "0 25px 55px rgba(0,163,255,0.3)", borderRadius: 16, border: "none", letterSpacing: "0.2em" }}>
+              <div className="card" style={{ background: `linear-gradient(135deg, #00A3FF, #0077FF)`, color: "white", padding: isMobile ? "14px 40px" : "20px 90px", fontWeight: 900, fontSize: isMobile ? 22 : 32, boxShadow: "0 25px 55px rgba(0,163,255,0.3)", borderRadius: 16, border: "none", letterSpacing: "0.2em" }}>
                 UPTD
               </div>
             </div>
