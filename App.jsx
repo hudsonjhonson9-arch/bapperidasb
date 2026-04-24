@@ -720,7 +720,7 @@ export default function App() {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", width: "100%", paddingBottom: 60 }}>
             
             {/* THE SPINE: Single continuous solid line (BEHIND everything) */}
-            <div style={{ position: "absolute", top: 115, bottom: 105, left: "50%", width: 3, background: "#CBD5E1", zIndex: 0, transform: "translateX(-50%)" }} />
+            <div style={{ position: "absolute", top: 130, bottom: 65, left: "50%", width: 3, background: "#CBD5E1", zIndex: 0, transform: "translateX(-50%)" }} />
 
             {/* --- LEVEL 1: KEPALA BADAN --- */}
             <div style={{ zIndex: 20, marginBottom: 80 }}>
@@ -741,7 +741,7 @@ export default function App() {
             {/* --- LEVEL 2: SEKRETARIS & JABATAN --- */}
             <div style={{ width: "100%", maxWidth: 1100, position: "relative", display: "flex", justifyContent: "center", gap: 0, marginBottom: 110 }}>
               {/* Horizontal Connector Bar (Matches center of branches exactly) */}
-              <div style={{ position: "absolute", top: 0, left: "calc(27.5% - 21.5px)", right: "calc(27.5% - 21.5px)", height: 3, background: "#CBD5E1", zIndex: 1 }} />
+              <div style={{ position: "absolute", top: 0, left: "calc(25% - 10px)", right: "calc(25% - 10px)", height: 3, background: "#CBD5E1", zIndex: 1 }} />
               
               {/* Left Branch: Kelompok Jabatan */}
               <div style={{ width: "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -805,12 +805,12 @@ export default function App() {
             {/* --- LEVEL 3: BIDANG-BIDANG --- */}
             <div style={{ width: "100%", maxWidth: 1350, position: "relative", marginBottom: 100 }}>
               {/* Wide Horizontal Connector Bar (Ends exactly at first and last node center) */}
-              <div style={{ position: "absolute", top: 0, left: "calc(10% - 9.5px)", right: "calc(10% - 9.5px)", height: 3, background: "#CBD5E1", zIndex: 1 }} />
+              <div style={{ position: "absolute", top: 0, left: "calc(10% - 8px)", right: "calc(10% - 8px)", height: 3, background: "#CBD5E1", zIndex: 1 }} />
               
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 20, paddingTop: 50 }}>
                 {[
                   { title: "Bidang Pemerintahan & Pembangunan Manusia", name: "FIKA MARTIANA, SET", nip: "19860308 201001 2 032" },
-                  { title: "Bidang Perencanaan Pengendalian & Evaluasi", name: "JACKSON UBULELE DADE, SE., M.ACC", nip: "18910529 201403 1 002" },
+                  { title: "Bidang Perencanaan Pengendalian & Evaluasi", name: "JACKSON UBULELE DADE, SE., M.ACC", nip: "19910529 201403 1 002" },
                   { title: "Bidang Perekonomian & Sumber Daya Alam", name: "ALVIAN ZADRAKH TILUATA KOSI, S.PT", nip: "19771122 200501 1 009" },
                   { title: "Bidang Infrastruktur & Kewilayahan", name: "ERLAN PORO, ST., M.SC", nip: "19860114 201403 1 002" },
                   { title: "Bidang Riset dan Inovasi", name: "YAHYA ANTOSARI STORY, S.IP", nip: "19790707 200312 1 006" },
@@ -837,8 +837,10 @@ export default function App() {
             </div>
 
             {/* --- LEVEL 4: UPTD --- */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", zIndex: 20 }}>
-               {/* Redundant space maintained for layout flow */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", zIndex: 20, position: "relative" }}>
+               {/* Vertical Connector connecting to spine */}
+               <div style={{ width: 3, height: 80, background: "#CBD5E1", position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", zIndex: 1 }} />
+               
                <div style={{ height: 80 }} /> 
                <div className="card" style={{ background: `linear-gradient(135deg, #00A3FF, #0077FF)`, color: "white", padding: "20px 90px", fontWeight: 900, fontSize: 32, boxShadow: "0 25px 55px rgba(0,163,255,0.3)", borderRadius: 16, border: "none", letterSpacing: "0.2em" }}>
                   UPTD
@@ -898,7 +900,7 @@ export default function App() {
               </p>
             </div>
             <div style={{ background: `rgba(11,36,71,0.06)`, borderRadius: 12, padding: "14px 22px", textAlign: "center" }}>
-              <div className="display" style={{ fontSize: 28, fontWeight: 700, color: C.navy }}>{DOKUMEN.reduce((a, k) => a + k.items.length, 0)}</div>
+              <div className="display" style={{ fontSize: 28, fontWeight: 700, color: C.navy }}>{dokumenList.length}</div>
               <div style={{ fontSize: 11.5, color: C.textLight, letterSpacing: "0.06em", textTransform: "uppercase" }}>Total Dokumen</div>
             </div>
           </div>
@@ -1207,6 +1209,19 @@ export default function App() {
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* Map Embed */}
+          <div style={{ marginTop: 64, borderRadius: 18, overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}>
+            <iframe 
+              src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d2419.9522882405076!2d119.3882584!3d-9.6482982!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2c4ae1251f39f43f:0xdfc6985dc05acd50!2sBapperida Sumba Barat!5e1!3m2!1sid!2sid!4v1777031037506!5m2!1sid!2sid" 
+              width="100%" 
+              height="400" 
+              style={{ border: 0, display: "block" }} 
+              allowFullScreen="" 
+              loading="lazy" 
+              referrerPolicy="no-referrer-when-downgrade"
+            ></iframe>
           </div>
         </div>
       </section>
