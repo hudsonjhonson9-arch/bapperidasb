@@ -308,6 +308,20 @@ export default function App() {
     const onResize = () => setIsMobile(window.innerWidth < 1024);
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onResize);
+
+    // Inject Global Mobile Fixes
+    const style = document.createElement("style");
+    style.innerHTML = `
+      * { box-sizing: border-box; }
+      body, html { overflow-x: hidden; width: 100%; position: relative; }
+      .section-padding { padding: 80px 20px; }
+      @media (max-width: 768px) {
+        .section-padding { padding: 60px 16px; }
+        .display { font-size: 28px !important; }
+      }
+    `;
+    document.head.appendChild(style);
+
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onResize);
@@ -728,7 +742,7 @@ export default function App() {
           </div>
 
           {/* Misi cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(285px, 1fr))", gap: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
             {[
               { n: "M1", title: "Perencanaan Berkualitas", desc: "Meningkatkan kualitas perencanaan pembangunan daerah yang komprehensif, terintegrasi, dan berbasis data valid." },
               { n: "M2", title: "Partisipasi Masyarakat", desc: "Mendorong keterlibatan aktif masyarakat dalam proses perencanaan pembangunan secara transparan dan akuntabel." },
@@ -764,8 +778,8 @@ export default function App() {
             <div style={{ position: "absolute", top: 130, bottom: 65, left: "50%", width: 3, background: "#CBD5E1", zIndex: 0, transform: "translateX(-50%)" }} />
 
             {/* --- LEVEL 1: KEPALA BADAN --- */}
-            <div style={{ zIndex: 20, marginBottom: isMobile ? 40 : 80 }}>
-              <div className="card" style={{ padding: 0, width: isMobile ? 280 : 340, display: "flex", overflow: "hidden", border: "none", boxShadow: "0 20px 50px rgba(0,0,0,0.15)", background: "white" }}>
+            <div style={{ zIndex: 20, marginBottom: isMobile ? 40 : 80, width: "100%", display: "flex", justifyContent: "center" }}>
+              <div className="card" style={{ padding: 0, width: "100%", maxWidth: isMobile ? 300 : 340, display: "flex", overflow: "hidden", border: "none", boxShadow: "0 20px 50px rgba(0,0,0,0.15)", background: "white" }}>
                 <div style={{ width: isMobile ? 80 : 110, height: isMobile ? 110 : 130, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <User size={isMobile ? 40 : 56} color={C.navyLight} style={{ opacity: 0.5 }} />
                 <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
@@ -788,7 +802,7 @@ export default function App() {
               <div style={{ width: isMobile ? "100%" : "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {/* Vertical line connecting to horizontal bar */}
                 <div style={{ width: 3, height: 40, background: "#CBD5E1", zIndex: 2 }} />
-                <div className="card" style={{ padding: 0, width: 290, border: `1px solid #F1F5F9`, boxShadow: "0 8px 25px rgba(0,0,0,0.05)", overflow: "hidden", background: "white", zIndex: 10 }}>
+                <div className="card" style={{ padding: 0, width: "100%", maxWidth: 290, border: `1px solid #F1F5F9`, boxShadow: "0 8px 25px rgba(0,0,0,0.05)", overflow: "hidden", background: "white", zIndex: 10 }}>
                   <div style={{ background: "#F8FAFC", color: C.navy, padding: "10px 14px", fontWeight: 800, fontSize: 11.5, textAlign: "center", borderBottom: "1px solid #F1F5F9", textTransform: "uppercase" }}>KELOMPOK JABATAN</div>
                   <div style={{ padding: "20px 25px" }}>
                     <div style={{ fontSize: 11.5, fontWeight: 700, color: C.navyMid, marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
@@ -807,9 +821,9 @@ export default function App() {
               <div style={{ width: isMobile ? "100%" : "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {/* Vertical line connecting to horizontal bar */}
                 <div style={{ width: 3, height: 40, background: "#CBD5E1", zIndex: 2 }} />
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0 }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0, width: "100%" }}>
                   {/* Sekretaris */}
-                  <div className="card" style={{ padding: 0, width: 300, display: "flex", overflow: "hidden", border: "none", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", background: "white", zIndex: 10 }}>
+                  <div className="card" style={{ padding: 0, width: "100%", maxWidth: 300, display: "flex", overflow: "hidden", border: "none", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", background: "white", zIndex: 10 }}>
                     <div style={{ width: 85, height: 110, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <User size={36} color={C.navyLight} style={{ opacity: 0.5 }} />
                     </div>
@@ -826,7 +840,7 @@ export default function App() {
                   <div style={{ width: 3, height: 35, background: "#CBD5E1" }} />
 
                   {/* Sub Bagian */}
-                  <div className="card" style={{ padding: 0, width: 300, display: "flex", overflow: "hidden", border: `1px solid #F1F5F9`, boxShadow: "0 6px 20px rgba(0,0,0,0.04)", background: "white", zIndex: 10 }}>
+                  <div className="card" style={{ padding: 0, width: "100%", maxWidth: 300, display: "flex", overflow: "hidden", border: `1px solid #F1F5F9`, boxShadow: "0 6px 20px rgba(0,0,0,0.04)", background: "white", zIndex: 10 }}>
                     <div style={{ width: 85, height: 110, background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <User size={34} color={C.navyLight} style={{ opacity: 0.4 }} />
                     </div>
@@ -856,11 +870,11 @@ export default function App() {
                   { title: "Bidang Infrastruktur & Kewilayahan", name: "ERLAN PORO, ST., M.SC", nip: "19860114 201403 1 002" },
                   { title: "Bidang Riset dan Inovasi", name: "YAHYA ANTOSARI STORY, S.IP", nip: "19790707 200312 1 006" },
                 ].map((b, i) => (
-                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", width: "100%" }}>
                     {/* Vertical Connector connecting to horizontal bar */}
                     <div style={{ width: 3, height: isMobile ? 30 : 50, background: "#CBD5E1", position: "absolute", top: isMobile ? -30 : -50, left: "50%", transform: "translateX(-50%)", zIndex: 2 }} />
 
-                    <div className="card" style={{ padding: 0, width: isMobile ? 280 : "100%", display: "flex", flexDirection: "column", overflow: "hidden", border: "none", boxShadow: "0 12px 35px rgba(0,0,0,0.1)", height: "100%", background: "white", zIndex: 10 }}>
+                    <div className="card" style={{ padding: 0, width: "100%", maxWidth: isMobile ? 300 : "100%", display: "flex", flexDirection: "column", overflow: "hidden", border: "none", boxShadow: "0 12px 35px rgba(0,0,0,0.1)", height: "100%", background: "white", zIndex: 10 }}>
                       <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1A527A)`, color: "white", padding: "12px 14px", fontWeight: 800, fontSize: isMobile ? 9.5 : 10.5, textAlign: "center", textTransform: "uppercase", minHeight: isMobile ? 55 : 65, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1.3 }}>{b.title}</div>
                       <div style={{ display: "flex", flex: 1 }}>
                         <div style={{ width: isMobile ? 55 : 65, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -901,7 +915,7 @@ export default function App() {
             <h2 className="section-title" style={{ maxWidth: 520 }}>Program &amp; Kegiatan Unggulan</h2>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
             {[
               { icon: "📐", title: "Penyusunan RPJMD 2026–2031", cat: "Perencanaan Jangka Menengah", desc: "Proses penyusunan Rencana Pembangunan Jangka Menengah Daerah yang melibatkan seluruh pemangku kepentingan lintas sektor.", status: "Berjalan", sc: "#16A34A" },
               { icon: "🗺️", title: "Musrenbang Kecamatan & Kabupaten", cat: "Perencanaan Partisipatif", desc: "Musyawarah perencanaan pembangunan yang melibatkan masyarakat dari tingkat kelurahan/desa hingga kabupaten secara menyeluruh.", status: "Terjadwal", sc: "#1D4ED8" },
