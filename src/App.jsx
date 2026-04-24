@@ -112,12 +112,12 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dokSearch, setDokSearch] = useState("");
   const [dokFilter, setDokFilter] = useState("Semua");
-  
+
   // Security & Session
   const APP_SECRET = "BAPPERIDA_SECURE_TOKEN_2026";
   const [isAdmin, setIsAdmin] = useState(localStorage.getItem("bapperida_admin_session") === APP_SECRET);
   const [showLogin, setShowLogin] = useState(false);
-  
+
   // Database States
   const [beritaList, setBeritaList] = useState([]);
   const [dokumenList, setDokumenList] = useState([]);
@@ -126,11 +126,11 @@ export default function App() {
   // CMS States
   const [showModal, setShowModal] = useState(null); // 'berita' | 'dokumen'
   const [editItem, setEditItem] = useState(null);
-  
+
   const [selectedBerita, setSelectedBerita] = useState(null);
   const [previewDokumen, setPreviewDokumen] = useState(null);
   const [showAllBeritaModal, setShowAllBeritaModal] = useState(false);
-  
+
   // Slider State
   const [sliderList, setSliderList] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -483,8 +483,8 @@ export default function App() {
         {/* Carousel Background */}
         {sliderList.length > 0 ? (
           sliderList.map((slide, idx) => (
-            <div 
-              key={slide.id} 
+            <div
+              key={slide.id}
               style={{
                 position: "absolute", inset: 0,
                 backgroundImage: `url(${slide.gambar_url})`,
@@ -499,7 +499,7 @@ export default function App() {
         ) : (
           <div style={{ position: "absolute", inset: 0, background: `linear-gradient(150deg, ${C.navyDark} 0%, ${C.navyMid} 45%, #1A4A72 100%)`, zIndex: 0 }} />
         )}
-        
+
         {/* Overlay gradient to ensure text readability */}
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(150deg, rgba(11,36,71,0.95) 0%, rgba(11,36,71,0.85) 45%, rgba(26,74,114,0.7) 100%)`, zIndex: 0 }} />
 
@@ -586,8 +586,8 @@ export default function App() {
         {sliderList.length > 1 && (
           <div style={{ position: "absolute", bottom: 80, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 8, zIndex: 2 }}>
             {sliderList.map((_, idx) => (
-              <button 
-                key={idx} 
+              <button
+                key={idx}
                 onClick={() => setCurrentSlide(idx)}
                 style={{ width: currentSlide === idx ? 24 : 8, height: 8, borderRadius: 4, background: currentSlide === idx ? C.gold : "rgba(255,255,255,0.3)", border: "none", cursor: "pointer", transition: "all 0.3s ease" }}
                 aria-label={`Go to slide ${idx + 1}`}
@@ -718,7 +718,7 @@ export default function App() {
 
           {/* Tree Wrapper */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", width: "100%", paddingBottom: 60 }}>
-            
+
             {/* THE SPINE: Single continuous solid line (BEHIND everything) */}
             <div style={{ position: "absolute", top: 130, bottom: 65, left: "50%", width: 3, background: "#CBD5E1", zIndex: 0, transform: "translateX(-50%)" }} />
 
@@ -726,7 +726,7 @@ export default function App() {
             <div style={{ zIndex: 20, marginBottom: 80 }}>
               <div className="card" style={{ padding: 0, width: 340, display: "flex", overflow: "hidden", border: "none", boxShadow: "0 20px 50px rgba(0,0,0,0.15)", background: "white" }}>
                 <div style={{ width: 110, height: 130, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                   <User size={56} color={C.navyLight} style={{ opacity: 0.5 }} />
+                  <User size={56} color={C.navyLight} style={{ opacity: 0.5 }} />
                 </div>
                 <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
                   <div style={{ background: `linear-gradient(135deg, ${C.navy}, #00A3FF)`, color: "white", padding: "12px 14px", fontWeight: 800, fontSize: 13, textAlign: "center", textTransform: "uppercase", letterSpacing: "0.08em" }}>Kepala Badan</div>
@@ -742,7 +742,7 @@ export default function App() {
             <div style={{ width: "100%", maxWidth: 1100, position: "relative", display: "flex", justifyContent: "center", gap: 0, marginBottom: 110 }}>
               {/* Horizontal Connector Bar (Matches center of branches exactly) */}
               <div style={{ position: "absolute", top: 0, left: "calc(25% - 10px)", right: "calc(25% - 10px)", height: 3, background: "#CBD5E1", zIndex: 1 }} />
-              
+
               {/* Left Branch: Kelompok Jabatan */}
               <div style={{ width: "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {/* Vertical line connecting to horizontal bar */}
@@ -751,10 +751,10 @@ export default function App() {
                   <div style={{ background: "#F8FAFC", color: C.navy, padding: "10px 14px", fontWeight: 800, fontSize: 11.5, textAlign: "center", borderBottom: "1px solid #F1F5F9", textTransform: "uppercase" }}>KELOMPOK JABATAN</div>
                   <div style={{ padding: "20px 25px" }}>
                     <div style={{ fontSize: 11.5, fontWeight: 700, color: C.navyMid, marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
-                       <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.gold }} /> JABATAN FUNGSIONAL
+                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.gold }} /> JABATAN FUNGSIONAL
                     </div>
                     <div style={{ fontSize: 11.5, fontWeight: 700, color: C.navyMid, display: "flex", alignItems: "center", gap: 12 }}>
-                       <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.gold }} /> JABATAN PELAKSANA
+                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.gold }} /> JABATAN PELAKSANA
                     </div>
                   </div>
                 </div>
@@ -771,7 +771,7 @@ export default function App() {
                   {/* Sekretaris */}
                   <div className="card" style={{ padding: 0, width: 300, display: "flex", overflow: "hidden", border: "none", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", background: "white", zIndex: 10 }}>
                     <div style={{ width: 85, height: 110, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                       <User size={40} color={C.navyLight} style={{ opacity: 0.5 }} />
+                      <User size={40} color={C.navyLight} style={{ opacity: 0.5 }} />
                     </div>
                     <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
                       <div style={{ background: `linear-gradient(135deg, #1A527A, #00A3FF)`, color: "white", padding: "8px 12px", fontWeight: 700, fontSize: 11.5, textAlign: "center", textTransform: "uppercase" }}>Sekretaris</div>
@@ -781,14 +781,14 @@ export default function App() {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Vertical Connector between Sekretaris and Sub Bagian */}
                   <div style={{ width: 3, height: 35, background: "#CBD5E1" }} />
 
                   {/* Sub Bagian */}
                   <div className="card" style={{ padding: 0, width: 300, display: "flex", overflow: "hidden", border: `1px solid #F1F5F9`, boxShadow: "0 6px 20px rgba(0,0,0,0.04)", background: "white", zIndex: 10 }}>
                     <div style={{ width: 85, height: 110, background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                       <User size={38} color={C.navyLight} style={{ opacity: 0.4 }} />
+                      <User size={38} color={C.navyLight} style={{ opacity: 0.4 }} />
                     </div>
                     <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
                       <div style={{ background: "#F1F5F9", color: C.navy, padding: "10px 12px", fontWeight: 700, fontSize: 10, textAlign: "center", textTransform: "uppercase", borderBottom: "1px solid #E5E7EB", minHeight: 45, display: "flex", alignItems: "center", justifyContent: "center" }}>Sub Bagian Umum & Kepegawaian</div>
@@ -806,7 +806,7 @@ export default function App() {
             <div style={{ width: "100%", maxWidth: 1350, position: "relative", marginBottom: 100 }}>
               {/* Wide Horizontal Connector Bar (Ends exactly at first and last node center) */}
               <div style={{ position: "absolute", top: 0, left: "calc(10% - 8px)", right: "calc(10% - 8px)", height: 3, background: "#CBD5E1", zIndex: 1 }} />
-              
+
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 20, paddingTop: 50 }}>
                 {[
                   { title: "Bidang Pemerintahan & Pembangunan Manusia", name: "FIKA MARTIANA, SET", nip: "19860308 201001 2 032" },
@@ -818,18 +818,18 @@ export default function App() {
                   <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
                     {/* Vertical Connector connecting to horizontal bar */}
                     <div style={{ width: 3, height: 50, background: "#CBD5E1", position: "absolute", top: -50, left: "50%", transform: "translateX(-50%)", zIndex: 2 }} />
-                    
+
                     <div className="card" style={{ padding: 0, width: "100%", display: "flex", flexDirection: "column", overflow: "hidden", border: "none", boxShadow: "0 12px 35px rgba(0,0,0,0.1)", height: "100%", background: "white", zIndex: 10 }}>
-                       <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1A527A)`, color: "white", padding: "12px 14px", fontWeight: 800, fontSize: 10.5, textAlign: "center", textTransform: "uppercase", minHeight: 65, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1.3 }}>{b.title}</div>
-                       <div style={{ display: "flex", flex: 1 }}>
-                          <div style={{ width: 65, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                             <User size={32} color={C.navyLight} style={{ opacity: 0.5 }} />
-                          </div>
-                          <div style={{ flex: 1, padding: 12, textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                            <div style={{ fontSize: 11, fontWeight: 900, color: C.navy, lineHeight: 1.3 }}>{b.name}</div>
-                            <div style={{ fontSize: 9, color: C.textLight, marginTop: 5 }}>NIP. {b.nip}</div>
-                          </div>
-                       </div>
+                      <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1A527A)`, color: "white", padding: "12px 14px", fontWeight: 800, fontSize: 10.5, textAlign: "center", textTransform: "uppercase", minHeight: 65, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1.3 }}>{b.title}</div>
+                      <div style={{ display: "flex", flex: 1 }}>
+                        <div style={{ width: 65, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <User size={32} color={C.navyLight} style={{ opacity: 0.5 }} />
+                        </div>
+                        <div style={{ flex: 1, padding: 12, textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                          <div style={{ fontSize: 11, fontWeight: 900, color: C.navy, lineHeight: 1.3 }}>{b.name}</div>
+                          <div style={{ fontSize: 9, color: C.textLight, marginTop: 5 }}>NIP. {b.nip}</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -838,13 +838,13 @@ export default function App() {
 
             {/* --- LEVEL 4: UPTD --- */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", zIndex: 20, position: "relative" }}>
-               {/* Vertical Connector connecting to spine */}
-               <div style={{ width: 3, height: 80, background: "#CBD5E1", position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", zIndex: 1 }} />
-               
-               <div style={{ height: 80 }} /> 
-               <div className="card" style={{ background: `linear-gradient(135deg, #00A3FF, #0077FF)`, color: "white", padding: "20px 90px", fontWeight: 900, fontSize: 32, boxShadow: "0 25px 55px rgba(0,163,255,0.3)", borderRadius: 16, border: "none", letterSpacing: "0.2em" }}>
-                  UPTD
-               </div>
+              {/* Vertical Connector connecting to spine */}
+              <div style={{ width: 3, height: 80, background: "#CBD5E1", position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", zIndex: 1 }} />
+
+              <div style={{ height: 80 }} />
+              <div className="card" style={{ background: `linear-gradient(135deg, #00A3FF, #0077FF)`, color: "white", padding: "20px 90px", fontWeight: 900, fontSize: 32, boxShadow: "0 25px 55px rgba(0,163,255,0.3)", borderRadius: 16, border: "none", letterSpacing: "0.2em" }}>
+                UPTD
+              </div>
             </div>
 
           </div>
@@ -935,14 +935,14 @@ export default function App() {
           {(() => {
             const categories = [...new Set(dokumenList.map(d => d.kategori))];
             const displayCategories = dokFilter === "Semua" ? categories : [dokFilter];
-            
+
             return displayCategories.map(cat => {
-              const items = dokumenList.filter(d => 
-                d.kategori === cat && 
+              const items = dokumenList.filter(d =>
+                d.kategori === cat &&
                 (dokSearch === "" || d.judul.toLowerCase().includes(dokSearch.toLowerCase()))
               );
               if (items.length === 0) return null;
-              
+
               return (
                 <div key={cat} style={{ marginBottom: 36 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
@@ -1461,27 +1461,27 @@ export default function App() {
           <div className="modal-content" style={{ maxWidth: 1000, height: "90vh", padding: 0, display: "flex", flexDirection: "column", overflow: "hidden" }} onClick={e => e.stopPropagation()}>
             <div className="modal-header" style={{ padding: "16px 24px" }}>
               <div>
-                 <h3 className="display" style={{ fontSize: 18, fontWeight: 700, color: C.navy }}>{previewDokumen.judul}</h3>
-                 <div style={{ fontSize: 12, color: C.textLight, marginTop: 4 }}>{previewDokumen.kategori} &bull; {previewDokumen.ukuran || "Ukuran tidak diketahui"}</div>
+                <h3 className="display" style={{ fontSize: 18, fontWeight: 700, color: C.navy }}>{previewDokumen.judul}</h3>
+                <div style={{ fontSize: 12, color: C.textLight, marginTop: 4 }}>{previewDokumen.kategori} &bull; {previewDokumen.ukuran || "Ukuran tidak diketahui"}</div>
               </div>
               <button onClick={() => setPreviewDokumen(null)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textLight }}><X size={20} /></button>
             </div>
             <div style={{ flex: 1, background: "#f1f5f9", position: "relative" }}>
-               {previewDokumen.url ? (
-                  <iframe 
-                    src={previewDokumen.url} 
-                    width="100%" 
-                    height="100%" 
-                    style={{ border: "none", position: "absolute", inset: 0 }} 
-                    title="PDF Preview" 
-                  />
-               ) : (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: C.textLight, padding: 40, textAlign: "center" }}>
-                     <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-                     <div style={{ fontSize: 16, color: C.navy, fontWeight: 600, marginBottom: 8 }}>Tautan Dokumen Tidak Tersedia</div>
-                     <div>Dokumen ini belum memiliki tautan file untuk dipratinjau.</div>
-                  </div>
-               )}
+              {previewDokumen.url ? (
+                <iframe
+                  src={previewDokumen.url}
+                  width="100%"
+                  height="100%"
+                  style={{ border: "none", position: "absolute", inset: 0 }}
+                  title="PDF Preview"
+                />
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: C.textLight, padding: 40, textAlign: "center" }}>
+                  <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+                  <div style={{ fontSize: 16, color: C.navy, fontWeight: 600, marginBottom: 8 }}>Tautan Dokumen Tidak Tersedia</div>
+                  <div>Dokumen ini belum memiliki tautan file untuk dipratinjau.</div>
+                </div>
+              )}
             </div>
             <div className="modal-footer" style={{ background: C.white, padding: "16px 24px" }}>
               <button onClick={() => window.open(previewDokumen.url, '_blank')} className="btn-ghost" style={{ borderColor: C.navy, color: C.navy, padding: "8px 16px", fontSize: 13 }}>
@@ -1502,28 +1502,28 @@ export default function App() {
               <button onClick={() => setShowAllBeritaModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textLight }}><X size={20} /></button>
             </div>
             <div className="modal-body" style={{ flex: 1, overflowY: "auto", padding: 24, background: "#f8fafc" }}>
-               <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
-                 {beritaList.map(item => (
-                    <div key={item.id} onClick={() => { setShowAllBeritaModal(false); setSelectedBerita(item); }} className="card" style={{ padding: "16px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 16 }}>
-                      <div style={{ width: 60, height: 60, borderRadius: 10, background: `${C.navy}14`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0, overflow: "hidden" }}>
-                        {item.gambar_url ? (
-                          <img src={item.gambar_url} alt={item.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                        ) : (
-                          item.emoji || "📰"
-                        )}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                          <span style={{ background: `${C.navy}14`, color: C.navy, fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20 }}>{item.kategori}</span>
-                          <span style={{ color: C.textLight, fontSize: 12 }}>{item.tanggal}</span>
-                          {item.is_featured && <span style={{ color: C.gold, fontSize: 11, fontWeight: 700 }}>★ Unggulan</span>}
-                        </div>
-                        <h4 style={{ fontSize: 15, fontWeight: 600, color: C.navy, lineHeight: 1.4 }}>{item.judul}</h4>
-                      </div>
-                      <ArrowRight size={18} color={C.textLight} style={{ flexShrink: 0 }} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+                {beritaList.map(item => (
+                  <div key={item.id} onClick={() => { setShowAllBeritaModal(false); setSelectedBerita(item); }} className="card" style={{ padding: "16px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 16 }}>
+                    <div style={{ width: 60, height: 60, borderRadius: 10, background: `${C.navy}14`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0, overflow: "hidden" }}>
+                      {item.gambar_url ? (
+                        <img src={item.gambar_url} alt={item.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : (
+                        item.emoji || "📰"
+                      )}
                     </div>
-                 ))}
-               </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                        <span style={{ background: `${C.navy}14`, color: C.navy, fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20 }}>{item.kategori}</span>
+                        <span style={{ color: C.textLight, fontSize: 12 }}>{item.tanggal}</span>
+                        {item.is_featured && <span style={{ color: C.gold, fontSize: 11, fontWeight: 700 }}>★ Unggulan</span>}
+                      </div>
+                      <h4 style={{ fontSize: 15, fontWeight: 600, color: C.navy, lineHeight: 1.4 }}>{item.judul}</h4>
+                    </div>
+                    <ArrowRight size={18} color={C.textLight} style={{ flexShrink: 0 }} />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
