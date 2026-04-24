@@ -157,6 +157,9 @@ export default function App() {
       add: `${API_BASE}/bapperida-slider-add`,
       edit: `${API_BASE}/bapperida-slider-edit`,
       del: `${API_BASE}/bapperida-slider-delete`,
+    },
+    kontak: {
+      submit: `${API_BASE}/bapperida-kontak-submit`
     }
   };
 
@@ -259,6 +262,38 @@ export default function App() {
       });
       fetchData();
     } catch (e) { alert("Gagal menghapus data"); }
+  };
+
+  const handleKontakSubmit = async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    const originalText = btn.innerHTML;
+    
+    try {
+      btn.disabled = true;
+      btn.innerHTML = 'Mengirim...';
+      
+      const fd = new FormData(e.target);
+      const data = Object.fromEntries(fd.entries());
+      
+      const res = await fetch(api.kontak.submit, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      
+      if (res.ok) {
+        alert("Pesan Anda telah terkirim. Terima kasih!");
+        e.target.reset();
+      } else {
+        throw new Error();
+      }
+    } catch (err) {
+      alert("Gagal mengirim pesan. Silakan coba lagi nanti.");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+    }
   };
 
   useEffect(() => {
@@ -1160,7 +1195,7 @@ export default function App() {
               </div>
 
               {[
-                { Icon: MapPin, label: "Alamat Kantor", val: "Jl. Weekarou,\nWaikabubak, Sumba Barat, NTT 87284" },
+                { Icon: MapPin, label: "Alamat Kantor", val: "Jl. Weekarou, Waikabubak, Sumba Barat, NTT 87284" },
                 { Icon: Phone, label: "Telepon", val: "(0387) 21050" },
                 { Icon: Mail, label: "Email Resmi", val: "bapperida@sumbabarat.go.id" },
               ].map(({ Icon, label, val }) => (
@@ -1181,33 +1216,33 @@ export default function App() {
               <h3 className="display" style={{ fontSize: 26, fontWeight: 600, marginBottom: 8, color: "white" }}>Kirim Pesan</h3>
               <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", marginBottom: 36 }}>Kami akan merespons dalam 1–2 hari kerja</p>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <form onSubmit={handleKontakSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                   <div className="form-group-dark">
                     <label style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", display: "block", marginBottom: 8, fontWeight: 500 }}>Nama Lengkap *</label>
-                    <input type="text" placeholder="Nama lengkap" style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "12px 16px", color: "white" }} />
+                    <input name="nama" type="text" placeholder="Nama lengkap" required style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "12px 16px", color: "white" }} />
                   </div>
                   <div className="form-group-dark">
                     <label style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", display: "block", marginBottom: 8, fontWeight: 500 }}>Email *</label>
-                    <input type="email" placeholder="email@contoh.com" style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "12px 16px", color: "white" }} />
+                    <input name="email" type="email" placeholder="email@contoh.com" required style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "12px 16px", color: "white" }} />
                   </div>
                 </div>
                 <div className="form-group-dark">
                   <label style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", display: "block", marginBottom: 8, fontWeight: 500 }}>Instansi / Organisasi</label>
-                  <input type="text" placeholder="Nama instansi (opsional)" style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "12px 16px", color: "white" }} />
+                  <input name="instansi" type="text" placeholder="Nama instansi (opsional)" style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "12px 16px", color: "white" }} />
                 </div>
                 <div className="form-group-dark">
                   <label style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", display: "block", marginBottom: 8, fontWeight: 500 }}>Perihal</label>
-                  <input type="text" placeholder="Topik atau perihal pesan" style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "12px 16px", color: "white" }} />
+                  <input name="perihal" type="text" placeholder="Topik atau perihal pesan" required style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "12px 16px", color: "white" }} />
                 </div>
                 <div className="form-group-dark">
                   <label style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", display: "block", marginBottom: 8, fontWeight: 500 }}>Pesan *</label>
-                  <textarea rows={4} placeholder="Tuliskan pesan atau pertanyaan Anda..." style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "12px 16px", color: "white", resize: "none" }} />
+                  <textarea name="pesan" rows={4} placeholder="Tuliskan pesan atau pertanyaan Anda..." required style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "12px 16px", color: "white", resize: "none" }} />
                 </div>
-                <button className="btn-gold" style={{ width: "100%", justifyContent: "center", padding: "16px", marginTop: 10, fontSize: 14, fontWeight: 700 }}>
+                <button type="submit" className="btn-gold" style={{ width: "100%", justifyContent: "center", padding: "16px", marginTop: 10, fontSize: 14, fontWeight: 700 }}>
                   Kirim Pesan <ArrowRight size={16} />
                 </button>
-              </div>
+              </form>
             </div>
           </div>
         </div>

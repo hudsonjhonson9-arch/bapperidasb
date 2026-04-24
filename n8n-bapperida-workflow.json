@@ -756,6 +756,54 @@
         400,
         2750
       ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bapperida-kontak-submit",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "node-37",
+      "name": "Webhook Kontak Submit",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        3000
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "no-reply@mindcloud.my.id",
+        "toEmail": "bapperida@sumbabarat.go.id, bapperidasb@gmail.com",
+        "subject": "=Pesan Baru: {{$json[\"perihal\"]}}",
+        "text": "=Nama: {{$json[\"nama\"]}}\nEmail: {{$json[\"email\"]}}\nInstansi: {{$json[\"instansi\"]}}\n\nPesan:\n{{$json[\"pesan\"]}}",
+        "options": {}
+      },
+      "id": "node-38",
+      "name": "Send Email Bapperida",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        200,
+        3000
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"status\":\"success\"}",
+        "options": {}
+      },
+      "id": "node-39",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        400,
+        3000
+      ]
     }
   ],
   "connections": {
@@ -1124,6 +1172,33 @@
       ]
     },
     "Unauthorized slider": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook Kontak Submit": {
+      "main": [
+        [
+          {
+            "node": "Send Email Bapperida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email Bapperida": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Success": {
       "main": [
         []
       ]
