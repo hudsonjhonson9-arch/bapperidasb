@@ -900,7 +900,7 @@ export default function App() {
               </p>
             </div>
             <div style={{ background: `rgba(11,36,71,0.06)`, borderRadius: 12, padding: "14px 22px", textAlign: "center" }}>
-              <div className="display" style={{ fontSize: 28, fontWeight: 700, color: C.navy }}>{DOKUMEN.reduce((a, k) => a + k.items.length, 0)}</div>
+              <div className="display" style={{ fontSize: 28, fontWeight: 700, color: C.navy }}>{dokumenList.length}</div>
               <div style={{ fontSize: 11.5, color: C.textLight, letterSpacing: "0.06em", textTransform: "uppercase" }}>Total Dokumen</div>
             </div>
           </div>
