@@ -569,6 +569,17 @@ export default function App() {
                 {n.label}
               </div>
             ))}
+            {!isAdmin ? (
+              <div onClick={() => { setShowLogin(true); setMenuOpen(false); }}
+                style={{ padding: "13px 0", color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 500, cursor: "pointer", letterSpacing: "0.07em", textTransform: "uppercase" }}>
+                Login Admin
+              </div>
+            ) : (
+              <div onClick={() => { handleLogout(); setMenuOpen(false); }}
+                style={{ padding: "13px 0", color: "#ef4444", fontSize: 12, fontWeight: 700, cursor: "pointer", letterSpacing: "0.07em", textTransform: "uppercase" }}>
+                Keluar Admin
+              </div>
+            )}
           </div>
         )}
       </header>
