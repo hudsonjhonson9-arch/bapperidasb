@@ -483,19 +483,22 @@ export default function App() {
         }
         .form-input:focus { border-color: ${C.gold}; }
 
-        .org-container { display: flex; flexDirection: column; alignItems: center; position: relative; width: 100%; }
+        .org-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 20px; }
+        .org-container { display: flex; flexDirection: column; alignItems: center; position: relative; width: 100%; min-width: 1050px; margin: 0 auto; }
         .org-spine { position: absolute; top: 130px; bottom: 65px; left: 50%; width: 3px; background: #CBD5E1; z-index: 0; transform: translateX(-50%); }
-        .org-level-2 { width: 100%; maxWidth: 1100px; position: relative; display: flex; justifyContent: center; }
+        .org-level-2 { width: 100%; maxWidth: 1100px; position: relative; display: flex; flex-direction: row; align-items: flex-start; justify-content: center; gap: 0; }
         .org-level-3 { width: 100%; maxWidth: 1350px; position: relative; }
-        .org-grid { display: grid; gap: 20px; }
+        .org-grid { display: grid; gap: 20px; grid-template-columns: repeat(5, 1fr); }
 
+        .swipe-hint { display: none; }
         @media (max-width: 1024px) {
+          .swipe-hint { display: flex; align-items: center; justify-content: center; gap: 8px; color: #8898AA; font-size: 13px; margin-bottom: 20px; animation: pulse 2s infinite; }
           .org-spine { bottom: 40px; }
-          .org-level-2 { flex-direction: column; align-items: center; gap: 40px; }
-          .org-level-3 { max-width: 500px; }
-          .org-grid { grid-template-columns: 1fr !important; justify-items: center; }
-          .org-connector-h { display: none; }
-          .org-mobile-gap { height: 30px !important; }
+        }
+        @keyframes pulse {
+          0% { opacity: 0.6; }
+          50% { opacity: 1; }
+          100% { opacity: 0.6; }
         }
       `}</style>
 
@@ -786,13 +789,19 @@ export default function App() {
             <p style={{ fontSize: 15.5, color: C.textMid, marginTop: 14, maxWidth: 500, margin: "14px auto 0" }}>Dipimpin oleh Kepala Badan yang bertanggung jawab langsung kepada Bupati Sumba Barat</p>
           </div>
 
+          {/* Swipe Hint */}
+          <div className="swipe-hint">
+            <ArrowRight size={16} /> Geser untuk melihat struktur penuh
+          </div>
+
           {/* Tree Wrapper */}
-          <div className="org-container" style={{ paddingBottom: 60 }}>
+          <div className="org-wrapper">
+            <div className="org-container" style={{ paddingBottom: 60 }}>
 
-            {/* THE SPINE: Single continuous solid line (BEHIND everything) */}
-            <div className="org-spine" />
+              {/* THE SPINE: Single continuous solid line (BEHIND everything) */}
+              <div className="org-spine" />
 
-            {/* --- LEVEL 1: KEPALA BADAN --- */}
+              {/* --- LEVEL 1: KEPALA BADAN --- */}
             <div style={{ zIndex: 20, marginBottom: isMobile ? 40 : 80, width: "100%", display: "flex", justifyContent: "center" }}>
               <div className="card" style={{ padding: 0, width: "100%", maxWidth: isMobile ? 300 : 340, display: "flex", overflow: "hidden", border: "none", boxShadow: "0 20px 50px rgba(0,0,0,0.15)", background: "white" }}>
                 <div style={{ width: isMobile ? 80 : 110, height: isMobile ? 110 : 130, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -813,7 +822,7 @@ export default function App() {
               <div className="org-connector-h" style={{ position: "absolute", top: 0, left: "calc(25% - 10px)", right: "calc(25% - 10px)", height: 3, background: "#CBD5E1", zIndex: 1 }} />
               
               {/* Left Branch: Kelompok Jabatan */}
-              <div style={{ width: isMobile ? "100%" : "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ width: "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {/* Vertical line connecting to horizontal bar */}
                 <div style={{ width: 3, height: isMobile ? 30 : 40, background: "#CBD5E1", zIndex: 2 }} />
                 <div className="card" style={{ padding: 0, width: "100%", maxWidth: 290, border: `1px solid #F1F5F9`, boxShadow: "0 8px 25px rgba(0,0,0,0.05)", overflow: "hidden", background: "white", zIndex: 10 }}>
@@ -832,7 +841,7 @@ export default function App() {
               <div className="org-connector-h" style={{ width: 40 }} />
 
               {/* Right Branch: Sekretariat Stack */}
-              <div style={{ width: isMobile ? "100%" : "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ width: "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {/* Vertical line connecting to horizontal bar */}
                 <div style={{ width: 3, height: isMobile ? 30 : 40, background: "#CBD5E1", zIndex: 2 }} />
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0, width: "100%" }}>
@@ -874,10 +883,7 @@ export default function App() {
             <div className="org-level-3" style={{ marginBottom: isMobile ? 40 : 100 }}>
               <div className="org-connector-h" style={{ position: "absolute", top: 0, left: "calc(10% - 8px)", right: "calc(10% - 8px)", height: 3, background: "#CBD5E1", zIndex: 1 }} />
 
-              <div className="org-grid" style={{ 
-                gridTemplateColumns: isMobile ? "1fr" : "repeat(5, 1fr)", 
-                paddingTop: isMobile ? 20 : 50,
-              }}>
+              <div className="org-grid" style={{ paddingTop: isMobile ? 20 : 50 }}>
                 {[
                   { title: "Bidang Pemerintahan & Pembangunan Manusia", name: "FIKA MARTIANA, SET", nip: "19860308 201001 2 032" },
                   { title: "Bidang Perencanaan Pengendalian & Evaluasi", name: "JACKSON UBULELE DADE, SE., M.ACC", nip: "19910529 201403 1 002" },
@@ -919,7 +925,8 @@ export default function App() {
 
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
       {/* ──── PROGRAM & KEGIATAN ──── */}
       <section id="program" style={{ background: C.offWhite, padding: "96px 28px" }}>
