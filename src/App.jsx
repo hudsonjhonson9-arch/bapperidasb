@@ -504,12 +504,12 @@ export default function App() {
         }
         .form-input:focus { border-color: ${C.gold}; }
 
-        .org-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding-top: 20px; padding-bottom: 60px; display: flex; justify-content: flex-start; }
+        .org-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding-top: 20px; padding-bottom: 80px; display: flex; justify-content: flex-start; }
         .org-container { position: relative; width: 1200px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 0 40px; }
-        .org-spine { position: absolute; top: 130px; bottom: 85px; left: 600px; width: 3px; background: #CBD5E1; z-index: 0; transform: translateX(-50%); }
-        .org-level-2 { width: 100%; position: relative; display: flex; flex-direction: row; align-items: flex-start; justify-content: center; gap: 0; margin-bottom: 120px; }
-        .org-level-3 { width: 100%; position: relative; margin-bottom: 120px; }
-        .org-grid { display: grid; gap: 30px; grid-template-columns: repeat(5, 1fr); width: 1100px; margin: 0 auto; }
+        .org-spine { position: absolute; top: 100px; bottom: 100px; left: 50%; width: 2.5px; background: #CBD5E1; z-index: 0; transform: translateX(-50%); }
+        .org-level-2 { width: 100%; position: relative; display: flex; flex-direction: row; align-items: flex-start; justify-content: center; gap: 0; margin-bottom: 110px; }
+        .org-level-3 { width: 100%; position: relative; margin-bottom: 110px; }
+        .org-grid { display: grid; gap: 20px; grid-template-columns: repeat(5, 1fr); width: 1120px; margin: 0 auto; }
 
         .swipe-hint { display: none; }
         @media (max-width: 1024px) {
@@ -840,8 +840,8 @@ export default function App() {
               <div className="org-spine" />
 
               {/* --- LEVEL 1: KEPALA BADAN --- */}
-            <div style={{ zIndex: 20, marginBottom: isMobile ? 40 : 80, width: "100%", display: "flex", justifyContent: "center" }}>
-              <div className="card" style={{ padding: 0, width: "100%", maxWidth: isMobile ? 300 : 340, display: "flex", overflow: "hidden", border: "none", boxShadow: "0 20px 50px rgba(0,0,0,0.15)", background: "white" }}>
+            <div style={{ zIndex: 20, marginBottom: isMobile ? 50 : 100, width: "100%", display: "flex", justifyContent: "center" }}>
+              <div className="org-card" style={{ width: "100%", maxWidth: isMobile ? 300 : 340, display: "flex", border: "none", boxShadow: "0 20px 50px rgba(0,0,0,0.12)" }}>
                 <div style={{ width: isMobile ? 80 : 110, height: isMobile ? 110 : 130, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <User size={isMobile ? 40 : 56} color={C.navyLight} style={{ opacity: 0.5 }} />
                 </div>
@@ -855,16 +855,15 @@ export default function App() {
               </div>
             </div>
 
-            {/* --- LEVEL 2: SEKRETARIS & JABATAN --- */}
-            <div className="org-level-2" style={{ marginBottom: isMobile ? 40 : 110 }}>
+            <div className="org-level-2" style={{ marginBottom: isMobile ? 60 : 110 }}>
               {/* Horizontal Connector Line (Shoulder) */}
-              <div style={{ position: "absolute", top: 0, left: 380, width: 440, height: 3, background: "#CBD5E1", zIndex: 1 }} />
+              <div style={{ position: "absolute", top: 0, left: "22%", right: "22%", height: 2, background: "#CBD5E1", zIndex: 1 }} />
               
               {/* Left Branch: Kelompok Jabatan */}
-              <div style={{ width: 440, display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ width: "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {/* Vertical line connecting to horizontal bar */}
-                <div style={{ width: 3, height: isMobile ? 30 : 40, background: "#CBD5E1", zIndex: 2 }} />
-                <div className="card" style={{ padding: 0, width: "100%", maxWidth: 290, border: `1px solid #F1F5F9`, boxShadow: "0 8px 25px rgba(0,0,0,0.05)", overflow: "hidden", background: "white", zIndex: 10 }}>
+                <div style={{ width: 2, height: isMobile ? 30 : 45, background: "#CBD5E1", zIndex: 2 }} />
+                <div className="org-card" style={{ width: "100%", maxWidth: 290 }}>
                   <div style={{ background: `linear-gradient(135deg, ${C.navyMid}, ${C.navy})`, color: "white", padding: "10px 14px", fontWeight: 800, fontSize: 11.5, textAlign: "center", textTransform: "uppercase" }}>KELOMPOK JABATAN</div>
                   <div style={{ padding: "16px 20px" }}>
                     <div style={{ fontSize: isMobile ? 10.5 : 11.5, fontWeight: 700, color: C.navyMid, marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
@@ -878,12 +877,12 @@ export default function App() {
               </div>
 
               {/* Right Branch: Sekretariat Stack */}
-              <div style={{ width: 440, display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ width: "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {/* Vertical line connecting to horizontal bar */}
-                <div style={{ width: 3, height: isMobile ? 30 : 40, background: "#CBD5E1", zIndex: 2 }} />
+                <div style={{ width: 2, height: isMobile ? 30 : 45, background: "#CBD5E1", zIndex: 2 }} />
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0, width: "100%" }}>
                   {/* Sekretaris */}
-                  <div className="card" style={{ padding: 0, width: "100%", maxWidth: 300, display: "flex", overflow: "hidden", border: "none", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", background: "white", zIndex: 10 }}>
+                  <div className="org-card" style={{ width: "100%", maxWidth: 300, display: "flex", border: "none" }}>
                     <div style={{ width: isMobile ? 75 : 85, height: isMobile ? 100 : 110, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <User size={isMobile ? 32 : 36} color={C.navyLight} style={{ opacity: 0.5 }} />
                     </div>
@@ -897,10 +896,10 @@ export default function App() {
                   </div>
 
                   {/* Vertical Connector between Sekretaris and Sub Bagian */}
-                  <div style={{ width: 3, height: 35, background: "#CBD5E1" }} />
+                  <div style={{ width: 2, height: 35, background: "#CBD5E1" }} />
 
                   {/* Sub Bagian */}
-                  <div className="card" style={{ padding: 0, width: "100%", maxWidth: 300, display: "flex", overflow: "hidden", border: `1px solid #F1F5F9`, boxShadow: "0 6px 20px rgba(0,0,0,0.04)", background: "white", zIndex: 10 }}>
+                  <div className="org-card" style={{ width: "100%", maxWidth: 300, display: "flex" }}>
                     <div style={{ width: isMobile ? 75 : 85, height: isMobile ? 100 : 110, background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <User size={isMobile ? 30 : 34} color={C.navyLight} style={{ opacity: 0.4 }} />
                     </div>
@@ -917,9 +916,9 @@ export default function App() {
             </div>
 
             {/* --- LEVEL 3: BIDANG-BIDANG --- */}
-            <div className="org-level-3" style={{ marginBottom: isMobile ? 40 : 100 }}>
+            <div className="org-level-3" style={{ marginBottom: isMobile ? 60 : 110 }}>
               {/* Horizontal Connector Line (Shoulder) */}
-              <div style={{ position: "absolute", top: 0, left: 160, width: 880, height: 3, background: "#CBD5E1", zIndex: 1 }} />
+              <div style={{ position: "absolute", top: 0, left: 152, width: 896, height: 2, background: "#CBD5E1", zIndex: 1 }} />
 
               <div className="org-grid" style={{ paddingTop: isMobile ? 20 : 50 }}>
                 {[
@@ -929,11 +928,11 @@ export default function App() {
                   { title: "Kepala Bidang Infrastruktur & Kewilayahan", name: "ERLAN PORO, ST., M.SC", nip: "19860114 201403 1 002" },
                   { title: "Kepala Bidang Riset dan Inovasi", name: "YAHYA ANTOSARI STORY, S.IP", nip: "19790707 200312 1 006" },
                 ].map((b, i) => (
-                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", width: "100%", maxWidth: isMobile ? 320 : "none" }}>
+                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", width: "100%" }}>
                     {/* Vertical Connector connecting to horizontal bar / spine */}
-                    <div style={{ width: 3, height: isMobile ? 30 : 50, background: "#CBD5E1", position: "absolute", top: isMobile ? -30 : -50, left: "50%", transform: "translateX(-50%)", zIndex: 2 }} />
+                    <div style={{ width: 2, height: isMobile ? 30 : 50, background: "#CBD5E1", position: "absolute", top: isMobile ? -30 : -50, left: "50%", transform: "translateX(-50%)", zIndex: 2 }} />
 
-                    <div className="card" style={{ padding: 0, width: "100%", display: "flex", flexDirection: "column", overflow: "hidden", border: "none", boxShadow: "0 12px 35px rgba(0,0,0,0.1)", height: "100%", background: "white", zIndex: 10 }}>
+                    <div className="org-card" style={{ width: "100%", display: "flex", flexDirection: "column", height: "100%", border: "none" }}>
                       <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1A527A)`, color: "white", padding: "12px 14px", fontWeight: 800, fontSize: isMobile ? 9.5 : 10.5, textAlign: "center", textTransform: "uppercase", minHeight: isMobile ? 55 : 65, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1.3 }}>{b.title}</div>
                       <div style={{ display: "flex", flex: 1 }}>
                         <div style={{ width: isMobile ? 55 : 65, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -953,10 +952,8 @@ export default function App() {
             {/* --- LEVEL 4: UPTD --- */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", zIndex: 20, position: "relative" }}>
               {/* Vertical Connector connecting to spine */}
-              <div style={{ width: 3, height: 80, background: "#CBD5E1", position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", zIndex: 1 }} />
-
-              <div style={{ height: 80 }} />
-              <div className="card" style={{ background: `linear-gradient(135deg, #00A3FF, #0077FF)`, color: "white", padding: isMobile ? "14px 40px" : "20px 90px", fontWeight: 900, fontSize: isMobile ? 22 : 32, boxShadow: "0 25px 55px rgba(0,163,255,0.3)", borderRadius: 16, border: "none", letterSpacing: "0.2em" }}>
+              <div style={{ width: 2, height: isMobile ? 40 : 80, background: "#CBD5E1", zIndex: 1 }} />
+              <div className="org-card" style={{ background: `linear-gradient(135deg, #00A3FF, #0077FF)`, color: "white", padding: isMobile ? "14px 40px" : "20px 90px", fontWeight: 900, fontSize: isMobile ? 22 : 32, boxShadow: "0 25px 55px rgba(0,163,255,0.3)", border: "none", letterSpacing: "0.2em" }}>
                 UPTD
               </div>
             </div>
