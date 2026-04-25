@@ -116,6 +116,12 @@ export default function App() {
   const [dokFilter, setDokFilter] = useState("Semua");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // Security & Session
   const APP_SECRET = "BAPPERIDA_SECURE_TOKEN_2026";
   const [isAdmin, setIsAdmin] = useState(localStorage.getItem("bapperida_admin_session") === APP_SECRET);
@@ -855,14 +861,16 @@ export default function App() {
               </div>
             </div>
 
-            <div className="org-level-2" style={{ marginBottom: isMobile ? 60 : 110 }}>
-              {/* Horizontal Connector Line (Shoulder) */}
-              <div style={{ position: "absolute", top: 0, left: "22%", right: "22%", height: 2, background: "#CBD5E1", zIndex: 1 }} />
+            <div className="org-level-2" style={{ marginBottom: isMobile ? 60 : 120 }}>
+              {/* Horizontal Connector Line (Shoulder) - Pixel Perfect SVG */}
+              <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 3, zIndex: 1 }} overflow="visible">
+                <line x1="330" y1="0" x2="870" y2="0" stroke="#CBD5E1" strokeWidth="2.5" />
+              </svg>
               
               {/* Left Branch: Kelompok Jabatan */}
               <div style={{ width: "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {/* Vertical line connecting to horizontal bar */}
-                <div style={{ width: 2, height: isMobile ? 30 : 45, background: "#CBD5E1", zIndex: 2 }} />
+                <div style={{ width: 2.5, height: isMobile ? 30 : 50, background: "#CBD5E1", zIndex: 2 }} />
                 <div className="org-card" style={{ width: "100%", maxWidth: 290 }}>
                   <div style={{ background: `linear-gradient(135deg, ${C.navyMid}, ${C.navy})`, color: "white", padding: "10px 14px", fontWeight: 800, fontSize: 11.5, textAlign: "center", textTransform: "uppercase" }}>KELOMPOK JABATAN</div>
                   <div style={{ padding: "16px 20px" }}>
@@ -916,11 +924,13 @@ export default function App() {
             </div>
 
             {/* --- LEVEL 3: BIDANG-BIDANG --- */}
-            <div className="org-level-3" style={{ marginBottom: isMobile ? 60 : 110 }}>
-              {/* Horizontal Connector Line (Shoulder) */}
-              <div style={{ position: "absolute", top: 0, left: 152, width: 896, height: 2, background: "#CBD5E1", zIndex: 1 }} />
+            <div className="org-level-3" style={{ marginBottom: isMobile ? 60 : 130 }}>
+              {/* Horizontal Connector Line (Shoulder) - Pixel Perfect SVG */}
+              <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 3, zIndex: 1 }} overflow="visible">
+                <line x1="152" y1="0" x2="1048" y2="0" stroke="#CBD5E1" strokeWidth="2.5" />
+              </svg>
 
-              <div className="org-grid" style={{ paddingTop: isMobile ? 20 : 50 }}>
+              <div className="org-grid" style={{ paddingTop: isMobile ? 30 : 60 }}>
                 {[
                   { title: "Kepala Bidang Pemerintahan & Pembangunan Manusia", name: "FIKA MARTIANA, SET", nip: "19860308 201001 2 032" },
                   { title: "Kepala Bidang Perencanaan Pengendalian & Evaluasi", name: "JACKSON UBULELE DADE, SE., M.ACC", nip: "19910529 201403 1 002" },
@@ -1141,7 +1151,7 @@ export default function App() {
           </div>
 
           {/* Featured + grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 24, marginBottom: 24 }}>
             {/* Featured */}
             {beritaList.filter(b => b.is_featured).map(fb => (
               <div key={fb.id} onClick={() => setSelectedBerita(fb)} className="card berita-wrap" style={{ overflow: "hidden", cursor: "pointer", display: "flex", flexDirection: "column" }}>
@@ -1162,12 +1172,12 @@ export default function App() {
                     </div>
                   )}
                 </div>
-                <div style={{ padding: "24px 26px 28px", flexGrow: 1, display: "flex", flexDirection: "column" }}>
+                <div style={{ padding: isMobile ? "20px 22px" : "24px 26px 28px", flexGrow: 1, display: "flex", flexDirection: "column" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
                     <span style={{ background: `${C.navy}14`, color: C.navy, fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20 }}>{fb.kategori}</span>
                     <span style={{ color: C.textLight, fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}><Calendar size={11} /> {fb.tanggal}</span>
                   </div>
-                  <h3 className="display" style={{ fontSize: 20, fontWeight: 700, color: C.navy, marginBottom: 12, lineHeight: 1.4 }}>{fb.judul}</h3>
+                  <h3 className="display" style={{ fontSize: isMobile ? 18 : 20, fontWeight: 700, color: C.navy, marginBottom: 12, lineHeight: 1.4 }}>{fb.judul}</h3>
                   <p style={{ fontSize: 14, color: C.textMid, lineHeight: 1.82, marginBottom: 18, flexGrow: 1 }}>{fb.konten}</p>
                   <div onClick={() => setSelectedBerita(fb)} style={{ display: "flex", alignItems: "center", gap: 5, color: C.navy, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Baca selengkapnya <ArrowRight size={13} /></div>
                 </div>
