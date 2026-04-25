@@ -483,22 +483,25 @@ export default function App() {
         }
         .form-input:focus { border-color: ${C.gold}; }
 
-        .org-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 20px; }
-        .org-container { display: flex; flexDirection: column; alignItems: center; position: relative; width: 100%; min-width: 1050px; margin: 0 auto; }
-        .org-spine { position: absolute; top: 130px; bottom: 65px; left: 50%; width: 3px; background: #CBD5E1; z-index: 0; transform: translateX(-50%); }
-        .org-level-2 { width: 100%; maxWidth: 1100px; position: relative; display: flex; flex-direction: row; align-items: flex-start; justify-content: center; gap: 0; }
-        .org-level-3 { width: 100%; maxWidth: 1350px; position: relative; }
-        .org-grid { display: grid; gap: 20px; grid-template-columns: repeat(5, 1fr); }
+        .org-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding-top: 20px; padding-bottom: 60px; display: flex; justify-content: center; }
+        .org-container { position: relative; width: 1200px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; }
+        .org-spine { position: absolute; top: 130px; bottom: 65px; left: 600px; width: 3px; background: #CBD5E1; z-index: 0; transform: translateX(-50%); }
+        .org-level-2 { width: 100%; position: relative; display: flex; flex-direction: row; align-items: flex-start; justify-content: center; gap: 0; }
+        .org-level-3 { width: 100%; position: relative; }
+        .org-grid { display: grid; gap: 20px; grid-template-columns: repeat(5, 1fr); width: 1100px; margin: 0 auto; }
 
         .swipe-hint { display: none; }
         @media (max-width: 1024px) {
-          .swipe-hint { display: flex; align-items: center; justify-content: center; gap: 8px; color: #8898AA; font-size: 13px; margin-bottom: 20px; animation: pulse 2s infinite; }
-          .org-spine { bottom: 40px; }
+          .org-wrapper { justify-content: flex-start; }
+          .org-container { transform: scale(0.8); transform-origin: top left; margin-bottom: -150px; }
+          .swipe-hint { display: flex; align-items: center; justify-content: center; gap: 8px; color: ${C.navy}; font-size: 13px; font-weight: 600; margin-bottom: 24px; animation: pulse 2s infinite; }
+        }
+        @media (max-width: 768px) {
+          .org-container { transform: scale(0.65); margin-bottom: -300px; }
         }
         @keyframes pulse {
-          0% { opacity: 0.6; }
-          50% { opacity: 1; }
-          100% { opacity: 0.6; }
+          0%, 100% { opacity: 0.5; transform: translateX(0); }
+          50% { opacity: 1; transform: translateX(10px); }
         }
       `}</style>
 
@@ -789,7 +792,7 @@ export default function App() {
             <p style={{ fontSize: 15.5, color: C.textMid, marginTop: 14, maxWidth: 500, margin: "14px auto 0" }}>Dipimpin oleh Kepala Badan yang bertanggung jawab langsung kepada Bupati Sumba Barat</p>
           </div>
 
-          {/* Swipe Hint */}
+          {/* Swipe Hint (Mobile Only) */}
           <div className="swipe-hint">
             <ArrowRight size={16} /> Geser untuk melihat struktur penuh
           </div>
@@ -819,10 +822,11 @@ export default function App() {
 
             {/* --- LEVEL 2: SEKRETARIS & JABATAN --- */}
             <div className="org-level-2" style={{ marginBottom: isMobile ? 40 : 110 }}>
-              <div className="org-connector-h" style={{ position: "absolute", top: 0, left: "calc(25% - 10px)", right: "calc(25% - 10px)", height: 3, background: "#CBD5E1", zIndex: 1 }} />
+              {/* Horizontal Connector Line (Shoulder) */}
+              <div style={{ position: "absolute", top: 0, left: 380, width: 440, height: 3, background: "#CBD5E1", zIndex: 1 }} />
               
               {/* Left Branch: Kelompok Jabatan */}
-              <div style={{ width: "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ width: 440, display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {/* Vertical line connecting to horizontal bar */}
                 <div style={{ width: 3, height: isMobile ? 30 : 40, background: "#CBD5E1", zIndex: 2 }} />
                 <div className="card" style={{ padding: 0, width: "100%", maxWidth: 290, border: `1px solid #F1F5F9`, boxShadow: "0 8px 25px rgba(0,0,0,0.05)", overflow: "hidden", background: "white", zIndex: 10 }}>
@@ -838,10 +842,8 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="org-connector-h" style={{ width: 40 }} />
-
               {/* Right Branch: Sekretariat Stack */}
-              <div style={{ width: "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ width: 440, display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {/* Vertical line connecting to horizontal bar */}
                 <div style={{ width: 3, height: isMobile ? 30 : 40, background: "#CBD5E1", zIndex: 2 }} />
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0, width: "100%" }}>
@@ -881,7 +883,8 @@ export default function App() {
 
             {/* --- LEVEL 3: BIDANG-BIDANG --- */}
             <div className="org-level-3" style={{ marginBottom: isMobile ? 40 : 100 }}>
-              <div className="org-connector-h" style={{ position: "absolute", top: 0, left: "calc(10% - 8px)", right: "calc(10% - 8px)", height: 3, background: "#CBD5E1", zIndex: 1 }} />
+              {/* Horizontal Connector Line (Shoulder) */}
+              <div style={{ position: "absolute", top: 0, left: 160, width: 880, height: 3, background: "#CBD5E1", zIndex: 1 }} />
 
               <div className="org-grid" style={{ paddingTop: isMobile ? 20 : 50 }}>
                 {[
