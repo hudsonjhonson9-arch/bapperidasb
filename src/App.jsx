@@ -268,6 +268,14 @@ export default function App() {
     window.location.reload();
   };
 
+  const handleMoveBerita = (index, direction) => {
+    const newList = [...beritaList];
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= newList.length) return;
+    [newList[index], newList[targetIndex]] = [newList[targetIndex], newList[index]];
+    setBeritaList(newList);
+  };
+
   const handleSave = async (type, data) => {
     const endpoint = data.id ? api[type].edit : api[type].add;
     try {
@@ -863,14 +871,17 @@ export default function App() {
 
             <div className="org-level-2" style={{ marginBottom: isMobile ? 60 : 120 }}>
               {/* Horizontal Connector Line (Shoulder) - Pixel Perfect SVG */}
-              <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 3, zIndex: 1 }} overflow="visible">
-                <line x1="330" y1="0" x2="870" y2="0" stroke="#CBD5E1" strokeWidth="2.5" />
+              <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 10, zIndex: 1 }} overflow="visible">
+                <line x1="300" y1="0" x2="900" y2="0" stroke="#CBD5E1" strokeWidth="3" />
+                <circle cx="300" cy="0" r="3" fill="#CBD5E1" />
+                <circle cx="900" cy="0" r="3" fill="#CBD5E1" />
+                <circle cx="600" cy="0" r="3" fill="#CBD5E1" />
               </svg>
               
               {/* Left Branch: Kelompok Jabatan */}
-              <div style={{ width: "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ width: "48%", display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {/* Vertical line connecting to horizontal bar */}
-                <div style={{ width: 2.5, height: isMobile ? 30 : 50, background: "#CBD5E1", zIndex: 2 }} />
+                <div style={{ width: 3, height: isMobile ? 30 : 50, background: "#CBD5E1", zIndex: 2 }} />
                 <div className="org-card" style={{ width: "100%", maxWidth: 290 }}>
                   <div style={{ background: `linear-gradient(135deg, ${C.navyMid}, ${C.navy})`, color: "white", padding: "10px 14px", fontWeight: 800, fontSize: 11.5, textAlign: "center", textTransform: "uppercase" }}>KELOMPOK JABATAN</div>
                   <div style={{ padding: "16px 20px" }}>
@@ -885,9 +896,9 @@ export default function App() {
               </div>
 
               {/* Right Branch: Sekretariat Stack */}
-              <div style={{ width: "45%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ width: "48%", display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {/* Vertical line connecting to horizontal bar */}
-                <div style={{ width: 2, height: isMobile ? 30 : 45, background: "#CBD5E1", zIndex: 2 }} />
+                <div style={{ width: 3, height: isMobile ? 30 : 45, background: "#CBD5E1", zIndex: 2 }} />
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0, width: "100%" }}>
                   {/* Sekretaris */}
                   <div className="org-card" style={{ width: "100%", maxWidth: 300, display: "flex", border: "none" }}>
@@ -926,8 +937,11 @@ export default function App() {
             {/* --- LEVEL 3: BIDANG-BIDANG --- */}
             <div className="org-level-3" style={{ marginBottom: isMobile ? 60 : 130 }}>
               {/* Horizontal Connector Line (Shoulder) - Pixel Perfect SVG */}
-              <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 3, zIndex: 1 }} overflow="visible">
-                <line x1="152" y1="0" x2="1048" y2="0" stroke="#CBD5E1" strokeWidth="2.5" />
+              <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 10, zIndex: 1 }} overflow="visible">
+                <line x1="112" y1="0" x2="1088" y2="0" stroke="#CBD5E1" strokeWidth="3" />
+                {[112, 356, 600, 844, 1088].map(x => (
+                  <circle key={x} cx={x} cy="0" r="3" fill="#CBD5E1" />
+                ))}
               </svg>
 
               <div className="org-grid" style={{ paddingTop: isMobile ? 30 : 60 }}>
@@ -940,7 +954,7 @@ export default function App() {
                 ].map((b, i) => (
                   <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", width: "100%" }}>
                     {/* Vertical Connector connecting to horizontal bar / spine */}
-                    <div style={{ width: 2, height: isMobile ? 30 : 50, background: "#CBD5E1", position: "absolute", top: isMobile ? -30 : -50, left: "50%", transform: "translateX(-50%)", zIndex: 2 }} />
+                    <div style={{ width: 3, height: isMobile ? 30 : 50, background: "#CBD5E1", position: "absolute", top: isMobile ? -30 : -50, left: "50%", transform: "translateX(-50%)", zIndex: 2 }} />
 
                     <div className="org-card" style={{ width: "100%", display: "flex", flexDirection: "column", height: "100%", border: "none" }}>
                       <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1A527A)`, color: "white", padding: "12px 14px", fontWeight: 800, fontSize: isMobile ? 9.5 : 10.5, textAlign: "center", textTransform: "uppercase", minHeight: isMobile ? 55 : 65, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1.3 }}>{b.title}</div>
@@ -962,7 +976,7 @@ export default function App() {
             {/* --- LEVEL 4: UPTD --- */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", zIndex: 20, position: "relative" }}>
               {/* Vertical Connector connecting to spine */}
-              <div style={{ width: 2, height: isMobile ? 40 : 80, background: "#CBD5E1", zIndex: 1 }} />
+              <div style={{ width: 3, height: isMobile ? 40 : 80, background: "#CBD5E1", zIndex: 1 }} />
               <div className="org-card" style={{ background: `linear-gradient(135deg, #00A3FF, #0077FF)`, color: "white", padding: isMobile ? "14px 40px" : "20px 90px", fontWeight: 900, fontSize: isMobile ? 22 : 32, boxShadow: "0 25px 55px rgba(0,163,255,0.3)", border: "none", letterSpacing: "0.2em" }}>
                 UPTD
               </div>
@@ -1147,7 +1161,12 @@ export default function App() {
               <p className="eyebrow" style={{ marginBottom: 14 }}>Informasi Terkini</p>
               <h2 className="section-title">Berita &amp; Kegiatan</h2>
             </div>
-            <button className="btn-gold" onClick={() => setShowAllBeritaModal(true)}>Lihat Semua Berita <ArrowRight size={14} /></button>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <button className="btn-gold" onClick={() => setShowAllBeritaModal(true)}>Lihat Semua Berita <ArrowRight size={14} /></button>
+              {isAdmin && (
+                <button className="btn-gold" onClick={() => { setEditItem(null); setShowModal('berita'); }} style={{ background: C.navy, color: "white" }}>+ Tambah Berita</button>
+              )}
+            </div>
           </div>
 
           {/* Featured + grid */}
@@ -1203,7 +1222,11 @@ export default function App() {
                     <h4 style={{ fontSize: 13.5, fontWeight: 600, color: C.navy, lineHeight: 1.45 }}>{item.judul}</h4>
                   </div>
                   {isAdmin ? (
-                    <div style={{ display: "flex", gap: 5 }}>
+                    <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                        <button onClick={(e) => { e.stopPropagation(); handleMoveBerita(idx, -1); }} style={{ padding: "2px 6px", fontSize: 8, background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: 3, cursor: "pointer" }}>▲</button>
+                        <button onClick={(e) => { e.stopPropagation(); handleMoveBerita(idx, 1); }} style={{ padding: "2px 6px", fontSize: 8, background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: 3, cursor: "pointer" }}>▼</button>
+                      </div>
                       <button onClick={(e) => { e.stopPropagation(); setEditItem(item); setShowModal('berita'); }} style={{ background: C.navy, color: "white", border: "none", padding: "4px 8px", borderRadius: 4, cursor: "pointer", fontSize: 10 }}>Edit</button>
                       <button onClick={(e) => { e.stopPropagation(); handleDelete('berita', item.id); }} style={{ background: "#ef4444", color: "white", border: "none", padding: "4px 8px", borderRadius: 4, cursor: "pointer", fontSize: 10 }}>Hapus</button>
                     </div>
@@ -1218,7 +1241,9 @@ export default function App() {
           {/* CMS Controls */}
           {isAdmin && (
             <div style={{ display: "flex", gap: 12, marginBottom: 40, background: C.warmGray, padding: 20, borderRadius: 12 }}>
-              <button className="btn-gold" onClick={() => { setEditItem(null); setShowModal('berita'); }}>+ Tambah Berita</button>
+            <div style={{ textAlign: "center", marginTop: 40 }}>
+              <p style={{ color: C.textLight, fontSize: 14 }}>Gunakan Panel Admin untuk menambah berita.</p>
+            </div>
             </div>
           )}
 
@@ -1230,7 +1255,11 @@ export default function App() {
               return (
                 <div key={item.id} onClick={() => setSelectedBerita(item)} className="card" style={{ padding: "22px 22px 26px", cursor: "pointer", position: "relative" }}>
                   {isAdmin && (
-                    <div style={{ position: "absolute", top: 12, right: 16, display: "flex", gap: 8, zIndex: 10 }}>
+                    <div style={{ position: "absolute", top: 12, right: 16, display: "flex", gap: 8, zIndex: 10, alignItems: "center" }}>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <button onClick={(e) => { e.stopPropagation(); handleMoveBerita(idx + 3, -1); }} style={{ padding: "4px 8px", fontSize: 10, background: "#fff", border: "1px solid #cbd5e1", borderRadius: 4, cursor: "pointer" }}>◀</button>
+                        <button onClick={(e) => { e.stopPropagation(); handleMoveBerita(idx + 3, 1); }} style={{ padding: "4px 8px", fontSize: 10, background: "#fff", border: "1px solid #cbd5e1", borderRadius: 4, cursor: "pointer" }}>▶</button>
+                      </div>
                       <button onClick={(e) => { e.stopPropagation(); setEditItem(item); setShowModal('berita'); }} style={{ background: C.gold, border: "none", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: 10, fontWeight: 700 }}>Edit</button>
                       <button onClick={(e) => { e.stopPropagation(); handleDelete('berita', item.id); }} style={{ background: "#ef4444", color: "white", border: "none", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: 10, fontWeight: 700 }}>Hapus</button>
                     </div>
@@ -1342,8 +1371,12 @@ export default function App() {
             {/* Brand col */}
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
-                <div style={{ width: 44, height: 44, borderRadius: "50%", background: C.gold, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span className="display" style={{ fontWeight: 700, fontSize: 18, color: C.navyDark }}>B</span>
+                <div style={{ width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <img src={LOGO_URL} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} 
+                    onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+                  <div style={{ display: "none", width: "100%", height: "100%", borderRadius: "50%", background: C.gold, alignItems: "center", justifyContent: "center" }}>
+                    <span className="display" style={{ fontWeight: 700, fontSize: 18, color: C.navyDark }}>B</span>
+                  </div>
                 </div>
                 <div>
                   <div style={{ color: "white", fontWeight: 700, fontSize: 15 }}>BAPPERIDA</div>
