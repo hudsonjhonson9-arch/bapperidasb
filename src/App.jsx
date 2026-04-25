@@ -179,13 +179,32 @@ export default function App() {
     setLoading(true);
     try {
       const [resB, resD, resS] = await Promise.all([
-        fetch(api.berita.list).then(r => r.json()),
-        fetch(api.dokumen.list).then(r => r.json()),
-        fetch(api.slider.list).then(r => r.json())
+        fetch(api.berita.list).then(r => r.ok ? r.json() : []),
+        fetch(api.dokumen.list).then(r => r.ok ? r.json() : []),
+        fetch(api.slider.list).then(r => r.ok ? r.json() : [])
       ]);
-      setBeritaList(Array.isArray(resB) ? resB : []);
-      setDokumenList(Array.isArray(resD) ? resD : []);
-      setSliderList(Array.isArray(resS) ? resS : []);
+      
+      // Handle n8n-style object responses or plain arrays
+      const getList = (res) => {
+        if (Array.isArray(res)) return res;
+        if (res && typeof res === 'object' && Array.isArray(res.data)) return res.data;
+        return [];
+      };
+
+      const bList = getList(resB);
+      const dList = getList(resD);
+      const sList = getList(resS);
+
+      // If we got empty lists from the server, but no error, we still might want to show fallbacks
+      // or at least update the state.
+      setBeritaList(bList.length > 0 ? bList : []); 
+      setDokumenList(dList.length > 0 ? dList : []);
+      setSliderList(sList.length > 0 ? sList : []);
+
+      // If all are empty, maybe trigger fallback in catch
+      if (bList.length === 0 && dList.length === 0 && sList.length === 0) {
+        throw new Error("Empty data from server");
+      }
     } catch (e) {
       console.error("Fetch error:", e);
       // Fallback data
