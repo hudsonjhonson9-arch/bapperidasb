@@ -23,7 +23,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM bapperida_berita ORDER BY id DESC;"
+        "query": "SELECT * FROM bapperida_berita ORDER BY priority ASC, id DESC;"
       },
       "id": "node-2",
       "name": "DB berita List",

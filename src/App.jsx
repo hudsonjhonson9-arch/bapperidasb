@@ -274,6 +274,26 @@ export default function App() {
     if (targetIndex < 0 || targetIndex >= newList.length) return;
     [newList[index], newList[targetIndex]] = [newList[targetIndex], newList[index]];
     setBeritaList(newList);
+    // Auto-save order if it was a drag or move
+    if (isAdmin) saveBeritaOrder(newList);
+  };
+
+  const saveBeritaOrder = async (list) => {
+    // Only update items that have changed priority to save API calls
+    // But for simplicity and ensuring everything is right, we update all.
+    // In a real app, we'd use a single batch endpoint.
+    try {
+      const updates = list.map((item, idx) => {
+        return authFetch(api.berita.edit, {
+          method: "POST",
+          body: JSON.stringify({ ...item, priority: idx })
+        });
+      });
+      await Promise.all(updates);
+      console.log("Order saved");
+    } catch (e) {
+      console.error("Failed to save order", e);
+    }
   };
 
   const handleSave = async (type, data) => {
@@ -872,10 +892,10 @@ export default function App() {
             <div className="org-level-2" style={{ marginBottom: isMobile ? 60 : 120 }}>
               {/* Horizontal Connector Line (Shoulder) - Pixel Perfect SVG */}
               <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 10, zIndex: 1 }} overflow="visible">
-                <line x1="300" y1="0" x2="900" y2="0" stroke="#CBD5E1" strokeWidth="3" />
-                <circle cx="300" cy="0" r="3" fill="#CBD5E1" />
-                <circle cx="900" cy="0" r="3" fill="#CBD5E1" />
-                <circle cx="600" cy="0" r="3" fill="#CBD5E1" />
+                <line x1="312" y1="0" x2="888" y2="0" stroke="#CBD5E1" strokeWidth="3" />
+                <circle cx="312" cy="0" r="3.5" fill="#CBD5E1" />
+                <circle cx="888" cy="0" r="3.5" fill="#CBD5E1" />
+                <circle cx="600" cy="0" r="3.5" fill="#CBD5E1" />
               </svg>
               
               {/* Left Branch: Kelompok Jabatan */}
@@ -938,9 +958,9 @@ export default function App() {
             <div className="org-level-3" style={{ marginBottom: isMobile ? 60 : 130 }}>
               {/* Horizontal Connector Line (Shoulder) - Pixel Perfect SVG */}
               <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 10, zIndex: 1 }} overflow="visible">
-                <line x1="112" y1="0" x2="1088" y2="0" stroke="#CBD5E1" strokeWidth="3" />
-                {[112, 356, 600, 844, 1088].map(x => (
-                  <circle key={x} cx={x} cy="0" r="3" fill="#CBD5E1" />
+                <line x1="152" y1="0" x2="1048" y2="0" stroke="#CBD5E1" strokeWidth="3" />
+                {[152, 376, 600, 824, 1048].map(x => (
+                  <circle key={x} cx={x} cy="0" r="3.5" fill="#CBD5E1" />
                 ))}
               </svg>
 
@@ -1205,8 +1225,21 @@ export default function App() {
 
             {/* List column */}
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {beritaList.filter(b => !b.is_featured).slice(0, 3).map(item => (
-                <div key={item.id} onClick={() => setSelectedBerita(item)} className="card berita-wrap" style={{ padding: "18px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 16, height: "100%" }}>
+              {beritaList.filter(b => !b.is_featured).slice(0, 3).map((item, idx) => (
+                <div key={item.id} 
+                  draggable={isAdmin}
+                  onDragStart={(e) => isAdmin && e.dataTransfer.setData("index", idx)}
+                  onDragOver={(e) => isAdmin && e.preventDefault()}
+                  onDrop={(e) => {
+                    if (!isAdmin) return;
+                    const fromIdx = parseInt(e.dataTransfer.getData("index"));
+                    handleMoveBerita(fromIdx, idx - fromIdx);
+                  }}
+                  onClick={() => setSelectedBerita(item)} 
+                  className="card berita-wrap" 
+                  style={{ padding: "18px 20px", cursor: isAdmin ? "grab" : "pointer", display: "flex", alignItems: "center", gap: 16, height: "100%", border: isAdmin ? `1px dashed ${C.warmGray}` : "none" }}
+                >
+                  {isAdmin && <div style={{ color: C.textLight, cursor: "grab", paddingRight: 4 }}>⋮⋮</div>}
                   <div style={{ width: 52, height: 52, borderRadius: 10, background: `${C.navy}14`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0, overflow: "hidden" }}>
                     {item.gambar_url ? (
                       <img src={item.gambar_url} alt={item.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -1223,10 +1256,6 @@ export default function App() {
                   </div>
                   {isAdmin ? (
                     <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                        <button onClick={(e) => { e.stopPropagation(); handleMoveBerita(idx, -1); }} style={{ padding: "2px 6px", fontSize: 8, background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: 3, cursor: "pointer" }}>▲</button>
-                        <button onClick={(e) => { e.stopPropagation(); handleMoveBerita(idx, 1); }} style={{ padding: "2px 6px", fontSize: 8, background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: 3, cursor: "pointer" }}>▼</button>
-                      </div>
                       <button onClick={(e) => { e.stopPropagation(); setEditItem(item); setShowModal('berita'); }} style={{ background: C.navy, color: "white", border: "none", padding: "4px 8px", borderRadius: 4, cursor: "pointer", fontSize: 10 }}>Edit</button>
                       <button onClick={(e) => { e.stopPropagation(); handleDelete('berita', item.id); }} style={{ background: "#ef4444", color: "white", border: "none", padding: "4px 8px", borderRadius: 4, cursor: "pointer", fontSize: 10 }}>Hapus</button>
                     </div>
@@ -1252,14 +1281,24 @@ export default function App() {
             {beritaList.filter(b => !b.is_featured).slice(3, 6).map((item, idx) => {
               const colors = [C.navy, "#1a6b45", "#7c3aed", "#b45309", "#0369A1"];
               const color = colors[idx % colors.length];
+              const listIdx = idx + 3;
               return (
-                <div key={item.id} onClick={() => setSelectedBerita(item)} className="card" style={{ padding: "22px 22px 26px", cursor: "pointer", position: "relative" }}>
+                <div key={item.id} 
+                  draggable={isAdmin}
+                  onDragStart={(e) => isAdmin && e.dataTransfer.setData("index", listIdx)}
+                  onDragOver={(e) => isAdmin && e.preventDefault()}
+                  onDrop={(e) => {
+                    if (!isAdmin) return;
+                    const fromIdx = parseInt(e.dataTransfer.getData("index"));
+                    handleMoveBerita(fromIdx, listIdx - fromIdx);
+                  }}
+                  onClick={() => setSelectedBerita(item)} 
+                  className="card" 
+                  style={{ padding: "22px 22px 26px", cursor: isAdmin ? "grab" : "pointer", position: "relative", border: isAdmin ? `1px dashed ${C.warmGray}` : "none" }}
+                >
                   {isAdmin && (
                     <div style={{ position: "absolute", top: 12, right: 16, display: "flex", gap: 8, zIndex: 10, alignItems: "center" }}>
-                      <div style={{ display: "flex", gap: 4 }}>
-                        <button onClick={(e) => { e.stopPropagation(); handleMoveBerita(idx + 3, -1); }} style={{ padding: "4px 8px", fontSize: 10, background: "#fff", border: "1px solid #cbd5e1", borderRadius: 4, cursor: "pointer" }}>◀</button>
-                        <button onClick={(e) => { e.stopPropagation(); handleMoveBerita(idx + 3, 1); }} style={{ padding: "4px 8px", fontSize: 10, background: "#fff", border: "1px solid #cbd5e1", borderRadius: 4, cursor: "pointer" }}>▶</button>
-                      </div>
+                      <div style={{ fontSize: 14, color: C.textLight }}>⋮⋮</div>
                       <button onClick={(e) => { e.stopPropagation(); setEditItem(item); setShowModal('berita'); }} style={{ background: C.gold, border: "none", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: 10, fontWeight: 700 }}>Edit</button>
                       <button onClick={(e) => { e.stopPropagation(); handleDelete('berita', item.id); }} style={{ background: "#ef4444", color: "white", border: "none", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: 10, fontWeight: 700 }}>Hapus</button>
                     </div>
