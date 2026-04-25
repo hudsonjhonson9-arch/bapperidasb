@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+const LOGO_URL = "/logo.png"; 
+
 import {
   MapPin, Phone, Mail, ChevronDown, Menu, X,
   ArrowRight, Users, User, Calendar, FileText, Download, Eye, Search,
@@ -502,21 +504,20 @@ export default function App() {
         }
         .form-input:focus { border-color: ${C.gold}; }
 
-        .org-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding-top: 20px; padding-bottom: 60px; display: flex; justify-content: center; }
-        .org-container { position: relative; width: 1200px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; }
-        .org-spine { position: absolute; top: 130px; bottom: 65px; left: 600px; width: 3px; background: #CBD5E1; z-index: 0; transform: translateX(-50%); }
-        .org-level-2 { width: 100%; position: relative; display: flex; flex-direction: row; align-items: flex-start; justify-content: center; gap: 0; }
-        .org-level-3 { width: 100%; position: relative; }
-        .org-grid { display: grid; gap: 20px; grid-template-columns: repeat(5, 1fr); width: 1100px; margin: 0 auto; }
+        .org-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding-top: 20px; padding-bottom: 60px; display: flex; justify-content: flex-start; }
+        .org-container { position: relative; width: 1200px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 0 40px; }
+        .org-spine { position: absolute; top: 130px; bottom: 85px; left: 600px; width: 3px; background: #CBD5E1; z-index: 0; transform: translateX(-50%); }
+        .org-level-2 { width: 100%; position: relative; display: flex; flex-direction: row; align-items: flex-start; justify-content: center; gap: 0; margin-bottom: 120px; }
+        .org-level-3 { width: 100%; position: relative; margin-bottom: 120px; }
+        .org-grid { display: grid; gap: 30px; grid-template-columns: repeat(5, 1fr); width: 1100px; margin: 0 auto; }
 
         .swipe-hint { display: none; }
         @media (max-width: 1024px) {
-          .org-wrapper { justify-content: flex-start; }
-          .org-container { transform: scale(0.8); transform-origin: top left; margin-bottom: -150px; }
+          .org-container { transform: scale(0.75); transform-origin: top left; margin-bottom: -250px; }
           .swipe-hint { display: flex; align-items: center; justify-content: center; gap: 8px; color: ${C.navy}; font-size: 13px; font-weight: 600; margin-bottom: 24px; animation: pulse 2s infinite; }
         }
         @media (max-width: 768px) {
-          .org-container { transform: scale(0.65); margin-bottom: -300px; }
+          .org-container { transform: scale(0.6); margin-bottom: -400px; }
         }
         @keyframes pulse {
           0%, 100% { opacity: 0.5; transform: translateX(0); }
@@ -535,8 +536,12 @@ export default function App() {
         <div style={{ maxWidth: 1300, margin: "0 auto", padding: "0 28px", height: 72, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           {/* Logo */}
           <div style={{ display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }} onClick={() => scrollTo("beranda")}>
-            <div style={{ width: 44, height: 44, borderRadius: "50%", background: C.gold, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 18, color: C.navyDark }}>B</span>
+            <div style={{ width: 50, height: 50, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <img src={LOGO_URL} alt="Logo BAPPERIDA" style={{ width: "100%", height: "100%", objectFit: "contain" }} 
+                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+              <div style={{ display: "none", width: "100%", height: "100%", borderRadius: "50%", background: C.gold, alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 18, color: C.navyDark }}>B</span>
+              </div>
             </div>
             <div>
               <div style={{ color: "white", fontWeight: 700, fontSize: 15, lineHeight: 1.2, letterSpacing: "0.02em" }}>BAPPERIDA</div>
@@ -1000,8 +1005,8 @@ export default function App() {
       <section id="dokumen" style={{ background: C.offWhite, padding: "96px 28px" }}>
         <div style={{ maxWidth: 1300, margin: "0 auto" }}>
           {/* Header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 48, flexWrap: "wrap", gap: 20 }}>
-            <div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 36, flexWrap: "wrap", gap: 24 }}>
+            <div style={{ flex: isMobile ? "0 0 100%" : "1" }}>
               <div className="gold-bar" style={{ marginBottom: 20 }} />
               <p className="eyebrow" style={{ marginBottom: 14 }}>Keterbukaan Informasi</p>
               <h2 className="section-title">Dokumen Publik</h2>
@@ -1009,15 +1014,15 @@ export default function App() {
                 Dokumen resmi perencanaan pembangunan, regulasi, dan laporan kinerja BAPPERIDA Kabupaten Sumba Barat tersedia untuk diakses oleh publik.
               </p>
             </div>
-            <div style={{ background: `rgba(11,36,71,0.06)`, borderRadius: 12, padding: "14px 22px", textAlign: "center" }}>
-              <div className="display" style={{ fontSize: 28, fontWeight: 700, color: C.navy }}>{dokumenList.length}</div>
+            <div style={{ background: `rgba(11,36,71,0.06)`, borderRadius: 12, padding: "14px 22px", textAlign: "center", width: isMobile ? "100%" : "auto", display: "flex", flexDirection: isMobile ? "row" : "column", alignItems: "center", justifyContent: "center", gap: isMobile ? 12 : 2 }}>
+              <div className="display" style={{ fontSize: isMobile ? 22 : 28, fontWeight: 700, color: C.navy }}>{dokumenList.length}</div>
               <div style={{ fontSize: 11.5, color: C.textLight, letterSpacing: "0.06em", textTransform: "uppercase" }}>Total Dokumen</div>
             </div>
           </div>
 
           {/* Search & Filter */}
           <div style={{ marginBottom: 40 }}>
-            <div style={{ position: "relative", maxWidth: 480, marginBottom: 20 }}>
+            <div style={{ position: "relative", maxWidth: isMobile ? "100%" : 480, marginBottom: 20 }}>
               <Search size={16} color={C.textLight} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
               <input
                 className="search-box"
