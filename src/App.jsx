@@ -788,8 +788,8 @@ export default function App() {
           <div style={{ textAlign: "center", marginBottom: 60 }}>
             <div className="gold-bar" style={{ margin: "0 auto 20px" }} />
             <p className="eyebrow" style={{ marginBottom: 14 }}>Organisasi</p>
-            <h2 className="section-title">Struktur Organisasi</h2>
-            <p style={{ fontSize: 15.5, color: C.textMid, marginTop: 14, maxWidth: 500, margin: "14px auto 0" }}>Dipimpin oleh Kepala Badan yang bertanggung jawab langsung kepada Bupati Sumba Barat</p>
+            <h2 className="section-title">Struktur Organisasi BAPPERIDA<br />Kabupaten Sumba Barat</h2>
+            <p style={{ fontSize: 15.5, color: C.textMid, marginTop: 14, maxWidth: 600, margin: "14px auto 0" }}>Berdasarkan Peraturan Bupati Sumba Barat tentang Kedudukan, Susunan Organisasi, Tugas dan Fungsi serta Tata Kerja Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah</p>
           </div>
 
           {/* Swipe Hint (Mobile Only) */}
@@ -830,7 +830,7 @@ export default function App() {
                 {/* Vertical line connecting to horizontal bar */}
                 <div style={{ width: 3, height: isMobile ? 30 : 40, background: "#CBD5E1", zIndex: 2 }} />
                 <div className="card" style={{ padding: 0, width: "100%", maxWidth: 290, border: `1px solid #F1F5F9`, boxShadow: "0 8px 25px rgba(0,0,0,0.05)", overflow: "hidden", background: "white", zIndex: 10 }}>
-                  <div style={{ background: "#F8FAFC", color: C.navy, padding: "10px 14px", fontWeight: 800, fontSize: 11.5, textAlign: "center", borderBottom: "1px solid #F1F5F9", textTransform: "uppercase" }}>KELOMPOK JABATAN</div>
+                  <div style={{ background: `linear-gradient(135deg, ${C.navyMid}, ${C.navy})`, color: "white", padding: "10px 14px", fontWeight: 800, fontSize: 11.5, textAlign: "center", textTransform: "uppercase" }}>KELOMPOK JABATAN</div>
                   <div style={{ padding: "16px 20px" }}>
                     <div style={{ fontSize: isMobile ? 10.5 : 11.5, fontWeight: 700, color: C.navyMid, marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
                       <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.gold }} /> JABATAN FUNGSIONAL
@@ -870,7 +870,7 @@ export default function App() {
                       <User size={isMobile ? 30 : 34} color={C.navyLight} style={{ opacity: 0.4 }} />
                     </div>
                     <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                      <div style={{ background: "#F1F5F9", color: C.navy, padding: "10px 12px", fontWeight: 700, fontSize: isMobile ? 8.5 : 9.5, textAlign: "center", textTransform: "uppercase", borderBottom: "1px solid #E5E7EB", minHeight: isMobile ? 40 : 45, display: "flex", alignItems: "center", justifyContent: "center" }}>Sub Bagian Umum & Kepegawaian</div>
+                      <div style={{ background: "#F1F5F9", color: C.navy, padding: "10px 12px", fontWeight: 700, fontSize: isMobile ? 8.5 : 9.5, textAlign: "center", textTransform: "uppercase", borderBottom: "1px solid #E5E7EB", minHeight: isMobile ? 40 : 45, display: "flex", alignItems: "center", justifyContent: "center" }}>Kepala Sub Bagian Umum & Kepegawaian</div>
                       <div style={{ padding: 10, textAlign: "center", flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                         <div style={{ fontSize: isMobile ? 9.5 : 10.5, fontWeight: 700, color: C.navy }}>YOHANES B. PATI MAKIN, SE</div>
                         <div style={{ fontSize: isMobile ? 8 : 8.5, color: C.textLight, marginTop: 4 }}>NIP. 19701126 200904 1 001</div>
@@ -888,11 +888,11 @@ export default function App() {
 
               <div className="org-grid" style={{ paddingTop: isMobile ? 20 : 50 }}>
                 {[
-                  { title: "Bidang Pemerintahan & Pembangunan Manusia", name: "FIKA MARTIANA, SET", nip: "19860308 201001 2 032" },
-                  { title: "Bidang Perencanaan Pengendalian & Evaluasi", name: "JACKSON UBULELE DADE, SE., M.ACC", nip: "19910529 201403 1 002" },
-                  { title: "Bidang Perekonomian & Sumber Daya Alam", name: "ALVIAN ZADRAKH TILUATA KOSI, S.PT", nip: "19771122 200501 1 009" },
-                  { title: "Bidang Infrastruktur & Kewilayahan", name: "ERLAN PORO, ST., M.SC", nip: "19860114 201403 1 002" },
-                  { title: "Bidang Riset dan Inovasi", name: "YAHYA ANTOSARI STORY, S.IP", nip: "19790707 200312 1 006" },
+                  { title: "Kepala Bidang Pemerintahan & Pembangunan Manusia", name: "FIKA MARTIANA, SET", nip: "19860308 201001 2 032" },
+                  { title: "Kepala Bidang Perencanaan Pengendalian & Evaluasi", name: "JACKSON UBULELE DADE, SE., M.ACC", nip: "19910529 201403 1 002" },
+                  { title: "Kepala Bidang Perekonomian & Sumber Daya Alam", name: "ALVIAN ZADRAKH TILUATA KOSI, S.PT", nip: "19771122 200501 1 009" },
+                  { title: "Kepala Bidang Infrastruktur & Kewilayahan", name: "ERLAN PORO, ST., M.SC", nip: "19860114 201403 1 002" },
+                  { title: "Kepala Bidang Riset dan Inovasi", name: "YAHYA ANTOSARI STORY, S.IP", nip: "19790707 200312 1 006" },
                 ].map((b, i) => (
                   <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", width: "100%", maxWidth: isMobile ? 320 : "none" }}>
                     {/* Vertical Connector connecting to horizontal bar / spine */}
