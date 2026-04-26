@@ -110,7 +110,10 @@ function scrollTo(id) {
 }
 
 export default function App() {
+  const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const longPressTimer = useRef(null);
+  const [isLongPress, setIsLongPress] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [dokSearch, setDokSearch] = useState("");
   const [dokFilter, setDokFilter] = useState("Semua");
@@ -891,17 +894,17 @@ export default function App() {
 
             <div className="org-level-2" style={{ marginBottom: isMobile ? 60 : 120 }}>
               {/* Horizontal Connector Line (Shoulder) - Pixel Perfect SVG */}
-              <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 10, zIndex: 1 }} overflow="visible">
-                <line x1="312" y1="0" x2="888" y2="0" stroke="#CBD5E1" strokeWidth="3" />
-                <circle cx="312" cy="0" r="3.5" fill="#CBD5E1" />
-                <circle cx="888" cy="0" r="3.5" fill="#CBD5E1" />
-                <circle cx="600" cy="0" r="3.5" fill="#CBD5E1" />
+              <svg style={{ position: "absolute", top: -2, left: 0, width: "100%", height: 14, zIndex: 1 }} overflow="visible">
+                <line x1="331" y1="2" x2="869" y2="2" stroke="#CBD5E1" strokeWidth="3" />
+                <circle cx="331" cy="2" r="3.5" fill="#CBD5E1" />
+                <circle cx="869" cy="2" r="3.5" fill="#CBD5E1" />
+                <circle cx="600" cy="2" r="3.5" fill="#CBD5E1" />
               </svg>
               
               {/* Left Branch: Kelompok Jabatan */}
               <div style={{ width: "48%", display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {/* Vertical line connecting to horizontal bar */}
-                <div style={{ width: 3, height: isMobile ? 30 : 50, background: "#CBD5E1", zIndex: 2 }} />
+                <div style={{ width: 3, height: isMobile ? 32 : 52, background: "#CBD5E1", zIndex: 2, marginTop: -2 }} />
                 <div className="org-card" style={{ width: "100%", maxWidth: 290 }}>
                   <div style={{ background: `linear-gradient(135deg, ${C.navyMid}, ${C.navy})`, color: "white", padding: "10px 14px", fontWeight: 800, fontSize: 11.5, textAlign: "center", textTransform: "uppercase" }}>KELOMPOK JABATAN</div>
                   <div style={{ padding: "16px 20px" }}>
@@ -918,7 +921,7 @@ export default function App() {
               {/* Right Branch: Sekretariat Stack */}
               <div style={{ width: "48%", display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {/* Vertical line connecting to horizontal bar */}
-                <div style={{ width: 3, height: isMobile ? 30 : 45, background: "#CBD5E1", zIndex: 2 }} />
+                <div style={{ width: 3, height: isMobile ? 32 : 47, background: "#CBD5E1", zIndex: 2, marginTop: -2 }} />
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0, width: "100%" }}>
                   {/* Sekretaris */}
                   <div className="org-card" style={{ width: "100%", maxWidth: 300, display: "flex", border: "none" }}>
@@ -957,10 +960,10 @@ export default function App() {
             {/* --- LEVEL 3: BIDANG-BIDANG --- */}
             <div className="org-level-3" style={{ marginBottom: isMobile ? 60 : 130 }}>
               {/* Horizontal Connector Line (Shoulder) - Pixel Perfect SVG */}
-              <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 10, zIndex: 1 }} overflow="visible">
-                <line x1="152" y1="0" x2="1048" y2="0" stroke="#CBD5E1" strokeWidth="3" />
-                {[152, 376, 600, 824, 1048].map(x => (
-                  <circle key={x} cx={x} cy="0" r="3.5" fill="#CBD5E1" />
+              <svg style={{ position: "absolute", top: -2, left: 0, width: "100%", height: 14, zIndex: 1 }} overflow="visible">
+                <line x1="144" y1="2" x2="1056" y2="2" stroke="#CBD5E1" strokeWidth="3" />
+                {[144, 372, 600, 828, 1056].map(x => (
+                  <circle key={x} cx={x} cy="2" r="3.5" fill="#CBD5E1" />
                 ))}
               </svg>
 
@@ -974,7 +977,7 @@ export default function App() {
                 ].map((b, i) => (
                   <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", width: "100%" }}>
                     {/* Vertical Connector connecting to horizontal bar / spine */}
-                    <div style={{ width: 3, height: isMobile ? 30 : 50, background: "#CBD5E1", position: "absolute", top: isMobile ? -30 : -50, left: "50%", transform: "translateX(-50%)", zIndex: 2 }} />
+                    <div style={{ width: 3, height: isMobile ? 32 : 52, background: "#CBD5E1", position: "absolute", top: isMobile ? -32 : -52, left: "50%", transform: "translateX(-50%)", zIndex: 2 }} />
 
                     <div className="org-card" style={{ width: "100%", display: "flex", flexDirection: "column", height: "100%", border: "none" }}>
                       <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1A527A)`, color: "white", padding: "12px 14px", fontWeight: 800, fontSize: isMobile ? 9.5 : 10.5, textAlign: "center", textTransform: "uppercase", minHeight: isMobile ? 55 : 65, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1.3 }}>{b.title}</div>
@@ -1239,7 +1242,27 @@ export default function App() {
                   className="card berita-wrap" 
                   style={{ padding: "18px 20px", cursor: isAdmin ? "grab" : "pointer", display: "flex", alignItems: "center", gap: 16, height: "100%", border: isAdmin ? `1px dashed ${C.warmGray}` : "none" }}
                 >
-                  {isAdmin && <div style={{ color: C.textLight, cursor: "grab", paddingRight: 4 }}>⋮⋮</div>}
+                  {isAdmin && (
+                    <div 
+                      style={{ color: C.textLight, cursor: "grab", padding: "8px 4px", fontSize: 18, userSelect: "none" }}
+                      onPointerDown={() => {
+                        longPressTimer.current = setTimeout(() => {
+                          setIsLongPress(true);
+                          if (window.navigator.vibrate) window.navigator.vibrate(40);
+                        }, 500);
+                      }}
+                      onPointerUp={() => {
+                        clearTimeout(longPressTimer.current);
+                        setIsLongPress(false);
+                      }}
+                      onPointerLeave={() => {
+                        clearTimeout(longPressTimer.current);
+                        setIsLongPress(false);
+                      }}
+                    >
+                      ⋮⋮
+                    </div>
+                  )}
                   <div style={{ width: 52, height: 52, borderRadius: 10, background: `${C.navy}14`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0, overflow: "hidden" }}>
                     {item.gambar_url ? (
                       <img src={item.gambar_url} alt={item.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -1298,7 +1321,25 @@ export default function App() {
                 >
                   {isAdmin && (
                     <div style={{ position: "absolute", top: 12, right: 16, display: "flex", gap: 8, zIndex: 10, alignItems: "center" }}>
-                      <div style={{ fontSize: 14, color: C.textLight }}>⋮⋮</div>
+                      <div 
+                        style={{ fontSize: 18, color: C.textLight, cursor: "grab", userSelect: "none", padding: "4px" }}
+                        onPointerDown={() => {
+                          longPressTimer.current = setTimeout(() => {
+                            setIsLongPress(true);
+                            if (window.navigator.vibrate) window.navigator.vibrate(40);
+                          }, 500);
+                        }}
+                        onPointerUp={() => {
+                          clearTimeout(longPressTimer.current);
+                          setIsLongPress(false);
+                        }}
+                        onPointerLeave={() => {
+                          clearTimeout(longPressTimer.current);
+                          setIsLongPress(false);
+                        }}
+                      >
+                        ⋮⋮
+                      </div>
                       <button onClick={(e) => { e.stopPropagation(); setEditItem(item); setShowModal('berita'); }} style={{ background: C.gold, border: "none", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: 10, fontWeight: 700 }}>Edit</button>
                       <button onClick={(e) => { e.stopPropagation(); handleDelete('berita', item.id); }} style={{ background: "#ef4444", color: "white", border: "none", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: 10, fontWeight: 700 }}>Hapus</button>
                     </div>
