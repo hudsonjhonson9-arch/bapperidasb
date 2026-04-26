@@ -305,40 +305,44 @@ export default function App() {
       return [];
     };
 
+    // Optimalisasi: Tarik semua data secara PARALEL agar loading 4x lebih cepat
+    const results = await Promise.allSettled([
+      fetchSafe(api.berita.list),
+      fetchSafe(api.dokumen.list),
+      fetchSafe(api.slider.list),
+      fetchSafe(api.program.list)
+    ]);
+
     // Berita
-    try {
-      const resB = await fetchSafe(api.berita.list);
-      setBeritaList(getList(resB).sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-    } catch (e) {
-      console.error("Berita fail:", e);
-      errors.push(`Berita (${e.message})`);
+    if (results[0].status === 'fulfilled') {
+      setBeritaList(getList(results[0].value).sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
+    } else {
+      console.error("Berita fail:", results[0].reason);
+      errors.push(`Berita (${results[0].reason.message})`);
     }
 
     // Dokumen
-    try {
-      const resD = await fetchSafe(api.dokumen.list);
-      setDokumenList(getList(resD));
-    } catch (e) {
-      console.error("Dokumen fail:", e);
-      errors.push(`Dokumen (${e.message})`);
+    if (results[1].status === 'fulfilled') {
+      setDokumenList(getList(results[1].value));
+    } else {
+      console.error("Dokumen fail:", results[1].reason);
+      errors.push(`Dokumen (${results[1].reason.message})`);
     }
 
     // Slider
-    try {
-      const resS = await fetchSafe(api.slider.list);
-      setSliderList(getList(resS));
-    } catch (e) {
-      console.error("Slider fail:", e);
-      errors.push(`Slider (${e.message})`);
+    if (results[2].status === 'fulfilled') {
+      setSliderList(getList(results[2].value));
+    } else {
+      console.error("Slider fail:", results[2].reason);
+      errors.push(`Slider (${results[2].reason.message})`);
     }
 
     // Program
-    try {
-      const resP = await fetchSafe(api.program.list);
-      setProgramList(getList(resP).sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-    } catch (e) {
-      console.error("Program fail:", e);
-      errors.push(`Program (${e.message})`);
+    if (results[3].status === 'fulfilled') {
+      setProgramList(getList(results[3].value).sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
+    } else {
+      console.error("Program fail:", results[3].reason);
+      errors.push(`Program (${results[3].reason.message})`);
     }
 
     // Hanya set error jika ada yang gagal; hanya reset jika semua sukses
