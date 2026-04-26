@@ -802,26 +802,28 @@ export default function App() {
                 <span style={{ color: C.gold, fontSize: 11.5, fontWeight: 600, letterSpacing: "0.09em", textTransform: "uppercase" }}>Pemerintah Kabupaten Sumba Barat</span>
               </div>
 
-              {sliderList.length > 0 && sliderList[currentSlide] && sliderList[currentSlide].judul ? (
-                <>
-                  <h1 className="fu fu2 display" style={{ fontSize: "clamp(32px, 5vw, 64px)", fontWeight: 800, color: "white", lineHeight: 1.1, marginBottom: 12, textShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>
-                    {sliderList[currentSlide].judul}
-                  </h1>
-                  <p className="fu fu3" style={{ fontSize: "clamp(16px, 1.2vw, 20px)", color: "rgba(255,255,255,0.8)", lineHeight: 1.6, maxWidth: 650, marginBottom: 44, fontWeight: 500 }}>
-                    {sliderList[currentSlide].subjudul}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <h1 className="fu fu2 display" style={{ fontSize: "clamp(36px, 5.5vw, 70px)", fontWeight: 700, color: "white", lineHeight: 1.08, marginBottom: 6 }}>Badan Perencanaan</h1>
-                  <h1 className="display" style={{ fontSize: "clamp(36px, 5.5vw, 70px)", fontWeight: 700, color: C.gold, lineHeight: 1.08, marginBottom: 6 }}>Pembangunan Riset</h1>
-                  <h1 className="display" style={{ fontSize: "clamp(36px, 5.5vw, 70px)", fontWeight: 700, color: "rgba(255,255,255,0.88)", lineHeight: 1.08, marginBottom: 32 }}>&amp; Inovasi Daerah</h1>
-                  
-                  <p className="fu fu3" style={{ fontSize: 16.5, color: "rgba(255,255,255,0.62)", lineHeight: 1.85, maxWidth: 580, marginBottom: 44 }}>
-                    Mendorong perencanaan pembangunan daerah yang berkualitas, partisipatif, dan inovatif untuk mewujudkan Kabupaten Sumba Barat yang maju, mandiri, dan sejahtera bagi seluruh masyarakat.
-                  </p>
-                </>
-              )}
+              <div style={{ minHeight: 280, display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
+                {sliderList.length > 0 && sliderList[currentSlide] && sliderList[currentSlide].judul ? (
+                  <>
+                    <h1 className="fu fu2 display" style={{ fontSize: "clamp(32px, 5vw, 64px)", fontWeight: 800, color: "white", lineHeight: 1.1, marginBottom: 12, textShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>
+                      {sliderList[currentSlide].judul}
+                    </h1>
+                    <p className="fu fu3" style={{ fontSize: "clamp(16px, 1.2vw, 20px)", color: "rgba(255,255,255,0.8)", lineHeight: 1.6, maxWidth: 650, marginBottom: 0, fontWeight: 500 }}>
+                      {sliderList[currentSlide].subjudul}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h1 className="fu fu2 display" style={{ fontSize: "clamp(36px, 5.5vw, 70px)", fontWeight: 700, color: "white", lineHeight: 1.08, marginBottom: 6 }}>Badan Perencanaan</h1>
+                    <h1 className="display" style={{ fontSize: "clamp(36px, 5.5vw, 70px)", fontWeight: 700, color: C.gold, lineHeight: 1.08, marginBottom: 6 }}>Pembangunan Riset</h1>
+                    <h1 className="display" style={{ fontSize: "clamp(36px, 5.5vw, 70px)", fontWeight: 700, color: "rgba(255,255,255,0.88)", lineHeight: 1.08, marginBottom: 32 }}>&amp; Inovasi Daerah</h1>
+                    
+                    <p className="fu fu3" style={{ fontSize: 16.5, color: "rgba(255,255,255,0.62)", lineHeight: 1.85, maxWidth: 580, marginBottom: 0 }}>
+                      Mendorong perencanaan pembangunan daerah yang berkualitas, partisipatif, dan inovatif untuk mewujudkan Kabupaten Sumba Barat yang maju, mandiri, dan sejahtera bagi seluruh masyarakat.
+                    </p>
+                  </>
+                )}
+              </div>
 
               <div className="fu fu4" style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 64 }}>
                 <button className="btn-gold" onClick={() => scrollTo("profil")}>Kenali Kami <ArrowRight size={15} /></button>
