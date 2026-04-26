@@ -215,7 +215,11 @@ export default function App() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const fetchSafe = (url) => fetch(url).then(r => r.ok ? r.json() : []).catch(() => []);
+      const fetchSafe = async (url) => {
+        const r = await fetch(url);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      };
       
       const [resB, resD, resS, resP] = await Promise.all([
         fetchSafe(api.berita.list),
