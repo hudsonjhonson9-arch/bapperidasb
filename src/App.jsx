@@ -231,17 +231,15 @@ export default function App() {
         return [];
       };
 
-      const bList = getList(resB);
+      const bList = getList(resB).sort((a, b) => (a.priority || 0) - (b.priority || 0));
       const dList = getList(resD);
       const sList = getList(resS);
-      const pList = getList(resP);
+      const pList = getList(resP).sort((a, b) => (a.priority || 0) - (b.priority || 0));
 
-      // If we got empty lists from the server, but no error, we still might want to show fallbacks
-      // or at least update the state.
-      setBeritaList(bList.length > 0 ? bList : []); 
-      setDokumenList(dList.length > 0 ? dList : []);
-      setSliderList(sList.length > 0 ? sList : []);
-      setProgramList(pList.length > 0 ? pList : []);
+      setBeritaList(bList); 
+      setDokumenList(dList);
+      setSliderList(sList);
+      setProgramList(pList);
 
       // If all are empty, maybe trigger fallback in catch
       if (bList.length === 0 && dList.length === 0 && sList.length === 0 && pList.length === 0) {
@@ -253,7 +251,6 @@ export default function App() {
       setBeritaList([]);
       setDokumenList([]);
       setProgramList([]);
-    } finally {
     } finally {
       setLoading(false);
     }
