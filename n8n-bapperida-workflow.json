@@ -75,7 +75,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM bapperida_berita ORDER BY priority ASC, id DESC;",
+        "query": "ALTER TABLE bapperida_berita ADD COLUMN IF NOT EXISTS layout_size VARCHAR(50) DEFAULT 'normal'; ALTER TABLE bapperida_berita ADD COLUMN IF NOT EXISTS col_span INT DEFAULT 1; ALTER TABLE bapperida_berita ADD COLUMN IF NOT EXISTS row_span INT DEFAULT 1; SELECT * FROM bapperida_berita ORDER BY priority ASC, id DESC;",
         "options": {}
       },
       "id": "9fdff73c-1741-43e4-b8d8-17d049f0e34a",
@@ -199,21 +199,8 @@
     },
     {
       "parameters": {
-        "operation": "update",
-        "schema": {
-          "__rl": true,
-          "value": "public",
-          "mode": "list"
-        },
-        "table": {
-          "__rl": true,
-          "value": "bapperida_berita",
-          "mode": "list"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {}
-        },
+        "operation": "executeQuery",
+        "query": "UPDATE bapperida_berita SET judul = '{{$json.judul.replace(/'/g, \"''\")}}', konten = '{{$json.konten.replace(/'/g, \"''\")}}', kategori = '{{$json.kategori}}', tanggal = '{{$json.tanggal}}', gambar_url = '{{$json.gambar_url}}', emoji = '{{$json.emoji}}', priority = {{$json.priority || 0}}, layout_size = '{{$json.layout_size || \"normal\"}}', col_span = {{$json.col_span || 1}}, row_span = {{$json.row_span || 1}}, is_featured = {{$json.is_featured ? true : false}} WHERE id = {{$json.id}};",
         "options": {}
       },
       "id": "2200003b-fecd-4cf2-ad25-c8b414c4f709",
@@ -333,7 +320,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM bapperida_dokumen ORDER BY id DESC;",
+        "query": "CREATE TABLE IF NOT EXISTS bapperida_dokumen (id SERIAL PRIMARY KEY, judul VARCHAR(255) NOT NULL, kategori VARCHAR(100), tipe VARCHAR(20), ukuran VARCHAR(20), tanggal VARCHAR(50), icon VARCHAR(20), url TEXT, priority INT DEFAULT 0); SELECT * FROM bapperida_dokumen ORDER BY id DESC;",
         "options": {}
       },
       "id": "dc5f5701-e1c2-44dd-bdd9-3efcbacc5491",
@@ -829,6 +816,155 @@
         -320,
         -464
       ]
+    },
+    {
+      "parameters": {
+        "path": "bapperida-program-list",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "p1",
+      "name": "Webhook program List",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [ -720, 0 ],
+      "webhookId": "pw1"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "CREATE TABLE IF NOT EXISTS bapperida_program (id SERIAL PRIMARY KEY, icon VARCHAR(50), title VARCHAR(255) NOT NULL, cat VARCHAR(100), \"desc\" TEXT, status VARCHAR(50), sc VARCHAR(20), priority INT DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); SELECT * FROM bapperida_program ORDER BY id DESC;",
+        "options": {}
+      },
+      "id": "p2",
+      "name": "DB program List",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [ -512, 0 ],
+      "credentials": { "postgres": { "id": "vYOiyrTftLtD3zzd" } }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bapperida-program-add",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "p3",
+      "name": "Webhook program Add",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [ -720, 200 ],
+      "webhookId": "pw2"
+    },
+    {
+      "parameters": {
+        "conditions": { "string": [ { "value1": "={{$request.headers['x-app-token']}}", "value2": "BAPPERIDA_SECURE_TOKEN_2026" } ] }
+      },
+      "id": "p4",
+      "name": "Auth Add program",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [ -512, 200 ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO bapperida_program (icon, title, cat, \"desc\", status, sc) VALUES ('{{$json.icon}}', '{{$json.title.replace(/'/g, \"''\")}}', '{{$json.cat}}', '{{$json.desc.replace(/'/g, \"''\")}}', '{{$json.status}}', '{{$json.sc}}') RETURNING *;",
+        "options": {}
+      },
+      "id": "p5",
+      "name": "DB program Add",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [ -320, 150 ],
+      "credentials": { "postgres": { "id": "vYOiyrTftLtD3zzd" } }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bapperida-program-edit",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "p6",
+      "name": "Webhook program Edit",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [ -720, 400 ],
+      "webhookId": "pw3"
+    },
+    {
+      "parameters": {
+        "conditions": { "string": [ { "value1": "={{$request.headers['x-app-token']}}", "value2": "BAPPERIDA_SECURE_TOKEN_2026" } ] }
+      },
+      "id": "p7",
+      "name": "Auth Edit program",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [ -512, 400 ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE bapperida_program SET icon = '{{$json.icon}}', title = '{{$json.title.replace(/'/g, \"''\")}}', cat = '{{$json.cat}}', \"desc\" = '{{$json.desc.replace(/'/g, \"''\")}}', status = '{{$json.status}}', sc = '{{$json.sc}}' WHERE id = {{$json.id}} RETURNING *;",
+        "options": {}
+      },
+      "id": "p8",
+      "name": "DB program Edit",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [ -320, 350 ],
+      "credentials": { "postgres": { "id": "vYOiyrTftLtD3zzd" } }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bapperida-program-delete",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "p9",
+      "name": "Webhook program Delete",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [ -720, 600 ],
+      "webhookId": "pw4"
+    },
+    {
+      "parameters": {
+        "conditions": { "string": [ { "value1": "={{$request.headers['x-app-token']}}", "value2": "BAPPERIDA_SECURE_TOKEN_2026" } ] }
+      },
+      "id": "p10",
+      "name": "Auth Del program",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [ -512, 600 ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "schema": { "__rl": true, "value": "public", "mode": "list" },
+        "table": { "__rl": true, "value": "bapperida_program", "mode": "list" }
+      },
+      "id": "p11",
+      "name": "DB program Delete",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [ -320, 550 ],
+      "credentials": { "postgres": { "id": "vYOiyrTftLtD3zzd" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Unauthorized",
+        "options": { "responseCode": 401 }
+      },
+      "id": "p12",
+      "name": "Unauthorized program",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [ -320, 750 ]
     }
   ],
   "connections": {
@@ -1132,20 +1268,38 @@
     },
     "Auth Del slider": {
       "main": [
-        [
-          {
-            "node": "DB slider Delete",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Unauthorized slider",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [ { "node": "DB slider Delete", "type": "main", "index": 0 } ],
+        [ { "node": "Unauthorized slider", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Webhook program List": {
+      "main": [ [ { "node": "DB program List", "type": "main", "index": 0 } ] ]
+    },
+    "Webhook program Add": {
+      "main": [ [ { "node": "Auth Add program", "type": "main", "index": 0 } ] ]
+    },
+    "Auth Add program": {
+      "main": [
+        [ { "node": "DB program Add", "type": "main", "index": 0 } ],
+        [ { "node": "Unauthorized program", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Webhook program Edit": {
+      "main": [ [ { "node": "Auth Edit program", "type": "main", "index": 0 } ] ]
+    },
+    "Auth Edit program": {
+      "main": [
+        [ { "node": "DB program Edit", "type": "main", "index": 0 } ],
+        [ { "node": "Unauthorized program", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Webhook program Delete": {
+      "main": [ [ { "node": "Auth Del program", "type": "main", "index": 0 } ] ]
+    },
+    "Auth Del program": {
+      "main": [
+        [ { "node": "DB program Delete", "type": "main", "index": 0 } ],
+        [ { "node": "Unauthorized program", "type": "main", "index": 0 } ]
       ]
     }
   },

@@ -4,7 +4,7 @@ const LOGO_URL = "/logo.png";
 import {
   MapPin, Phone, Mail, ChevronDown, Menu, X,
   ArrowRight, Users, User, Calendar, FileText, Download, Eye, Search,
-  Target, Lightbulb, BarChart2, BookOpen, Globe, Shield
+  Target, Lightbulb, BarChart2, BookOpen, Globe, Shield, Maximize2
 } from "lucide-react";
 
 const NAV = [
@@ -114,7 +114,6 @@ export default function App() {
   const [scrolled, setScrolled] = useState(false);
   const longPressTimer = useRef(null);
   const [isLongPress, setIsLongPress] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [dokSearch, setDokSearch] = useState("");
   const [dokFilter, setDokFilter] = useState("Semua");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
@@ -133,21 +132,41 @@ export default function App() {
   // Database States
   const [beritaList, setBeritaList] = useState([]);
   const [dokumenList, setDokumenList] = useState([]);
+  const [programList, setProgramList] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // CMS States
-  const [showModal, setShowModal] = useState(null); // 'berita' | 'dokumen'
+  const [showModal, setShowModal] = useState(null); // 'berita' | 'dokumen' | 'layout'
   const [editItem, setEditItem] = useState(null);
 
+  const [isLayoutMode, setIsLayoutMode] = useState(false);
+  const [isSavingLayout, setIsSavingLayout] = useState(false);
+  const [showOrgZoom, setShowOrgZoom] = useState(false);
   const [selectedBerita, setSelectedBerita] = useState(null);
   const [previewDokumen, setPreviewDokumen] = useState(null);
   const [showAllBeritaModal, setShowAllBeritaModal] = useState(false);
+  const [strukturImg, setStrukturImg] = useState(localStorage.getItem("bapperida_struktur_img") || "/struktur.png");
 
   // Slider State
   const [sliderList, setSliderList] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const active = useScrollSpy();
+
+  const ORG_DATA = {
+    kepala: { name: "CHARLES HERMANA WERU, S.SOS", nip: "19721102 200112 1 001", title: "KEPALA BADAN" },
+    sekretaris: { name: "IMANUEL M. KALEGOTANA, ST., M.SI", nip: "19800315 200501 1 011", title: "SEKRETARIS" },
+    kasubag: { name: "YOHANES B. PATI MAKIN, SE", nip: "19701126 200904 1 001", title: "KEPALA SUB BAGIAN UMUM DAN KEPEGAWAIAN" },
+    kelompok: ["KELOMPOK JABATAN FUNGSIONAL", "KELOMPOK JABATAN PELAKSANA"],
+    bidang: [
+      { title: "PEMERINTAHAN DAN PEMBANGUNAN MANUSIA", name: "FIKA MARTIANA, SET", nip: "19860308 201001 2 032" },
+      { title: "PERENCANAAN PENGENDALIAN DAN EVALUASI", name: "JACKSON UBULELE DADE, SE., M.ACC", nip: "19910529 201403 1 002" },
+      { title: "PEREKONOMIAN DAN SUMBER DAYA ALAM", name: "ALVIAN ZADRAKH TILUATA KOSI, S.PT", nip: "19771122 200501 1 009" },
+      { title: "INFRASTRUKTUR DAN KEWILAYAHAN", name: "ERLAN PORO, ST., M.SC", nip: "19860114 201403 1 002" },
+      { title: "RISET DAN INOVASI DAERAH", name: "YAHYA ANTOSARI STORY, S.IP", nip: "19790707 200312 1 006" }
+    ],
+    uptd: "UPTD"
+  };
 
   // API Config
   const API_BASE = "https://mindcloud.my.id/webhook";
@@ -170,6 +189,12 @@ export default function App() {
       edit: `${API_BASE}/bapperida-slider-edit`,
       del: `${API_BASE}/bapperida-slider-delete`,
     },
+    program: {
+      list: `${API_BASE}/bapperida-program-list`,
+      add: `${API_BASE}/bapperida-program-add`,
+      edit: `${API_BASE}/bapperida-program-edit`,
+      del: `${API_BASE}/bapperida-program-delete`,
+    },
     kontak: {
       submit: `${API_BASE}/bapperida-kontak-submit`
     }
@@ -189,31 +214,37 @@ export default function App() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [resB, resD, resS] = await Promise.all([
-        fetch(api.berita.list).then(r => r.ok ? r.json() : []),
-        fetch(api.dokumen.list).then(r => r.ok ? r.json() : []),
-        fetch(api.slider.list).then(r => r.ok ? r.json() : [])
+      const fetchSafe = (url) => fetch(url).then(r => r.ok ? r.json() : []).catch(() => []);
+      
+      const [resB, resD, resS, resP] = await Promise.all([
+        fetchSafe(api.berita.list),
+        fetchSafe(api.dokumen.list),
+        fetchSafe(api.slider.list),
+        fetchSafe(api.program.list)
       ]);
       
       // Handle n8n-style object responses or plain arrays
       const getList = (res) => {
         if (Array.isArray(res)) return res;
-        if (res && typeof res === 'object' && Array.isArray(res.data)) return res.data;
+        if (res && res.data && Array.isArray(res.data)) return res.data;
+        if (res && res.json && Array.isArray(res.json)) return res.json; // n8n sometimes wraps in json
         return [];
       };
 
       const bList = getList(resB);
       const dList = getList(resD);
       const sList = getList(resS);
+      const pList = getList(resP);
 
       // If we got empty lists from the server, but no error, we still might want to show fallbacks
       // or at least update the state.
       setBeritaList(bList.length > 0 ? bList : []); 
       setDokumenList(dList.length > 0 ? dList : []);
       setSliderList(sList.length > 0 ? sList : []);
+      setProgramList(pList.length > 0 ? pList : []);
 
       // If all are empty, maybe trigger fallback in catch
-      if (bList.length === 0 && dList.length === 0 && sList.length === 0) {
+      if (bList.length === 0 && dList.length === 0 && sList.length === 0 && pList.length === 0) {
         throw new Error("Empty data from server");
       }
     } catch (e) {
@@ -235,6 +266,10 @@ export default function App() {
         { id: 1, judul: "RPJPD Kabupaten Sumba Barat 2025–2045", kategori: "Perencanaan Jangka Panjang", tipe: "PDF", ukuran: "4.2 MB", tanggal: "2025-01-15", icon: "📘" },
         { id: 2, judul: "RPJMD Kabupaten Sumba Barat 2021–2026", kategori: "Perencanaan Jangka Menengah", tipe: "PDF", ukuran: "8.7 MB", tanggal: "2021-03-20", icon: "📗" },
         { id: 3, judul: "RKPD Kabupaten Sumba Barat Tahun 2026", kategori: "Perencanaan Tahunan (RKPD)", tipe: "PDF", ukuran: "6.3 MB", tanggal: "2025-04-30", icon: "📙" },
+      ]);
+      setProgramList([
+        { id: 1, icon: "📐", title: "Penyusunan RPJMD 2026–2031", cat: "Perencanaan Jangka Menengah", desc: "Proses penyusunan Rencana Pembangunan Jangka Menengah Daerah...", status: "Berjalan", sc: "#16A34A" },
+        { id: 2, icon: "🗺️", title: "Musrenbang Kecamatan & Kabupaten", cat: "Perencanaan Partisipatif", desc: "Musyawarah perencanaan pembangunan yang melibatkan masyarakat...", status: "Terjadwal", sc: "#1D4ED8" },
       ]);
     } finally {
       setLoading(false);
@@ -271,32 +306,50 @@ export default function App() {
     window.location.reload();
   };
 
-  const handleMoveBerita = (index, direction) => {
+  const handleMoveBerita = (fromIdx, toIdx) => {
+    if (fromIdx === toIdx) return;
     const newList = [...beritaList];
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= newList.length) return;
-    [newList[index], newList[targetIndex]] = [newList[targetIndex], newList[index]];
+    const [movedItem] = newList.splice(fromIdx, 1);
+    newList.splice(toIdx, 0, movedItem);
     setBeritaList(newList);
     // Auto-save order if it was a drag or move
     if (isAdmin) saveBeritaOrder(newList);
   };
 
+
   const saveBeritaOrder = async (list) => {
-    // Only update items that have changed priority to save API calls
-    // But for simplicity and ensuring everything is right, we update all.
-    // In a real app, we'd use a single batch endpoint.
+    setIsSavingLayout(true);
     try {
       const updates = list.map((item, idx) => {
+        const isFeatured = idx === 0; 
         return authFetch(api.berita.edit, {
           method: "POST",
-          body: JSON.stringify({ ...item, priority: idx })
+          body: JSON.stringify({ 
+            ...item, 
+            priority: idx, 
+            is_featured: isFeatured,
+            col_span: item.col_span || 1,
+            row_span: item.row_span || 1
+          })
         });
       });
       await Promise.all(updates);
-      console.log("Order saved");
+      console.log("Order and Layout saved");
     } catch (e) {
       console.error("Failed to save order", e);
+    } finally {
+      setIsSavingLayout(false);
     }
+  };
+
+  const handlePinBerita = (item) => {
+    const fromIdx = beritaList.findIndex(b => b.id === item.id);
+    if (fromIdx === -1) return;
+    const newList = [...beritaList];
+    const [movedItem] = newList.splice(fromIdx, 1);
+    newList.unshift(movedItem);
+    setBeritaList(newList);
+    if (isAdmin) saveBeritaOrder(newList);
   };
 
   const handleSave = async (type, data) => {
@@ -507,8 +560,8 @@ export default function App() {
 
         .hover-gold:hover { color: ${C.gold} !important; }
 
-        .program-card { background: ${C.white}; border-radius: 14px; overflow: hidden; transition: transform 0.25s, box-shadow 0.25s; }
-        .program-card:hover { transform: translateY(-5px); box-shadow: 0 16px 40px rgba(11,36,71,0.1); }
+        .program-card { background: ${C.white}; border-radius: 16px; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.03); }
+        .program-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(11,36,71,0.08); border-color: ${C.gold}33; }
 
         .berita-thumb { transition: transform 0.4s ease; }
         .berita-wrap:hover .berita-thumb { transform: scale(1.05); }
@@ -663,20 +716,33 @@ export default function App() {
         <div style={{ maxWidth: 1300, margin: "0 auto", padding: "0 28px", position: "relative", zIndex: 1 }}>
           <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "1fr 420px", gap: 64, alignItems: "center" }}>
             {/* Left */}
-            <div>
+            <div style={{ position: "relative", zIndex: 1 }}>
               {/* Badge */}
               <div className="fu fu1" style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "rgba(201,162,39,0.12)", border: `1px solid rgba(201,162,39,0.3)`, borderRadius: 24, padding: "6px 18px", marginBottom: 32 }}>
                 <div style={{ width: 7, height: 7, borderRadius: "50%", background: C.gold, animation: "pulseDot 2s infinite" }} />
                 <span style={{ color: C.gold, fontSize: 11.5, fontWeight: 600, letterSpacing: "0.09em", textTransform: "uppercase" }}>Pemerintah Kabupaten Sumba Barat</span>
               </div>
 
-              <h1 className="fu fu2 display" style={{ fontSize: "clamp(36px, 5.5vw, 70px)", fontWeight: 700, color: "white", lineHeight: 1.08, marginBottom: 6 }}>Badan Perencanaan</h1>
-              <h1 className="display" style={{ fontSize: "clamp(36px, 5.5vw, 70px)", fontWeight: 700, color: C.gold, lineHeight: 1.08, marginBottom: 6 }}>Pembangunan Riset</h1>
-              <h1 className="display" style={{ fontSize: "clamp(36px, 5.5vw, 70px)", fontWeight: 700, color: "rgba(255,255,255,0.88)", lineHeight: 1.08, marginBottom: 32 }}>&amp; Inovasi Daerah</h1>
-
-              <p className="fu fu3" style={{ fontSize: 16.5, color: "rgba(255,255,255,0.62)", lineHeight: 1.85, maxWidth: 580, marginBottom: 44 }}>
-                Mendorong perencanaan pembangunan daerah yang berkualitas, partisipatif, dan inovatif untuk mewujudkan Kabupaten Sumba Barat yang maju, mandiri, dan sejahtera bagi seluruh masyarakat.
-              </p>
+              {sliderList.length > 0 && sliderList[currentSlide] && sliderList[currentSlide].judul ? (
+                <>
+                  <h1 className="fu fu2 display" style={{ fontSize: "clamp(32px, 5vw, 64px)", fontWeight: 800, color: "white", lineHeight: 1.1, marginBottom: 12, textShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>
+                    {sliderList[currentSlide].judul}
+                  </h1>
+                  <p className="fu fu3" style={{ fontSize: "clamp(16px, 1.2vw, 20px)", color: "rgba(255,255,255,0.8)", lineHeight: 1.6, maxWidth: 650, marginBottom: 44, fontWeight: 500 }}>
+                    {sliderList[currentSlide].subjudul}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1 className="fu fu2 display" style={{ fontSize: "clamp(36px, 5.5vw, 70px)", fontWeight: 700, color: "white", lineHeight: 1.08, marginBottom: 6 }}>Badan Perencanaan</h1>
+                  <h1 className="display" style={{ fontSize: "clamp(36px, 5.5vw, 70px)", fontWeight: 700, color: C.gold, lineHeight: 1.08, marginBottom: 6 }}>Pembangunan Riset</h1>
+                  <h1 className="display" style={{ fontSize: "clamp(36px, 5.5vw, 70px)", fontWeight: 700, color: "rgba(255,255,255,0.88)", lineHeight: 1.08, marginBottom: 32 }}>&amp; Inovasi Daerah</h1>
+                  
+                  <p className="fu fu3" style={{ fontSize: 16.5, color: "rgba(255,255,255,0.62)", lineHeight: 1.85, maxWidth: 580, marginBottom: 44 }}>
+                    Mendorong perencanaan pembangunan daerah yang berkualitas, partisipatif, dan inovatif untuk mewujudkan Kabupaten Sumba Barat yang maju, mandiri, dan sejahtera bagi seluruh masyarakat.
+                  </p>
+                </>
+              )}
 
               <div className="fu fu4" style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 64 }}>
                 <button className="btn-gold" onClick={() => scrollTo("profil")}>Kenali Kami <ArrowRight size={15} /></button>
@@ -841,8 +907,8 @@ export default function App() {
               { n: "M2", title: "Partisipasi Masyarakat", desc: "Mendorong keterlibatan aktif masyarakat dalam proses perencanaan pembangunan secara transparan dan akuntabel." },
               { n: "M3", title: "Riset & Inovasi", desc: "Mengembangkan kapasitas penelitian dan inovasi daerah sebagai landasan kebijakan pembangunan berbasis bukti." },
               { n: "M4", title: "Pengendalian Efektif", desc: "Memperkuat sistem monitoring dan evaluasi pelaksanaan program pembangunan secara berkala dan terukur." },
-              { n: "M5", title: "SDM Profesional", desc: "Meningkatkan kapasitas aparatur perencana yang kompeten, profesional, dan memiliki integritas tinggi." },
-              { n: "M6", title: "Kolaborasi Strategis", desc: "Membangun kemitraan dengan berbagai pemangku kepentingan untuk pembangunan yang inklusif dan berkelanjutan." },
+              { n: "M5", title: "SDM Profesional", desc: "Meningkatkan kapasitas aparatur perencana yang kompeten, profesional, and memiliki integritas tinggi." },
+              { n: "M6", title: "Kolaborasi Strategis", desc: "Membangun kemitraan dengan berbagai pemangku kepentingan untuk pembangunan yang inklusif and berkelanjutan." },
             ].map(m => (
               <div key={m.n} className="card" style={{ padding: "28px 26px", borderTop: `3px solid ${C.gold}` }}>
                 <div className="display" style={{ fontSize: 13, fontWeight: 700, color: C.gold, letterSpacing: "0.1em", marginBottom: 14 }}>{m.n}</div>
@@ -864,181 +930,84 @@ export default function App() {
             <p style={{ fontSize: 15.5, color: C.textMid, marginTop: 14, maxWidth: 600, margin: "14px auto 0" }}>Berdasarkan Peraturan Bupati Sumba Barat tentang Kedudukan, Susunan Organisasi, Tugas dan Fungsi serta Tata Kerja Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah</p>
           </div>
 
-          {/* Swipe Hint (Mobile Only) */}
-          <div className="swipe-hint">
-            <ArrowRight size={16} /> Geser untuk melihat struktur penuh
+          <div className="org-image-container" style={{ width: "100%", padding: "40px 0", background: "white", display: "flex", justifyContent: "center" }}>
+            <img 
+              src="/Struktur_Organisasi_BAPPERIDA.png" 
+              alt="Struktur Organisasi BAPPERIDA" 
+              style={{ 
+                maxWidth: "100%", 
+                height: "auto", 
+                borderRadius: 8,
+                cursor: "zoom-in",
+                transition: "transform 0.3s ease"
+              }}
+              onClick={() => setShowOrgZoom(true)}
+              onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.01)"}
+              onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
+            />
           </div>
 
-          {/* Tree Wrapper */}
-          <div className="org-wrapper">
-            <div className="org-container" style={{ paddingBottom: 60 }}>
-
-              {/* THE SPINE: Single continuous solid line (BEHIND everything) */}
-              <div className="org-spine" />
-
-              {/* --- LEVEL 1: KEPALA BADAN --- */}
-            <div style={{ zIndex: 20, marginBottom: isMobile ? 50 : 100, width: "100%", display: "flex", justifyContent: "center" }}>
-              <div className="org-card" style={{ width: "100%", maxWidth: isMobile ? 300 : 340, display: "flex", border: "none", boxShadow: "0 20px 50px rgba(0,0,0,0.12)" }}>
-                <div style={{ width: isMobile ? 80 : 110, height: isMobile ? 110 : 130, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <User size={isMobile ? 40 : 56} color={C.navyLight} style={{ opacity: 0.5 }} />
-                </div>
-                <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                  <div style={{ background: `linear-gradient(135deg, ${C.navy}, #00A3FF)`, color: "white", padding: "8px 12px", fontWeight: 800, fontSize: isMobile ? 11 : 13, textAlign: "center", textTransform: "uppercase", letterSpacing: "0.08em" }}>Kepala Badan</div>
-                  <div style={{ padding: 10, textAlign: "center", flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                    <div style={{ fontSize: isMobile ? 11 : 13, fontWeight: 900, color: C.navy, lineHeight: 1.3 }}>CHARLES HERMANA WERU, S.SOS</div>
-                    <div style={{ fontSize: isMobile ? 9 : 10, color: C.textLight, marginTop: 4, fontWeight: 500 }}>NIP. 19721102 200112 1 001</div>
-                  </div>
-                </div>
-              </div>
+          {/* Premium Zoom Modal */}
+          {showOrgZoom && (
+            <div 
+              style={{ 
+                position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", 
+                background: "rgba(11, 36, 71, 0.95)", backdropFilter: "blur(10px)",
+                zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "zoom-out", padding: 40, animation: "fadeIn 0.3s ease"
+              }}
+              onClick={() => setShowOrgZoom(false)}
+            >
+              <button 
+                style={{ position: "absolute", top: 30, right: 30, background: "white", border: "none", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 20, fontWeight: "bold" }}
+                onClick={() => setShowOrgZoom(false)}
+              >
+                ✕
+              </button>
+              <img 
+                src="/Struktur_Organisasi_BAPPERIDA.png" 
+                alt="Zoomed" 
+                style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 4, boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }} 
+              />
             </div>
-
-            <div className="org-level-2" style={{ marginBottom: isMobile ? 60 : 120 }}>
-              {/* Horizontal Connector Line (Shoulder) - Pixel Perfect SVG */}
-              <svg style={{ position: "absolute", top: -2, left: 0, width: "100%", height: 14, zIndex: 1 }} overflow="visible">
-                <line x1="331" y1="2" x2="869" y2="2" stroke="#CBD5E1" strokeWidth="3" />
-                <circle cx="331" cy="2" r="3.5" fill="#CBD5E1" />
-                <circle cx="869" cy="2" r="3.5" fill="#CBD5E1" />
-                <circle cx="600" cy="2" r="3.5" fill="#CBD5E1" />
-              </svg>
-              
-              {/* Left Branch: Kelompok Jabatan */}
-              <div style={{ width: "48%", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                {/* Vertical line connecting to horizontal bar */}
-                <div style={{ width: 3, height: isMobile ? 32 : 52, background: "#CBD5E1", zIndex: 2, marginTop: -2 }} />
-                <div className="org-card" style={{ width: "100%", maxWidth: 290 }}>
-                  <div style={{ background: `linear-gradient(135deg, ${C.navyMid}, ${C.navy})`, color: "white", padding: "10px 14px", fontWeight: 800, fontSize: 11.5, textAlign: "center", textTransform: "uppercase" }}>KELOMPOK JABATAN</div>
-                  <div style={{ padding: "16px 20px" }}>
-                    <div style={{ fontSize: isMobile ? 10.5 : 11.5, fontWeight: 700, color: C.navyMid, marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.gold }} /> JABATAN FUNGSIONAL
-                    </div>
-                    <div style={{ fontSize: isMobile ? 10.5 : 11.5, fontWeight: 700, color: C.navyMid, display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.gold }} /> JABATAN PELAKSANA
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Branch: Sekretariat Stack */}
-              <div style={{ width: "48%", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                {/* Vertical line connecting to horizontal bar */}
-                <div style={{ width: 3, height: isMobile ? 32 : 47, background: "#CBD5E1", zIndex: 2, marginTop: -2 }} />
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0, width: "100%" }}>
-                  {/* Sekretaris */}
-                  <div className="org-card" style={{ width: "100%", maxWidth: 300, display: "flex", border: "none" }}>
-                    <div style={{ width: isMobile ? 75 : 85, height: isMobile ? 100 : 110, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <User size={isMobile ? 32 : 36} color={C.navyLight} style={{ opacity: 0.5 }} />
-                    </div>
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                      <div style={{ background: `linear-gradient(135deg, #1A527A, #00A3FF)`, color: "white", padding: "8px 12px", fontWeight: 700, fontSize: isMobile ? 10 : 11, textAlign: "center", textTransform: "uppercase" }}>Sekretaris</div>
-                      <div style={{ padding: 10, textAlign: "center", flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                        <div style={{ fontSize: isMobile ? 10 : 11, fontWeight: 800, color: C.navy, lineHeight: 1.3 }}>IMANUEL M. KALEGOTANA, ST., M.SI</div>
-                        <div style={{ fontSize: isMobile ? 8 : 9, color: C.textLight, marginTop: 4 }}>NIP. 19800315 200501 1 011</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Vertical Connector between Sekretaris and Sub Bagian */}
-                  <div style={{ width: 2, height: 35, background: "#CBD5E1" }} />
-
-                  {/* Sub Bagian */}
-                  <div className="org-card" style={{ width: "100%", maxWidth: 300, display: "flex" }}>
-                    <div style={{ width: isMobile ? 75 : 85, height: isMobile ? 100 : 110, background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <User size={isMobile ? 30 : 34} color={C.navyLight} style={{ opacity: 0.4 }} />
-                    </div>
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                      <div style={{ background: "#F1F5F9", color: C.navy, padding: "10px 12px", fontWeight: 700, fontSize: isMobile ? 8.5 : 9.5, textAlign: "center", textTransform: "uppercase", borderBottom: "1px solid #E5E7EB", minHeight: isMobile ? 40 : 45, display: "flex", alignItems: "center", justifyContent: "center" }}>Kepala Sub Bagian Umum & Kepegawaian</div>
-                      <div style={{ padding: 10, textAlign: "center", flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                        <div style={{ fontSize: isMobile ? 9.5 : 10.5, fontWeight: 700, color: C.navy }}>YOHANES B. PATI MAKIN, SE</div>
-                        <div style={{ fontSize: isMobile ? 8 : 8.5, color: C.textLight, marginTop: 4 }}>NIP. 19701126 200904 1 001</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* --- LEVEL 3: BIDANG-BIDANG --- */}
-            <div className="org-level-3" style={{ marginBottom: isMobile ? 60 : 130 }}>
-              {/* Horizontal Connector Line (Shoulder) - Pixel Perfect SVG */}
-              <svg style={{ position: "absolute", top: -2, left: 0, width: "100%", height: 14, zIndex: 1 }} overflow="visible">
-                <line x1="144" y1="2" x2="1056" y2="2" stroke="#CBD5E1" strokeWidth="3" />
-                {[144, 372, 600, 828, 1056].map(x => (
-                  <circle key={x} cx={x} cy="2" r="3.5" fill="#CBD5E1" />
-                ))}
-              </svg>
-
-              <div className="org-grid" style={{ paddingTop: isMobile ? 30 : 60 }}>
-                {[
-                  { title: "Kepala Bidang Pemerintahan & Pembangunan Manusia", name: "FIKA MARTIANA, SET", nip: "19860308 201001 2 032" },
-                  { title: "Kepala Bidang Perencanaan Pengendalian & Evaluasi", name: "JACKSON UBULELE DADE, SE., M.ACC", nip: "19910529 201403 1 002" },
-                  { title: "Kepala Bidang Perekonomian & Sumber Daya Alam", name: "ALVIAN ZADRAKH TILUATA KOSI, S.PT", nip: "19771122 200501 1 009" },
-                  { title: "Kepala Bidang Infrastruktur & Kewilayahan", name: "ERLAN PORO, ST., M.SC", nip: "19860114 201403 1 002" },
-                  { title: "Kepala Bidang Riset dan Inovasi", name: "YAHYA ANTOSARI STORY, S.IP", nip: "19790707 200312 1 006" },
-                ].map((b, i) => (
-                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", width: "100%" }}>
-                    {/* Vertical Connector connecting to horizontal bar / spine */}
-                    <div style={{ width: 3, height: isMobile ? 32 : 52, background: "#CBD5E1", position: "absolute", top: isMobile ? -32 : -52, left: "50%", transform: "translateX(-50%)", zIndex: 2 }} />
-
-                    <div className="org-card" style={{ width: "100%", display: "flex", flexDirection: "column", height: "100%", border: "none" }}>
-                      <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1A527A)`, color: "white", padding: "12px 14px", fontWeight: 800, fontSize: isMobile ? 9.5 : 10.5, textAlign: "center", textTransform: "uppercase", minHeight: isMobile ? 55 : 65, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1.3 }}>{b.title}</div>
-                      <div style={{ display: "flex", flex: 1 }}>
-                        <div style={{ width: isMobile ? 55 : 65, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <User size={isMobile ? 24 : 32} color={C.navyLight} style={{ opacity: 0.5 }} />
-                        </div>
-                        <div style={{ flex: 1, padding: 10, textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                          <div style={{ fontSize: isMobile ? 10 : 11, fontWeight: 900, color: C.navy, lineHeight: 1.3 }}>{b.name}</div>
-                          <div style={{ fontSize: isMobile ? 8.5 : 9, color: C.textLight, marginTop: 4 }}>NIP. {b.nip}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* --- LEVEL 4: UPTD --- */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", zIndex: 20, position: "relative" }}>
-              {/* Vertical Connector connecting to spine */}
-              <div style={{ width: 3, height: isMobile ? 40 : 80, background: "#CBD5E1", zIndex: 1 }} />
-              <div className="org-card" style={{ background: `linear-gradient(135deg, #00A3FF, #0077FF)`, color: "white", padding: isMobile ? "14px 40px" : "20px 90px", fontWeight: 900, fontSize: isMobile ? 22 : 32, boxShadow: "0 25px 55px rgba(0,163,255,0.3)", border: "none", letterSpacing: "0.2em" }}>
-                UPTD
-              </div>
-            </div>
-
-          </div>
+          )}
         </div>
-      </div>
-    </section>
+      </section>
+
 
       {/* ──── PROGRAM & KEGIATAN ──── */}
       <section id="program" style={{ background: C.offWhite, padding: "96px 28px" }}>
         <div style={{ maxWidth: 1300, margin: "0 auto" }}>
-          <div style={{ marginBottom: 56 }}>
-            <div className="gold-bar" style={{ marginBottom: 20 }} />
-            <p className="eyebrow" style={{ marginBottom: 14 }}>Agenda Strategis 2026</p>
-            <h2 className="section-title" style={{ maxWidth: 520 }}>Program &amp; Kegiatan Unggulan</h2>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 56, flexWrap: "wrap", gap: 20 }}>
+            <div>
+              <div className="gold-bar" style={{ marginBottom: 20 }} />
+              <p className="eyebrow" style={{ marginBottom: 14 }}>Agenda Strategis 2026</p>
+              <h2 className="section-title" style={{ maxWidth: 520 }}>Program &amp; Kegiatan Unggulan</h2>
+            </div>
+            {isAdmin && (
+              <button className="btn-gold" onClick={() => { setEditItem(null); setShowModal('program'); }} style={{ background: C.navy, color: "white" }}>+ Tambah Program</button>
+            )}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
-            {[
-              { icon: "📐", title: "Penyusunan RPJMD 2026–2031", cat: "Perencanaan Jangka Menengah", desc: "Proses penyusunan Rencana Pembangunan Jangka Menengah Daerah yang melibatkan seluruh pemangku kepentingan lintas sektor.", status: "Berjalan", sc: "#16A34A" },
-              { icon: "🗺️", title: "Musrenbang Kecamatan & Kabupaten", cat: "Perencanaan Partisipatif", desc: "Musyawarah perencanaan pembangunan yang melibatkan masyarakat dari tingkat kelurahan/desa hingga kabupaten secara menyeluruh.", status: "Terjadwal", sc: "#1D4ED8" },
-              { icon: "🔬", title: "Inovasi Daerah Sumba Barat", cat: "Riset & Inovasi", desc: "Pengembangan inovasi pelayanan publik dan tata kelola pemerintahan berbasis teknologi informasi yang adaptif.", status: "Berjalan", sc: "#16A34A" },
-              { icon: "💻", title: "Implementasi SIPD Terintegrasi", cat: "Digitalisasi Perencanaan", desc: "Implementasi Sistem Informasi Pemerintahan Daerah terintegrasi sesuai Permendagri 70/2019 dan regulasi terkait.", status: "Berjalan", sc: "#16A34A" },
-              { icon: "🌾", title: "Kajian Potensi Ekonomi Lokal", cat: "Riset Pembangunan", desc: "Penelitian mendalam terkait potensi sektor pertanian, peternakan, dan pariwisata sebagai unggulan ekonomi daerah.", status: "Perencanaan", sc: "#D97706" },
-              { icon: "🤝", title: "Forum Perangkat Daerah Rutin", cat: "Koordinasi Lintas Sektor", desc: "Koordinasi periodik antar OPD untuk sinkronisasi program dan kegiatan pembangunan agar tidak tumpang tindih.", status: "Rutin", sc: "#7C3AED" },
-            ].map(p => (
-              <div key={p.title} className="program-card" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                <div style={{ padding: "28px 28px 24px", flexGrow: 1, display: "flex", flexDirection: "column" }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
-                    <div style={{ fontSize: 36 }}>{p.icon}</div>
-                    <span style={{ background: `${p.sc}18`, color: p.sc, fontSize: 11, fontWeight: 600, padding: "4px 12px", borderRadius: 20, letterSpacing: "0.04em", whiteSpace: "nowrap", marginLeft: 12 }}>{p.status}</span>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 32 }}>
+            {programList.map(p => (
+              <div key={p.id} className="program-card" style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative" }}>
+                {isAdmin && (
+                  <div style={{ position: "absolute", top: 15, right: 15, display: "flex", gap: 6, zIndex: 10 }}>
+                    <button onClick={() => { setEditItem(p); setShowModal('program'); }} className="btn-admin-small" style={{ background: "rgba(255,255,255,0.9)", color: C.navy, border: "none", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>✎</button>
+                    <button onClick={() => handleDelete('program', p.id)} className="btn-admin-small" style={{ background: "rgba(255,100,100,0.1)", color: "#ef4444", border: "none", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>✕</button>
                   </div>
-                  <div style={{ fontSize: 10.5, color: C.textLight, letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 8 }}>{p.cat}</div>
-                  <h3 style={{ fontSize: 16, fontWeight: 600, color: C.navy, marginBottom: 12, lineHeight: 1.45 }}>{p.title}</h3>
-                  <p style={{ fontSize: 13.5, color: C.textMid, lineHeight: 1.82, flexGrow: 1 }}>{p.desc}</p>
+                )}
+                <div style={{ padding: "32px", flexGrow: 1, display: "flex", flexDirection: "column" }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
+                    <div style={{ fontSize: 42, filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.1))" }}>{p.icon}</div>
+                    <span style={{ background: `${p.sc || C.gold}12`, color: p.sc || C.gold, fontSize: 10, fontWeight: 800, padding: "6px 14px", borderRadius: 20, letterSpacing: "0.04em", whiteSpace: "nowrap", border: `1px solid ${p.sc || C.gold}22` }}>{p.status.toUpperCase()}</span>
+                  </div>
+                  <div style={{ fontSize: 10, color: C.textLight, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10, fontWeight: 700 }}>{p.cat}</div>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, color: C.navy, marginBottom: 14, lineHeight: 1.4 }}>{p.title}</h3>
+                  <p style={{ fontSize: 14, color: C.textMid, lineHeight: 1.8, flexGrow: 1 }}>{p.desc}</p>
                 </div>
-                <div style={{ height: 4, background: `linear-gradient(to right, ${C.navy}, ${C.gold})` }} />
+                <div style={{ height: 4, background: `linear-gradient(to right, ${C.navy}, ${p.sc || C.gold})`, opacity: 0.8 }} />
               </div>
             ))}
           </div>
@@ -1055,7 +1024,7 @@ export default function App() {
               <p className="eyebrow" style={{ marginBottom: 14 }}>Keterbukaan Informasi</p>
               <h2 className="section-title">Dokumen Publik</h2>
               <p style={{ fontSize: 15, color: C.textMid, marginTop: 10, maxWidth: 520 }}>
-                Dokumen resmi perencanaan pembangunan, regulasi, dan laporan kinerja BAPPERIDA Kabupaten Sumba Barat tersedia untuk diakses oleh publik.
+                Dokumen resmi perencanaan pembangunan, regulasi, and laporan kinerja BAPPERIDA Kabupaten Sumba Barat tersedia untuk diakses oleh publik.
               </p>
             </div>
             <div style={{ background: `rgba(11,36,71,0.06)`, borderRadius: 12, padding: "14px 22px", textAlign: "center", width: isMobile ? "100%" : "auto", display: "flex", flexDirection: isMobile ? "row" : "column", alignItems: "center", justifyContent: "center", gap: isMobile ? 12 : 2 }}>
@@ -1184,7 +1153,21 @@ export default function App() {
               <p className="eyebrow" style={{ marginBottom: 14 }}>Informasi Terkini</p>
               <h2 className="section-title">Berita &amp; Kegiatan</h2>
             </div>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+              {isAdmin && (
+                <button 
+                  className="btn-gold" 
+                  onClick={() => setIsLayoutMode(!isLayoutMode)} 
+                  style={{ 
+                    background: isLayoutMode ? C.gold : C.navy, 
+                    color: "white", 
+                    border: `1px solid ${isLayoutMode ? C.gold : C.navy}`,
+                    boxShadow: isLayoutMode ? "0 0 15px rgba(201,162,39,0.4)" : "none"
+                  }}
+                >
+                  <Menu size={16} /> {isLayoutMode ? "Simpan Layout" : "Grid Builder"}
+                </button>
+              )}
               <button className="btn-gold" onClick={() => setShowAllBeritaModal(true)}>Lihat Semua Berita <ArrowRight size={14} /></button>
               {isAdmin && (
                 <button className="btn-gold" onClick={() => { setEditItem(null); setShowModal('berita'); }} style={{ background: C.navy, color: "white" }}>+ Tambah Berita</button>
@@ -1192,174 +1175,170 @@ export default function App() {
             </div>
           </div>
 
-          {/* Featured + grid */}
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 24, marginBottom: 24 }}>
-            {/* Featured */}
-            {beritaList.filter(b => b.is_featured).map(fb => (
-              <div key={fb.id} onClick={() => setSelectedBerita(fb)} className="card berita-wrap" style={{ overflow: "hidden", cursor: "pointer", display: "flex", flexDirection: "column" }}>
-                <div style={{ height: 220, background: `linear-gradient(145deg, ${C.navy} 0%, #1a6b45 100%)`, position: "relative", overflow: "hidden" }}>
-                  <div className="berita-thumb" style={{ position: "absolute", inset: 0, background: "linear-gradient(145deg, #0B2447 0%, #1a527a 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {fb.gambar_url ? (
-                      <img src={fb.gambar_url} alt={fb.judul} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.85 }} />
-                    ) : (
-                      <span style={{ fontSize: 64 }}>{fb.emoji || "📋"}</span>
-                    )}
-                  </div>
-                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.6), transparent)" }} />
-                  <span style={{ position: "absolute", top: 16, left: 16, background: "rgba(201,162,39,0.9)", color: C.navyDark, fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 20, letterSpacing: "0.04em" }}>Unggulan</span>
-                  {isAdmin && (
-                    <div style={{ position: "absolute", top: 16, right: 16, display: "flex", gap: 8 }}>
-                      <button onClick={(e) => { e.stopPropagation(); setEditItem(fb); setShowModal('berita'); }} style={{ background: C.gold, border: "none", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>Edit</button>
-                      <button onClick={(e) => { e.stopPropagation(); handleDelete('berita', fb.id); }} style={{ background: "#ef4444", color: "white", border: "none", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>Hapus</button>
-                    </div>
-                  )}
-                </div>
-                <div style={{ padding: isMobile ? "20px 22px" : "24px 26px 28px", flexGrow: 1, display: "flex", flexDirection: "column" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                    <span style={{ background: `${C.navy}14`, color: C.navy, fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20 }}>{fb.kategori}</span>
-                    <span style={{ color: C.textLight, fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}><Calendar size={11} /> {fb.tanggal}</span>
-                  </div>
-                  <h3 className="display" style={{ fontSize: isMobile ? 18 : 20, fontWeight: 700, color: C.navy, marginBottom: 12, lineHeight: 1.4 }}>{fb.judul}</h3>
-                  <p style={{ fontSize: 14, color: C.textMid, lineHeight: 1.82, marginBottom: 18, flexGrow: 1 }}>{fb.konten}</p>
-                  <div onClick={() => setSelectedBerita(fb)} style={{ display: "flex", alignItems: "center", gap: 5, color: C.navy, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Baca selengkapnya <ArrowRight size={13} /></div>
-                </div>
+          {isLayoutMode && (
+            <div style={{ background: `${C.gold}10`, border: `1px dashed ${C.gold}`, borderRadius: 12, padding: "16px 24px", marginBottom: 32, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ fontSize: 13, color: C.navy, fontWeight: 600 }}>
+                <span style={{ marginRight: 12 }}>🛠️ <b>Mode Grid Builder:</b></span> 
+                Gunakan tombol + / - pada setiap item untuk merubah ukuran, atau seret item untuk mengatur urutan.
               </div>
-            ))}
-
-            {/* List column */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {beritaList.filter(b => !b.is_featured).slice(0, 3).map((item, idx) => (
-                <div key={item.id} 
-                  draggable={isAdmin}
-                  onDragStart={(e) => isAdmin && e.dataTransfer.setData("index", idx)}
-                  onDragOver={(e) => isAdmin && e.preventDefault()}
-                  onDrop={(e) => {
-                    if (!isAdmin) return;
-                    const fromIdx = parseInt(e.dataTransfer.getData("index"));
-                    handleMoveBerita(fromIdx, idx - fromIdx);
-                  }}
-                  onClick={() => setSelectedBerita(item)} 
-                  className="card berita-wrap" 
-                  style={{ padding: "18px 20px", cursor: isAdmin ? "grab" : "pointer", display: "flex", alignItems: "center", gap: 16, height: "100%", border: isAdmin ? `1px dashed ${C.warmGray}` : "none" }}
-                >
-                  {isAdmin && (
-                    <div 
-                      style={{ color: C.textLight, cursor: "grab", padding: "8px 4px", fontSize: 18, userSelect: "none" }}
-                      onPointerDown={() => {
-                        longPressTimer.current = setTimeout(() => {
-                          setIsLongPress(true);
-                          if (window.navigator.vibrate) window.navigator.vibrate(40);
-                        }, 500);
-                      }}
-                      onPointerUp={() => {
-                        clearTimeout(longPressTimer.current);
-                        setIsLongPress(false);
-                      }}
-                      onPointerLeave={() => {
-                        clearTimeout(longPressTimer.current);
-                        setIsLongPress(false);
-                      }}
-                    >
-                      ⋮⋮
-                    </div>
-                  )}
-                  <div style={{ width: 52, height: 52, borderRadius: 10, background: `${C.navy}14`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0, overflow: "hidden" }}>
-                    {item.gambar_url ? (
-                      <img src={item.gambar_url} alt={item.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    ) : (
-                      item.emoji || "📰"
-                    )}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                      <span style={{ background: `${C.navy}14`, color: C.navy, fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20 }}>{item.kategori}</span>
-                      <span style={{ color: C.textLight, fontSize: 11 }}>{item.tanggal}</span>
-                    </div>
-                    <h4 style={{ fontSize: 13.5, fontWeight: 600, color: C.navy, lineHeight: 1.45 }}>{item.judul}</h4>
-                  </div>
-                  {isAdmin ? (
-                    <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
-                      <button onClick={(e) => { e.stopPropagation(); setEditItem(item); setShowModal('berita'); }} style={{ background: C.navy, color: "white", border: "none", padding: "4px 8px", borderRadius: 4, cursor: "pointer", fontSize: 10 }}>Edit</button>
-                      <button onClick={(e) => { e.stopPropagation(); handleDelete('berita', item.id); }} style={{ background: "#ef4444", color: "white", border: "none", padding: "4px 8px", borderRadius: 4, cursor: "pointer", fontSize: 10 }}>Hapus</button>
-                    </div>
-                  ) : (
-                    <ArrowRight size={14} color={C.textLight} style={{ flexShrink: 0 }} />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* CMS Controls */}
-          {isAdmin && (
-            <div style={{ display: "flex", gap: 12, marginBottom: 40, background: C.warmGray, padding: 20, borderRadius: 12 }}>
-            <div style={{ textAlign: "center", marginTop: 40 }}>
-              <p style={{ color: C.textLight, fontSize: 14 }}>Gunakan Panel Admin untuk menambah berita.</p>
-            </div>
+              <button className="btn-gold" onClick={() => setIsLayoutMode(false)} style={{ fontSize: 12, padding: "8px 16px" }}>Selesai</button>
             </div>
           )}
 
-          {/* Bottom row */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
-            {beritaList.filter(b => !b.is_featured).slice(3, 6).map((item, idx) => {
-              const colors = [C.navy, "#1a6b45", "#7c3aed", "#b45309", "#0369A1"];
-              const color = colors[idx % colors.length];
-              const listIdx = idx + 3;
+          {/* Unified Magazine Grid Layout */}
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", 
+            gridAutoRows: "minmax(120px, auto)",
+            gap: isLayoutMode ? 16 : 32, 
+            marginBottom: 60 
+          }}>
+            {beritaList.slice(0, 12).map((item, idx) => {
+              // Priority: col_span/row_span from DB, fallback to legacy layout_size, fallback to default
+              let col = item.col_span || 1;
+              let row = item.row_span || 1;
+              
+              if (!item.col_span && item.layout_size) {
+                if (item.layout_size === 'large') { col = 2; row = 2; }
+                else if (item.layout_size === 'wide') { col = 2; row = 1; }
+                else if (item.layout_size === 'tall') { col = 1; row = 2; }
+              } else if (!item.col_span && idx === 0) {
+                col = 2; row = 2; // Default for first item
+              }
+
+              const gridStyle = isMobile ? {} : {
+                gridColumn: `span ${col}`,
+                gridRow: `span ${row}`,
+              };
+
               return (
                 <div key={item.id} 
+                  onClick={() => !isLayoutMode && setSelectedBerita(item)} 
+                  className={`magazine-item ${isLayoutMode ? 'editing' : ''}`}
+                  style={{ 
+                    ...gridStyle,
+                    position: "relative",
+                    cursor: isLayoutMode ? "move" : "pointer", 
+                    display: "flex", 
+                    flexDirection: "column",
+                    transition: "all 0.3s ease",
+                    padding: isLayoutMode ? 12 : 0,
+                    background: isLayoutMode ? "white" : "white",
+                    borderRadius: isLayoutMode ? 16 : 16,
+                    boxShadow: isLayoutMode ? "0 10px 30px rgba(0,0,0,0.1)" : "0 4px 20px rgba(0,0,0,0.04)",
+                    border: "1px solid rgba(0,0,0,0.05)",
+                    overflow: "hidden",
+                    zIndex: isLayoutMode ? 5 : 1
+                  }}
                   draggable={isAdmin}
-                  onDragStart={(e) => isAdmin && e.dataTransfer.setData("index", listIdx)}
+                  onDragStart={(e) => isAdmin && e.dataTransfer.setData("index", beritaList.indexOf(item))}
                   onDragOver={(e) => isAdmin && e.preventDefault()}
                   onDrop={(e) => {
                     if (!isAdmin) return;
                     const fromIdx = parseInt(e.dataTransfer.getData("index"));
-                    handleMoveBerita(fromIdx, listIdx - fromIdx);
+                    handleMoveBerita(fromIdx, beritaList.indexOf(item));
                   }}
-                  onClick={() => setSelectedBerita(item)} 
-                  className="card" 
-                  style={{ padding: "22px 22px 26px", cursor: isAdmin ? "grab" : "pointer", position: "relative", border: isAdmin ? `1px dashed ${C.warmGray}` : "none" }}
                 >
-                  {isAdmin && (
-                    <div style={{ position: "absolute", top: 12, right: 16, display: "flex", gap: 8, zIndex: 10, alignItems: "center" }}>
-                      <div 
-                        style={{ fontSize: 18, color: C.textLight, cursor: "grab", userSelect: "none", padding: "4px" }}
-                        onPointerDown={() => {
-                          longPressTimer.current = setTimeout(() => {
-                            setIsLongPress(true);
-                            if (window.navigator.vibrate) window.navigator.vibrate(40);
-                          }, 500);
-                        }}
-                        onPointerUp={() => {
-                          clearTimeout(longPressTimer.current);
-                          setIsLongPress(false);
-                        }}
-                        onPointerLeave={() => {
-                          clearTimeout(longPressTimer.current);
-                          setIsLongPress(false);
-                        }}
-                      >
-                        ⋮⋮
-                      </div>
-                      <button onClick={(e) => { e.stopPropagation(); setEditItem(item); setShowModal('berita'); }} style={{ background: C.gold, border: "none", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: 10, fontWeight: 700 }}>Edit</button>
-                      <button onClick={(e) => { e.stopPropagation(); handleDelete('berita', item.id); }} style={{ background: "#ef4444", color: "white", border: "none", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: 10, fontWeight: 700 }}>Hapus</button>
+                  {isLayoutMode && (
+                    <div style={{ position: "absolute", top: -15, left: "50%", transform: "translateX(-50%)", background: C.navy, color: "white", padding: "4px 12px", borderRadius: 20, fontSize: 10, fontWeight: 700, zIndex: 20, whiteSpace: "nowrap", boxShadow: "0 4px 10px rgba(0,0,0,0.2)" }}>
+                      Size: {col} x {row}
                     </div>
                   )}
-                  <div style={{ height: 4, background: color, borderRadius: 4, marginBottom: 20 }} />
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                    <div style={{ width: 42, height: 42, borderRadius: 8, background: `${color}14`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0, overflow: "hidden" }}>
+
+                  <div style={{ 
+                    height: row === 1 ? 180 : 380, 
+                    position: "relative", 
+                    overflow: "hidden",
+                    flexShrink: 0,
+                  }}>
+                    <div className="berita-thumb-zoom" style={{ position: "absolute", inset: 0 }}>
                       {item.gambar_url ? (
-                        <img src={item.gambar_url} alt={item.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <img src={item.gambar_url} alt={item.judul} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s ease" }} />
                       ) : (
-                        item.emoji || "📰"
+                        <div style={{ width: "100%", height: "100%", background: `linear-gradient(135deg, ${C.navy} 0%, #1e40af 100%)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <span style={{ fontSize: row === 1 ? 32 : 48 }}>{item.emoji || "📋"}</span>
+                        </div>
                       )}
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ background: `${color}14`, color: color, fontSize: 10.5, fontWeight: 600, padding: "3px 10px", borderRadius: 20 }}>{item.kategori}</span>
-                      <div style={{ color: C.textLight, fontSize: 11.5, marginTop: 5 }}>{item.tanggal}</div>
-                    </div>
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.4), transparent)" }} />
+                    <span style={{ position: "absolute", top: 12, left: 12, background: C.gold, color: "white", fontSize: 9, fontWeight: 800, padding: "4px 12px", borderRadius: 4, letterSpacing: "0.05em" }}>{item.kategori.toUpperCase()}</span>
+                    
+                    {isAdmin && !isLayoutMode && (
+                      <div className="admin-actions" style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 5, zIndex: 10 }}>
+                        <button onClick={(e) => { e.stopPropagation(); handlePinBerita(item); }} className="btn-admin-small" style={{ background: item.is_featured ? C.gold : "rgba(255,255,255,0.9)", color: item.is_featured ? "white" : C.gold, border: "none", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>📌</button>
+                        <button onClick={(e) => { e.stopPropagation(); setEditItem(item); setShowModal('berita'); }} className="btn-admin-small" style={{ background: "rgba(255,255,255,0.9)", color: C.navy, border: "none", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>✎</button>
+                      </div>
+                    )}
                   </div>
-                  <h4 style={{ fontSize: 14.5, fontWeight: 600, color: C.navy, lineHeight: 1.5 }}>{item.judul}</h4>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, color: color, fontSize: 12.5, fontWeight: 600, marginTop: 14 }}>Baca selengkapnya <ArrowRight size={12} /></div>
+
+                  <div style={{ display: "flex", flexDirection: "column", flexGrow: 1, padding: "20px 24px" }}>
+                    <div style={{ color: C.textLight, fontSize: 11, marginBottom: 8, fontWeight: 500 }}>{item.tanggal}</div>
+                    <h3 style={{ 
+                      fontSize: col === 1 ? 15 : 22, 
+                      fontWeight: 800, 
+                      color: C.navy, 
+                      marginBottom: 10, 
+                      lineHeight: 1.3,
+                      display: "-webkit-box",
+                      WebkitLineClamp: row === 1 ? 2 : 3,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden"
+                    }}>{item.judul}</h3>
+                    
+                    {isLayoutMode ? (
+                      <div style={{ marginTop: 15, borderTop: "1px solid #eee", paddingTop: 15, display: "flex", flexWrap: "wrap", gap: 10 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 9, color: C.textLight, textTransform: "uppercase", marginBottom: 5 }}>Lebar (Cols)</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <button onClick={() => {
+                              const newList = [...beritaList];
+                              const i = newList.findIndex(b => b.id === item.id);
+                              newList[i] = { ...item, col_span: Math.max(1, col - 1) };
+                              setBeritaList(newList);
+                              saveBeritaOrder(newList);
+                            }} style={{ width: 24, height: 24, borderRadius: 4, border: "1px solid #ddd", background: "#f8fafc", cursor: "pointer" }}>-</button>
+                            <span style={{ fontSize: 12, fontWeight: 700 }}>{col}</span>
+                            <button onClick={() => {
+                              const newList = [...beritaList];
+                              const i = newList.findIndex(b => b.id === item.id);
+                              newList[i] = { ...item, col_span: Math.min(4, col + 1) };
+                              setBeritaList(newList);
+                              saveBeritaOrder(newList);
+                            }} style={{ width: 24, height: 24, borderRadius: 4, border: "1px solid #ddd", background: "#f8fafc", cursor: "pointer" }}>+</button>
+                          </div>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 9, color: C.textLight, textTransform: "uppercase", marginBottom: 5 }}>Tinggi (Rows)</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <button onClick={() => {
+                              const newList = [...beritaList];
+                              const i = newList.findIndex(b => b.id === item.id);
+                              newList[i] = { ...item, row_span: Math.max(1, row - 1) };
+                              setBeritaList(newList);
+                              saveBeritaOrder(newList);
+                            }} style={{ width: 24, height: 24, borderRadius: 4, border: "1px solid #ddd", background: "#f8fafc", cursor: "pointer" }}>-</button>
+                            <span style={{ fontSize: 12, fontWeight: 700 }}>{row}</span>
+                            <button onClick={() => {
+                              const newList = [...beritaList];
+                              const i = newList.findIndex(b => b.id === item.id);
+                              newList[i] = { ...item, row_span: Math.min(3, row + 1) };
+                              setBeritaList(newList);
+                              saveBeritaOrder(newList);
+                            }} style={{ width: 24, height: 24, borderRadius: 4, border: "1px solid #ddd", background: "#f8fafc", cursor: "pointer" }}>+</button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {(col > 1 || row > 1) && (
+                          <p style={{ fontSize: 13.5, color: C.textMid, lineHeight: 1.6, marginBottom: 12, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{item.konten}</p>
+                        )}
+                        <div className="read-more-link" style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 6, color: C.gold, fontSize: 12, fontWeight: 700 }}>
+                          Selengkapnya <ArrowRight size={14} />
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -1551,18 +1530,54 @@ export default function App() {
               </h3>
               <button onClick={() => setShowModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textLight }}><X size={20} /></button>
             </div>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const fd = new FormData(e.target);
-              const data = Object.fromEntries(fd.entries());
-              if (editItem) data.id = editItem.id;
-              if (showModal === 'berita') {
-                data.is_featured = fd.get("is_featured") === "on";
-              }
-              handleSave(showModal, data);
-            }}>
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const data = Object.fromEntries(fd.entries());
+                
+                // Merge new form data into existing item to preserve layout fields
+                const finalData = editItem ? { ...editItem, ...data } : data;
+                
+                if (showModal === 'berita') {
+                  finalData.is_featured = fd.get("is_featured") === "on";
+                }
+                handleSave(showModal, finalData);
+              }}
+            >
               <div className="modal-body">
-                {showModal === 'slider' ? (
+                {showModal === 'program' ? (
+                  <>
+                    <div className="form-group">
+                      <label className="form-label">Nama Program / Kegiatan</label>
+                      <input name="title" defaultValue={editItem?.title} className="form-input" required />
+                    </div>
+                    <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      <div>
+                        <label className="form-label">Kategori</label>
+                        <input name="cat" defaultValue={editItem?.cat} className="form-input" placeholder="Misal: Perencanaan" required />
+                      </div>
+                      <div>
+                        <label className="form-label">Icon (Emoji)</label>
+                        <input name="icon" defaultValue={editItem?.icon || "📐"} className="form-input" />
+                      </div>
+                    </div>
+                    <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      <div>
+                        <label className="form-label">Status</label>
+                        <input name="status" defaultValue={editItem?.status || "Berjalan"} className="form-input" required />
+                      </div>
+                      <div>
+                        <label className="form-label">Warna Status (Hex)</label>
+                        <input name="sc" defaultValue={editItem?.sc || "#16A34A"} className="form-input" placeholder="#000000" />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Deskripsi Singkat</label>
+                      <textarea name="desc" defaultValue={editItem?.desc} className="form-input" style={{ minHeight: 100 }} required />
+                    </div>
+                  </>
+                ) : showModal === 'slider' ? (
                   <>
                     <div className="form-group">
                       <label className="form-label">URL Gambar (Wajib)</label>
@@ -1785,7 +1800,7 @@ export default function App() {
               <div style={{ fontSize: 16, color: C.textMid, lineHeight: 1.9, whiteSpace: "pre-wrap" }}>
                 {selectedBerita.konten || "Tidak ada detail konten untuk berita ini."}
                 <br /><br />
-                Sumba Barat, {selectedBerita.tanggal} — BAPPERIDA Kabupaten Sumba Barat terus berkomitmen untuk memberikan informasi yang transparan dan akuntabel kepada masyarakat terkait perkembangan pembangunan dan inovasi daerah.
+                Sumba Barat, {selectedBerita.tanggal} — BAPPERIDA Kabupaten Sumba Barat terus berkomitmen untuk memberikan informasi yang transparan and akuntabel kepada masyarakat terkait perkembangan pembangunan and inovasi daerah.
               </div>
             </div>
             <div className="modal-footer" style={{ background: C.offWhite }}>
@@ -1794,6 +1809,115 @@ export default function App() {
           </div>
         </div>
       )}
+      {/* ──── MODAL: LAYOUT EDITOR ──── */}
+      {showModal === 'layout' && (
+        <div className="modal-overlay" onClick={() => setShowModal(null)}>
+          <div className="modal-content" style={{ maxWidth: 900 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="display" style={{ fontSize: 22, color: C.navy }}>Editor Tata Letak Berita</h3>
+              <button onClick={() => setShowModal(null)} style={{ background: "none", border: "none", cursor: "pointer" }}><X size={20} /></button>
+            </div>
+            <div className="modal-body" style={{ background: C.offWhite }}>
+              <p style={{ fontSize: 14, color: C.textMid, marginBottom: 24 }}>
+                Atur tata letak dengan menarik berita atau mengubah ukurannya. 
+                {isSavingLayout && <span style={{ marginLeft: 12, color: C.gold, fontSize: 12, fontWeight: 700 }}>● Menyimpan...</span>}
+              </p>
+              
+              <div style={{ 
+                display: "grid", 
+                gridTemplateColumns: "repeat(3, 1fr)", 
+                gap: 12,
+                maxHeight: "60vh",
+                overflowY: "auto",
+                padding: 4
+              }}>
+                {beritaList.map((item, idx) => {
+                  const size = item.layout_size || (idx === 0 ? 'large' : 'normal');
+                  return (
+                    <div 
+                      key={item.id}
+                      draggable
+                      onDragStart={(e) => e.dataTransfer.setData("index", idx)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        const fromIdx = parseInt(e.dataTransfer.getData("index"));
+                        handleMoveBerita(fromIdx, idx);
+                      }}
+                      style={{ 
+                        background: "white", 
+                        border: `2px solid ${idx === 0 ? C.gold : C.warmGray}`,
+                        borderRadius: 12,
+                        padding: 10,
+                        cursor: "grab",
+                        gridColumn: size === 'wide' || size === 'large' ? "span 2" : "span 1",
+                        gridRow: size === 'tall' || size === 'large' ? "span 2" : "span 1",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                        transition: "all 0.2s"
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 6, background: `${C.navy}14`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>{item.emoji || "📰"}</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: C.navy, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.judul}</div>
+                      </div>
+
+                      {/* Size Controls */}
+                      <div style={{ marginTop: "auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newList = [...beritaList];
+                            newList[idx] = { ...item, layout_size: 'normal' };
+                            setBeritaList(newList);
+                            saveBeritaOrder(newList);
+                          }}
+                          style={{ fontSize: 8, padding: "3px", borderRadius: 4, background: size === 'normal' ? C.gold : "#f1f5f9", color: size === 'normal' ? "white" : C.textMid, border: "none", cursor: "pointer" }}
+                        >Kecil</button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newList = [...beritaList];
+                            newList[idx] = { ...item, layout_size: 'wide' };
+                            setBeritaList(newList);
+                            saveBeritaOrder(newList);
+                          }}
+                          style={{ fontSize: 8, padding: "3px", borderRadius: 4, background: size === 'wide' ? C.gold : "#f1f5f9", color: size === 'wide' ? "white" : C.textMid, border: "none", cursor: "pointer" }}
+                        >Lebar</button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newList = [...beritaList];
+                            newList[idx] = { ...item, layout_size: 'tall' };
+                            setBeritaList(newList);
+                            saveBeritaOrder(newList);
+                          }}
+                          style={{ fontSize: 8, padding: "3px", borderRadius: 4, background: size === 'tall' ? C.gold : "#f1f5f9", color: size === 'tall' ? "white" : C.textMid, border: "none", cursor: "pointer" }}
+                        >Tinggi</button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newList = [...beritaList];
+                            newList[idx] = { ...item, layout_size: 'large' };
+                            setBeritaList(newList);
+                            saveBeritaOrder(newList);
+                          }}
+                          style={{ fontSize: 8, padding: "3px", borderRadius: 4, background: size === 'large' ? C.gold : "#f1f5f9", color: size === 'large' ? "white" : C.textMid, border: "none", cursor: "pointer" }}
+                        >Besar</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-gold" onClick={() => setShowModal(null)}>Selesai</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </>
   );
 }
