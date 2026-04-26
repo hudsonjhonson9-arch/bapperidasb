@@ -105,7 +105,7 @@ const ImageUploadField = ({ name, defaultValue, label, required }) => {
     
     // GANTI DENGAN API KEY IMGBB ANDA SENDIRI
     // Daftar gratis di https://api.imgbb.com/
-    const apiKey = '0d7a04992984534f3c059c381c15f9b4'; // Free generic fallback key for now
+    const apiKey = 'bb11ea2e37f3e926a3071f7d0e85d935';
 
     try {
       const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
