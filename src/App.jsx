@@ -249,28 +249,11 @@ export default function App() {
       }
     } catch (e) {
       console.error("Fetch error:", e);
-      // Fallback data
-      setSliderList([
-        { id: 1, gambar_url: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=2000", judul: "Pembangunan Berkelanjutan", subjudul: "Kabupaten Sumba Barat" },
-        { id: 2, gambar_url: "https://images.unsplash.com/photo-1577416412292-747c6607f055?auto=format&fit=crop&q=80&w=2000", judul: "Inovasi Daerah", subjudul: "Menuju Masyarakat Sejahtera" }
-      ]);
-      setBeritaList([
-        { id: 1, judul: "Kick-off Musrenbang Kabupaten Sumba Barat Tahun 2026", kategori: "Perencanaan", tanggal: "2026-04-22", konten: "BAPPERIDA menggelar Musyawarah Perencanaan Pembangunan tingkat Kabupaten...", is_featured: true, emoji: "📋" },
-        { id: 2, judul: "BAPPERIDA Raih Penghargaan Inovasi Pelayanan Publik NTT", kategori: "Inovasi", tanggal: "2026-04-15", emoji: "🏆" },
-        { id: 3, judul: "Peluncuran Kajian Potensi Pertanian Berbasis GIS", kategori: "Riset", tanggal: "2026-04-08", emoji: "🔬" },
-        { id: 4, judul: "Penyusunan Renstra OPD 2026–2031 Telah Dimulai", kategori: "Program", tanggal: "2026-03-28", emoji: "📊", konten: "Penyusunan Rencana Strategis (Renstra) Organisasi Perangkat Daerah (OPD) untuk periode 2026-2031 telah resmi dimulai..." },
-        { id: 5, judul: "BAPPERIDA Buka Pendaftaran Beasiswa Riset Daerah 2026", kategori: "Beasiswa", tanggal: "2026-03-20", emoji: "🎓", konten: "Sebagai bentuk dukungan terhadap pengembangan sumber daya manusia dan inovasi, BAPPERIDA membuka pendaftaran beasiswa riset..." },
-        { id: 6, judul: "Sosialisasi Penggunaan SIPD bagi Seluruh OPD Kabupaten", kategori: "Sosialisasi", tanggal: "2026-03-14", emoji: "💻", konten: "BAPPERIDA menyelenggarakan sosialisasi penggunaan Sistem Informasi Pemerintahan Daerah (SIPD) terintegrasi..." },
-      ]);
-      setDokumenList([
-        { id: 1, judul: "RPJPD Kabupaten Sumba Barat 2025–2045", kategori: "Perencanaan Jangka Panjang", tipe: "PDF", ukuran: "4.2 MB", tanggal: "2025-01-15", icon: "📘" },
-        { id: 2, judul: "RPJMD Kabupaten Sumba Barat 2021–2026", kategori: "Perencanaan Jangka Menengah", tipe: "PDF", ukuran: "8.7 MB", tanggal: "2021-03-20", icon: "📗" },
-        { id: 3, judul: "RKPD Kabupaten Sumba Barat Tahun 2026", kategori: "Perencanaan Tahunan (RKPD)", tipe: "PDF", ukuran: "6.3 MB", tanggal: "2025-04-30", icon: "📙" },
-      ]);
-      setProgramList([
-        { id: 1, icon: "📐", title: "Penyusunan RPJMD 2026–2031", cat: "Perencanaan Jangka Menengah", desc: "Proses penyusunan Rencana Pembangunan Jangka Menengah Daerah...", status: "Berjalan", sc: "#16A34A" },
-        { id: 2, icon: "🗺️", title: "Musrenbang Kecamatan & Kabupaten", cat: "Perencanaan Partisipatif", desc: "Musyawarah perencanaan pembangunan yang melibatkan masyarakat...", status: "Terjadwal", sc: "#1D4ED8" },
-      ]);
+      setSliderList([]);
+      setBeritaList([]);
+      setDokumenList([]);
+      setProgramList([]);
+    } finally {
     } finally {
       setLoading(false);
     }
