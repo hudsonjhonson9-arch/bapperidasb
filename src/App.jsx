@@ -134,6 +134,7 @@ export default function App() {
   const [dokumenList, setDokumenList] = useState([]);
   const [programList, setProgramList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
 
   // CMS States
   const [showModal, setShowModal] = useState(null); // 'berita' | 'dokumen' | 'layout'
@@ -231,26 +232,19 @@ export default function App() {
         return [];
       };
 
-      const bList = getList(resB).sort((a, b) => (a.priority || 0) - (b.priority || 0));
+      const bList = getList(resB).sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0));
       const dList = getList(resD);
       const sList = getList(resS);
-      const pList = getList(resP).sort((a, b) => (a.priority || 0) - (b.priority || 0));
+      const pList = getList(resP).sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0));
 
       setBeritaList(bList); 
       setDokumenList(dList);
       setSliderList(sList);
       setProgramList(pList);
-
-      // If all are empty, maybe trigger fallback in catch
-      if (bList.length === 0 && dList.length === 0 && sList.length === 0 && pList.length === 0) {
-        throw new Error("Empty data from server");
-      }
+      setFetchError(null);
     } catch (e) {
       console.error("Fetch error:", e);
-      setSliderList([]);
-      setBeritaList([]);
-      setDokumenList([]);
-      setProgramList([]);
+      setFetchError("Gagal mengambil data dari server. Pastikan n8n sudah aktif.");
     } finally {
       setLoading(false);
     }
