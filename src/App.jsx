@@ -759,7 +759,7 @@ export default function App() {
       </header>
 
       {/* ──── HERO ──── */}
-      <section id="beranda" style={{ minHeight: "100vh", backgroundColor: C.navyDark, display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", overflow: "hidden", padding: "100px 0 60px" }}>
+      <section id="beranda" style={{ minHeight: "100vh", backgroundColor: C.navyDark, display: "flex", flexDirection: "column", justifyContent: "flex-start", paddingTop: "22vh", paddingBottom: "60px", position: "relative", overflow: "hidden" }}>
         {/* Carousel Background */}
         {sliderList.length > 0 ? (
           sliderList.map((slide, idx) => (
@@ -792,8 +792,8 @@ export default function App() {
         {/* Bottom fade */}
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 140, background: `linear-gradient(to top, ${C.offWhite}, transparent)` }} />
 
-        <div style={{ maxWidth: 1300, margin: "0 auto", padding: "0 28px", position: "relative", zIndex: 1 }}>
-          <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "1fr 420px", gap: 64, alignItems: "center" }}>
+        <div style={{ maxWidth: 1300, margin: "0 auto", padding: "0 28px", position: "relative", zIndex: 1, width: "100%" }}>
+          <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "1fr 420px", gap: 64, alignItems: "flex-start" }}>
             {/* Left */}
             <div style={{ position: "relative", zIndex: 1 }}>
               {/* Badge */}
