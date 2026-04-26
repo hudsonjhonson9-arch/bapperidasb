@@ -214,53 +214,71 @@ export default function App() {
 
   const fetchData = async () => {
     setLoading(true);
-    try {
-      const fetchSafe = async (url) => {
-        const r = await fetch(url);
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      };
-      
-      const getList = (res) => {
-        if (Array.isArray(res)) return res;
-        if (res && res.data && Array.isArray(res.data)) return res.data;
-        if (res && res.json && Array.isArray(res.json)) return res.json;
-        return [];
-      };
+    const errors = [];
 
-      // Berita
-      try {
-        const resB = await fetchSafe(api.berita.list);
-        setBeritaList(getList(resB).sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-      } catch (e) { 
-        console.error("Berita fail:", e); 
-        setFetchError(`Berita: ${e.message} pada ${api.berita.list}`); 
+    const fetchSafe = async (url) => {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    };
+
+    const getList = (res) => {
+      if (Array.isArray(res)) {
+        // Handle n8n allIncomingItems format: [{json: {...}}, ...]
+        if (res.length > 0 && res[0] !== null && typeof res[0] === 'object' && 'json' in res[0]) {
+          return res.map(item => item.json);
+        }
+        return res;
       }
+      if (res && res.data && Array.isArray(res.data)) return res.data;
+      if (res && res.json && Array.isArray(res.json)) return res.json;
+      return [];
+    };
 
-      // Dokumen
-      try {
-        const resD = await fetchSafe(api.dokumen.list);
-        setDokumenList(getList(resD));
-      } catch (e) { console.error("Dokumen fail:", e); }
-
-      // Slider
-      try {
-        const resS = await fetchSafe(api.slider.list);
-        setSliderList(getList(resS));
-      } catch (e) { console.error("Slider fail:", e); }
-
-      // Program
-      try {
-        const resP = await fetchSafe(api.program.list);
-        setProgramList(getList(resP).sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-      } catch (e) { console.error("Program fail:", e); }
-
-      setFetchError(null);
+    // Berita
+    try {
+      const resB = await fetchSafe(api.berita.list);
+      setBeritaList(getList(resB).sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
     } catch (e) {
-      setFetchError(`Koneksi Gagal: ${e.message}`);
-    } finally {
-      setLoading(false);
+      console.error("Berita fail:", e);
+      errors.push(`Berita (${e.message})`);
     }
+
+    // Dokumen
+    try {
+      const resD = await fetchSafe(api.dokumen.list);
+      setDokumenList(getList(resD));
+    } catch (e) {
+      console.error("Dokumen fail:", e);
+      errors.push(`Dokumen (${e.message})`);
+    }
+
+    // Slider
+    try {
+      const resS = await fetchSafe(api.slider.list);
+      setSliderList(getList(resS));
+    } catch (e) {
+      console.error("Slider fail:", e);
+      errors.push(`Slider (${e.message})`);
+    }
+
+    // Program
+    try {
+      const resP = await fetchSafe(api.program.list);
+      setProgramList(getList(resP).sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
+    } catch (e) {
+      console.error("Program fail:", e);
+      errors.push(`Program (${e.message})`);
+    }
+
+    // Hanya set error jika ada yang gagal; hanya reset jika semua sukses
+    if (errors.length > 0) {
+      setFetchError(`Gagal memuat: ${errors.join(", ")}. Cek CORS & koneksi n8n.`);
+    } else {
+      setFetchError(null);
+    }
+
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -1034,7 +1052,7 @@ export default function App() {
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {["Semua", ...DOKUMEN.map(d => d.kategori)].map(kat => (
+                {["Semua", ...[...new Set(dokumenList.map(d => d.kategori).filter(Boolean))]].map(kat => (
                   <button key={kat} className={`filter-btn ${dokFilter === kat ? "active" : ""}`} onClick={() => setDokFilter(kat)}>
                     {kat === "Semua" ? "Semua Kategori" : kat}
                   </button>
@@ -1113,11 +1131,18 @@ export default function App() {
           })()}
 
           {/* Empty state */}
-          {DOKUMEN.every(grp => grp.items.filter(d => d.judul.toLowerCase().includes(dokSearch.toLowerCase())).length === 0) && (
+          {dokumenList.filter(d =>
+            (dokFilter === "Semua" || d.kategori === dokFilter) &&
+            (dokSearch === "" || d.judul.toLowerCase().includes(dokSearch.toLowerCase()))
+          ).length === 0 && (
             <div style={{ textAlign: "center", padding: "60px 20px", color: C.textLight }}>
               <div style={{ fontSize: 42, marginBottom: 14 }}>🔍</div>
-              <div style={{ fontSize: 16, fontWeight: 500, color: C.textMid, marginBottom: 6 }}>Dokumen tidak ditemukan</div>
-              <div style={{ fontSize: 14 }}>Coba kata kunci lain atau pilih kategori berbeda</div>
+              <div style={{ fontSize: 16, fontWeight: 500, color: C.textMid, marginBottom: 6 }}>
+                {dokumenList.length === 0 ? "Belum ada dokumen tersedia" : "Dokumen tidak ditemukan"}
+              </div>
+              <div style={{ fontSize: 14 }}>
+                {dokumenList.length === 0 ? "Data sedang dimuat atau belum ditambahkan." : "Coba kata kunci lain atau pilih kategori berbeda"}
+              </div>
             </div>
           )}
 
