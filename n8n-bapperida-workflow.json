@@ -78,7 +78,9 @@
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT * FROM public.bapperida_berita ORDER BY priority ASC, id DESC;",
-        "options": {}
+        "options": {
+          "alwaysOutputData": true
+        }
       },
       "id": "9f1e2580-5900-46de-8e74-4439f2bf5a4b",
       "name": "DB berita List",
@@ -306,7 +308,9 @@
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT * FROM public.bapperida_dokumen ORDER BY id DESC;",
-        "options": {}
+        "options": {
+          "alwaysOutputData": true
+        }
       },
       "id": "55c2b668-eded-4554-abbe-00094f96b3d2",
       "name": "DB dokumen List",
@@ -534,7 +538,9 @@
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT * FROM public.bapperida_slider ORDER BY id ASC;",
-        "options": {}
+        "options": {
+          "alwaysOutputData": true
+        }
       },
       "id": "0162ebf4-7ef7-4c70-b3cb-a68b2de0bd2f",
       "name": "DB slider List",
@@ -762,7 +768,9 @@
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT * FROM public.bapperida_program ORDER BY priority ASC, id ASC;",
-        "options": {}
+        "options": {
+          "alwaysOutputData": true
+        }
       },
       "id": "ffa10f72-1661-4cec-91b1-a726c5076546",
       "name": "DB program List",
