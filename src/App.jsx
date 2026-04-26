@@ -87,6 +87,76 @@ const C = {
   textLight: "#8898AA",
 };
 
+const ImageUploadField = ({ name, defaultValue, label, required }) => {
+  const [url, setUrl] = useState(defaultValue || '');
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    setUrl(defaultValue || '');
+  }, [defaultValue]);
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    // GANTI DENGAN API KEY IMGBB ANDA SENDIRI
+    // Daftar gratis di https://api.imgbb.com/
+    const apiKey = '0d7a04992984534f3c059c381c15f9b4'; // Free generic fallback key for now
+
+    try {
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUrl(data.data.url);
+      } else {
+        alert('Upload gagal: ' + data.error.message);
+      }
+    } catch (err) {
+      alert('Terjadi kesalahan saat upload');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="form-group">
+      <label className="form-label">{label}</label>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+        {url ? (
+          <img src={url} alt="Preview" style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 4, background: '#eee', flexShrink: 0, border: '1px solid #ddd' }} />
+        ) : (
+          <div style={{ width: 80, height: 60, borderRadius: 4, background: '#f5f5f5', border: '1px dashed #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#aaa', flexShrink: 0 }}>No Image</div>
+        )}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <input type="hidden" name={name} value={url} />
+          {required && !url && <input type="hidden" name={`${name}_required`} required />}
+          <input 
+            type="file" 
+            accept="image/*" 
+            onChange={handleFileChange} 
+            className="form-input" 
+            disabled={uploading}
+            style={{ padding: '6px 12px', background: '#fff', cursor: 'pointer' }}
+          />
+          {uploading ? (
+             <span style={{ fontSize: 12, color: '#2563EB', fontWeight: 600 }}>⏳ Mengupload gambar ke server...</span>
+          ) : (
+             <span style={{ fontSize: 11, color: '#666' }}>Bisa pilih file gambar (.jpg, .png) atau biarkan kosong jika sudah ada gambar.</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 function useScrollSpy() {
   const [active, setActive] = useState("beranda");
   useEffect(() => {
@@ -1592,10 +1662,7 @@ export default function App() {
                   </>
                 ) : showModal === 'slider' ? (
                   <>
-                    <div className="form-group">
-                      <label className="form-label">URL Gambar (Wajib)</label>
-                      <input name="gambar_url" defaultValue={editItem?.gambar_url} required className="form-input" placeholder="https://..." />
-                    </div>
+                    <ImageUploadField name="gambar_url" defaultValue={editItem?.gambar_url} label="Gambar Slider (Wajib)" required={true} />
                     <div className="form-group">
                       <label className="form-label">Judul Teks (Opsional)</label>
                       <input name="judul" defaultValue={editItem?.judul} className="form-input" placeholder="Misal: Inovasi Daerah" />
@@ -1626,10 +1693,7 @@ export default function App() {
                         <input name="emoji" defaultValue={editItem?.emoji || "📋"} className="form-input" />
                       </div>
                     </div>
-                    <div className="form-group">
-                      <label className="form-label">URL Gambar (Opsional)</label>
-                      <input name="gambar_url" defaultValue={editItem?.gambar_url} className="form-input" placeholder="https://..." />
-                    </div>
+                    <ImageUploadField name="gambar_url" defaultValue={editItem?.gambar_url} label="Gambar Berita (Opsional)" required={false} />
                     <div className="form-group">
                       <label className="form-label">Tanggal</label>
                       <input type="date" name="tanggal" defaultValue={editItem?.tanggal || new Date().toISOString().split('T')[0]} className="form-input" required />
