@@ -7,13 +7,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "208799b0-52ac-4238-b733-0e7f0b5fd01a",
+      "id": "48f7e7e5-0a06-4fe4-90ff-a020c7f3a408",
       "name": "Webhook Kontak Submit",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -768,
-        -144
+        -448,
+        3072
       ],
       "webhookId": "eb2c7329-197a-4539-bc38-1cd0f3723ae9"
     },
@@ -25,13 +25,13 @@
         "text": "=Nama: {{$json[\"nama\"]}}\nEmail: {{$json[\"email\"]}}\nInstansi: {{$json[\"instansi\"]}}\n\nPesan:\n{{$json[\"pesan\"]}}",
         "options": {}
       },
-      "id": "87876b74-9225-446a-835d-1b4376948809",
+      "id": "929d5b9b-09a6-4a36-8425-8285255a4087",
       "name": "Send Email Bapperida",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2,
       "position": [
-        -544,
-        -144
+        -224,
+        3072
       ],
       "webhookId": "f32bfd36-5934-44d6-b2b9-9b53650f2e27",
       "credentials": {
@@ -45,15 +45,17 @@
       "parameters": {
         "respondWith": "json",
         "responseBody": "{\"status\":\"success\"}",
-        "options": {}
+        "options": {
+          "responseHeaders": "{\n  \"Access-Control-Allow-Origin\": \"*\",\n  \"Access-Control-Allow-Methods\": \"GET,POST,OPTIONS\",\n  \"Access-Control-Allow-Headers\": \"*\"\n}"
+        }
       },
-      "id": "59a20d2e-8080-43b1-931f-0ecd777375c4",
+      "id": "80bb631b-17e4-4f74-a543-6630d53af782",
       "name": "Respond Success",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -320,
-        -144
+        0,
+        1584
       ]
     },
     {
@@ -62,13 +64,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "ac6492a0-54d0-4daf-87b6-67040c662930",
+      "id": "b308df30-726d-43de-a21e-a0f50be2e72b",
       "name": "Webhook berita List",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -720,
-        -3216
+        -672,
+        -848
       ],
       "webhookId": "15291e59-d856-4c19-ae8e-ff13118c34b7"
     },
@@ -76,17 +78,15 @@
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT * FROM public.bapperida_berita ORDER BY priority ASC, id DESC;",
-        "options": {
-          "alwaysOutputData": true
-        }
+        "options": {}
       },
-      "id": "9fdff73c-1741-43e4-b8d8-17d049f0e34a",
+      "id": "9f1e2580-5900-46de-8e74-4439f2bf5a4b",
       "name": "DB berita List",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -512,
-        -3216
+        -448,
+        -848
       ],
       "credentials": {
         "postgres": {
@@ -102,13 +102,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "36e38fda-7896-4b65-b96a-a48727404c10",
+      "id": "f4c1b9ae-bfa6-4af8-ba6e-c7fe70a242ad",
       "name": "Webhook berita Add",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -720,
-        -3024
+        -672,
+        0
       ],
       "webhookId": "18603eda-c3f2-49b2-9d9b-a6c7154dc27e"
     },
@@ -123,13 +123,13 @@
           ]
         }
       },
-      "id": "c77f3026-aaf6-4bcf-8d97-0f682d320e7c",
+      "id": "a362b638-832a-4b87-b230-ccdd3439c124",
       "name": "Auth Add berita",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -512,
-        -3024
+        -448,
+        0
       ]
     },
     {
@@ -138,13 +138,13 @@
         "query": "INSERT INTO public.bapperida_berita (judul, konten, kategori, tanggal, gambar_url, emoji, priority, layout_size, col_span, row_span, is_featured) VALUES ('{{$json.body.judul ? $json.body.judul.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.konten ? $json.body.konten.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.kategori || \"\"}}', '{{$json.body.tanggal || \"\"}}', '{{$json.body.gambar_url || \"\"}}', '{{$json.body.emoji || \"\"}}', {{$json.body.priority || 0}}, '{{$json.body.layout_size || \"normal\"}}', {{$json.body.col_span || 1}}, {{$json.body.row_span || 1}}, {{$json.body.is_featured ? true : false}}) RETURNING *;",
         "options": {}
       },
-      "id": "1b081f11-2851-4537-ac6d-b80dc2ecd658",
+      "id": "c42ce314-f668-4cba-9d3c-d86c266cd490",
       "name": "DB berita Add",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -320,
-        -3072
+        -224,
+        -48
       ],
       "credentials": {
         "postgres": {
@@ -160,13 +160,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "5c8117a0-5c21-48c4-a350-cfe8de93f3ce",
+      "id": "e8f646c1-43a9-4599-a559-6e5119a91b00",
       "name": "Webhook berita Edit",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -720,
-        -2816
+        -672,
+        288
       ],
       "webhookId": "4d1fded0-e8b4-45ee-945e-62ba322d69a0"
     },
@@ -181,13 +181,13 @@
           ]
         }
       },
-      "id": "af835967-bea3-46b2-ad38-5fb170690bce",
+      "id": "9ad8215e-cff1-495e-b708-5446aeebe7f3",
       "name": "Auth Edit berita",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -512,
-        -2816
+        -448,
+        288
       ]
     },
     {
@@ -196,13 +196,13 @@
         "query": "UPDATE public.bapperida_berita SET judul = '{{$json.body.judul ? $json.body.judul.replace(/'/g, \"''\") : \"\"}}', konten = '{{$json.body.konten ? $json.body.konten.replace(/'/g, \"''\") : \"\"}}', kategori = '{{$json.body.kategori || \"\"}}', tanggal = '{{$json.body.tanggal || \"\"}}', gambar_url = '{{$json.body.gambar_url || \"\"}}', emoji = '{{$json.body.emoji || \"\"}}', priority = {{$json.body.priority || 0}}, layout_size = '{{$json.body.layout_size || \"normal\"}}', col_span = {{$json.body.col_span || 1}}, row_span = {{$json.body.row_span || 1}}, is_featured = {{$json.body.is_featured ? true : false}} WHERE id = {{$json.body.id}} RETURNING *;",
         "options": {}
       },
-      "id": "2200003b-fecd-4cf2-ad25-c8b414c4f709",
+      "id": "b726ff97-bbb9-4294-8912-9836e01de0ca",
       "name": "DB berita Edit",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -320,
-        -2864
+        -224,
+        336
       ],
       "credentials": {
         "postgres": {
@@ -218,13 +218,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "c2ffa705-07f5-4244-8bd2-b6557a27ccea",
+      "id": "d690d8f6-9b64-4f1b-8675-6245625e995b",
       "name": "Webhook berita Delete",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -720,
-        -2608
+        -672,
+        576
       ],
       "webhookId": "e7a9f156-a509-447c-b385-964c094b97ce"
     },
@@ -239,13 +239,13 @@
           ]
         }
       },
-      "id": "1112f06b-c751-4245-b389-0b69fa29f69f",
+      "id": "1dc84c5a-7e21-4953-82f9-cf7ff8c783c9",
       "name": "Auth Del berita",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -512,
-        -2608
+        -448,
+        576
       ]
     },
     {
@@ -254,13 +254,13 @@
         "query": "DELETE FROM public.bapperida_berita WHERE id = {{$json.body.id}};",
         "options": {}
       },
-      "id": "d338288f-9474-4742-b46b-ac6031cffd79",
+      "id": "682550b5-ac9b-44f2-9b61-6b994390352a",
       "name": "DB berita Delete",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -320,
-        -2656
+        -224,
+        528
       ],
       "credentials": {
         "postgres": {
@@ -277,13 +277,13 @@
           "responseCode": 401
         }
       },
-      "id": "157efbff-b3bb-4c83-859e-2bdd67a7ca3a",
+      "id": "32118c3b-0d32-4579-bee9-6e22d753b660",
       "name": "Unauthorized berita",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -320,
-        -2464
+        -224,
+        144
       ]
     },
     {
@@ -292,13 +292,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "7fc0ebb0-e42e-484f-a57f-d8999cc28c8b",
+      "id": "be775797-7d7f-4049-8552-1471fea3136f",
       "name": "Webhook dokumen List",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -720,
-        -2208
+        -672,
+        -656
       ],
       "webhookId": "2e16e398-5088-4eb6-8ac9-ba52b79f4bcc"
     },
@@ -306,17 +306,15 @@
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT * FROM public.bapperida_dokumen ORDER BY id DESC;",
-        "options": {
-          "alwaysOutputData": true
-        }
+        "options": {}
       },
-      "id": "dc5f5701-e1c2-44dd-bdd9-3efcbacc5491",
+      "id": "55c2b668-eded-4554-abbe-00094f96b3d2",
       "name": "DB dokumen List",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -512,
-        -2208
+        -448,
+        -656
       ],
       "credentials": {
         "postgres": {
@@ -332,13 +330,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "d1bf87cb-6350-4811-9f91-de8dac37dbd1",
+      "id": "9a0bcdc3-6e8a-43c1-b4fc-6cc75f408225",
       "name": "Webhook dokumen Add",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -720,
-        -2016
+        -672,
+        768
       ],
       "webhookId": "0c0247b1-b7d6-4b05-9648-ad1c01195e29"
     },
@@ -353,13 +351,13 @@
           ]
         }
       },
-      "id": "995bb4a6-597f-4349-a235-47b2773f440f",
+      "id": "e2095182-71c0-4619-9967-77c359b0b3a3",
       "name": "Auth Add dokumen",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -512,
-        -2016
+        -448,
+        768
       ]
     },
     {
@@ -368,13 +366,13 @@
         "query": "INSERT INTO public.bapperida_dokumen (judul, kategori, tipe, ukuran, tanggal, icon, url) VALUES ('{{$json.body.judul.replace(/'/g, \"''\")}}', '{{$json.body.kategori}}', '{{$json.body.tipe}}', '{{$json.body.ukuran}}', '{{$json.body.tanggal}}', '{{$json.body.icon}}', '{{$json.body.url}}') RETURNING *;",
         "options": {}
       },
-      "id": "b4217f2b-ce4b-404f-abb9-01605cab3fcd",
+      "id": "435d8bc0-1096-42f3-9854-7646384b8e6e",
       "name": "DB dokumen Add",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -320,
-        -2064
+        -224,
+        720
       ],
       "credentials": {
         "postgres": {
@@ -390,13 +388,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "51a15337-96f9-4e41-8183-270c81139654",
+      "id": "fabc0b5f-878a-4dad-b6f3-a5edb7b09b59",
       "name": "Webhook dokumen Edit",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -720,
-        -1808
+        -672,
+        1104
       ],
       "webhookId": "569d5daf-0d4a-4866-bd43-4666bd4547d8"
     },
@@ -411,13 +409,13 @@
           ]
         }
       },
-      "id": "f5065f95-f641-4038-a7dc-0ee4f8af499b",
+      "id": "bea23196-09b7-4980-9c1f-860cb6c449ec",
       "name": "Auth Edit dokumen",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -512,
-        -1808
+        -448,
+        1104
       ]
     },
     {
@@ -426,13 +424,13 @@
         "query": "UPDATE public.bapperida_dokumen SET judul = '{{$json.body.judul ? $json.body.judul.replace(/'/g, \"''\") : \"\"}}', kategori = '{{$json.body.kategori || \"\"}}', tipe = '{{$json.body.tipe || \"\"}}', ukuran = '{{$json.body.ukuran || \"\"}}', tanggal = '{{$json.body.tanggal || \"\"}}', icon = '{{$json.body.icon || \"\"}}', url = '{{$json.body.url || \"\"}}' WHERE id = {{$json.body.id}} RETURNING *;",
         "options": {}
       },
-      "id": "759dba46-8deb-4d84-8b93-ef90261c566e",
+      "id": "c05795ac-8976-4d70-b306-57c86a029755",
       "name": "DB dokumen Edit",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -320,
-        -1856
+        -224,
+        1104
       ],
       "credentials": {
         "postgres": {
@@ -448,13 +446,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "ee684d83-3d7f-4d85-8697-4a08a3bfbb1e",
+      "id": "a5d5686d-9bde-43db-a1ae-bf211e0acc2e",
       "name": "Webhook dokumen Delete",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -720,
-        -1616
+        -672,
+        1344
       ],
       "webhookId": "c55e9897-0656-4031-ab0d-5f1bd58c6cda"
     },
@@ -469,13 +467,13 @@
           ]
         }
       },
-      "id": "119331cb-52ed-4cfa-9c00-de6bc9f1865a",
+      "id": "037fb238-7bb1-4257-9701-760886a6bc35",
       "name": "Auth Del dokumen",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -512,
-        -1616
+        -448,
+        1344
       ]
     },
     {
@@ -484,13 +482,13 @@
         "query": "DELETE FROM public.bapperida_dokumen WHERE id = {{$json.body.id}};",
         "options": {}
       },
-      "id": "5c67e04d-92a2-43e1-b672-f4d8e0956876",
+      "id": "c61e1165-2904-4690-a514-4f34bae58bda",
       "name": "DB dokumen Delete",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -320,
-        -1664
+        -224,
+        1296
       ],
       "credentials": {
         "postgres": {
@@ -507,13 +505,13 @@
           "responseCode": 401
         }
       },
-      "id": "9fd1319a-dc61-4fa1-b50b-d168287843d3",
+      "id": "5f065089-eebf-40ab-b38f-43aeb4a02670",
       "name": "Unauthorized dokumen",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -320,
-        -1456
+        -224,
+        912
       ]
     },
     {
@@ -522,13 +520,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "7ac2d1b2-686b-4030-b277-0f3276652711",
+      "id": "7333742f-80f2-4036-8baf-e0608fc3081e",
       "name": "Webhook slider List",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -720,
-        -1216
+        -672,
+        -464
       ],
       "webhookId": "a4ab592d-41d7-4970-b92c-c5df8cd527f8"
     },
@@ -536,17 +534,15 @@
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT * FROM public.bapperida_slider ORDER BY id ASC;",
-        "options": {
-          "alwaysOutputData": true
-        }
+        "options": {}
       },
-      "id": "eeaf557c-e682-4dcb-889d-c2984ac07b7a",
+      "id": "0162ebf4-7ef7-4c70-b3cb-a68b2de0bd2f",
       "name": "DB slider List",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -512,
-        -1216
+        -448,
+        -464
       ],
       "credentials": {
         "postgres": {
@@ -562,13 +558,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "bab8dc68-0f16-4b7e-994f-eb2bd7d64f4c",
+      "id": "467bd5e3-aebc-4e68-a5ab-c682f54c90f8",
       "name": "Webhook slider Add",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -720,
-        -1008
+        -672,
+        1536
       ],
       "webhookId": "0c2b99d1-0da8-45e9-be05-e3e8f7381222"
     },
@@ -583,13 +579,13 @@
           ]
         }
       },
-      "id": "9a3265c2-1c06-486c-9a81-c7f8cf038504",
+      "id": "b2cd91ad-b012-4a7a-bc27-9454cd23cc93",
       "name": "Auth Add slider",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -512,
-        -1008
+        -448,
+        1536
       ]
     },
     {
@@ -598,13 +594,13 @@
         "query": "INSERT INTO public.bapperida_slider (judul, subjudul, gambar_url) VALUES ('{{$json.body.judul ? $json.body.judul.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.subjudul ? $json.body.subjudul.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.gambar_url || \"\"}}') RETURNING *;",
         "options": {}
       },
-      "id": "de60d769-1aa8-4caf-a592-b13f5355a1d8",
+      "id": "2f9f1a41-8c1c-47ad-9c66-02000a196049",
       "name": "DB slider Add",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -320,
-        -1056
+        -224,
+        1488
       ],
       "credentials": {
         "postgres": {
@@ -620,13 +616,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "9e837eaa-3a9d-4cd8-a955-a2d9d98a88e6",
+      "id": "4166bbb3-12e7-4cf1-aabf-9f0a3716388c",
       "name": "Webhook slider Edit",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -720,
-        -816
+        -672,
+        1920
       ],
       "webhookId": "c61c2126-526c-4d71-8387-70303bc312ba"
     },
@@ -641,13 +637,13 @@
           ]
         }
       },
-      "id": "c4695d4b-f9e9-4f01-9228-eba22ba6fa68",
+      "id": "eb466831-72b9-4157-af13-d64f12725d3c",
       "name": "Auth Edit slider",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -512,
-        -816
+        -448,
+        1920
       ]
     },
     {
@@ -656,13 +652,13 @@
         "query": "UPDATE public.bapperida_slider SET judul = '{{$json.body.judul ? $json.body.judul.replace(/'/g, \"''\") : \"\"}}', subjudul = '{{$json.body.subjudul ? $json.body.subjudul.replace(/'/g, \"''\") : \"\"}}', gambar_url = '{{$json.body.gambar_url || \"\"}}' WHERE id = {{$json.body.id}} RETURNING *;",
         "options": {}
       },
-      "id": "a40a1cfc-3700-403c-bde1-8a8b2fac84ba",
+      "id": "f47fecb6-55d8-4df0-a7f5-b3940565e24f",
       "name": "DB slider Edit",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -320,
-        -864
+        -224,
+        1872
       ],
       "credentials": {
         "postgres": {
@@ -678,13 +674,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "0b0d45ec-ce95-48ac-964a-2e3a86b5c44d",
+      "id": "8e9eab62-39f2-49cc-bd5c-c940d311d4c7",
       "name": "Webhook slider Delete",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -720,
-        -608
+        -672,
+        2112
       ],
       "webhookId": "b1424c0b-fe54-4278-9344-e1f1606c3a56"
     },
@@ -699,13 +695,13 @@
           ]
         }
       },
-      "id": "feb3493a-9160-4a97-98d0-28f4fd9566de",
+      "id": "d91a90f8-7f0d-454a-8fce-149f665147b5",
       "name": "Auth Del slider",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -512,
-        -608
+        -448,
+        2112
       ]
     },
     {
@@ -714,13 +710,13 @@
         "query": "DELETE FROM public.bapperida_slider WHERE id = {{$json.body.id}};",
         "options": {}
       },
-      "id": "3be4bad9-fc73-4863-a0f7-383f4823ddf4",
+      "id": "43584273-6158-42e8-81f7-384b2754d43d",
       "name": "DB slider Delete",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -320,
-        -656
+        -224,
+        2064
       ],
       "credentials": {
         "postgres": {
@@ -737,13 +733,13 @@
           "responseCode": 401
         }
       },
-      "id": "b9b3f0ca-fe72-41b5-8bce-b62a11a70baa",
+      "id": "5ac20c8b-b9d3-4610-bcf5-bc2e95127b84",
       "name": "Unauthorized slider",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -320,
-        -464
+        -224,
+        1680
       ]
     },
     {
@@ -752,13 +748,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "p1",
+      "id": "9475aac8-133c-406a-a5a9-46cc39db9ffd",
       "name": "Webhook program List",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -720,
-        0
+        -672,
+        -272
       ],
       "webhookId": "pw1"
     },
@@ -766,17 +762,15 @@
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT * FROM public.bapperida_program ORDER BY priority ASC, id ASC;",
-        "options": {
-          "alwaysOutputData": true
-        }
+        "options": {}
       },
-      "id": "p2",
+      "id": "ffa10f72-1661-4cec-91b1-a726c5076546",
       "name": "DB program List",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -512,
-        0
+        -448,
+        -272
       ],
       "credentials": {
         "postgres": {
@@ -792,13 +786,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "p3",
+      "id": "c3e1676c-c230-4f19-ab41-87c2ae2ba091",
       "name": "Webhook program Add",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -720,
-        200
+        -672,
+        2304
       ],
       "webhookId": "pw2"
     },
@@ -813,13 +807,13 @@
           ]
         }
       },
-      "id": "p4",
+      "id": "a3771cc7-3e2f-4125-93c6-aa7b12efebd6",
       "name": "Auth Add program",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -512,
-        200
+        -448,
+        2304
       ]
     },
     {
@@ -828,13 +822,13 @@
         "query": "INSERT INTO public.bapperida_program (icon, title, cat, \"desc\", status, sc, priority) VALUES ('{{$json.body.icon || \"\"}}', '{{$json.body.title ? $json.body.title.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.cat || \"\"}}', '{{$json.body.desc ? $json.body.desc.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.status || \"\"}}', '{{$json.body.sc || \"\"}}', {{$json.body.priority || 0}}) RETURNING *;",
         "options": {}
       },
-      "id": "p5",
+      "id": "69de9afe-e365-4d70-9862-32baf210e461",
       "name": "DB program Add",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -320,
-        150
+        -224,
+        2256
       ],
       "credentials": {
         "postgres": {
@@ -850,13 +844,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "p6",
+      "id": "715df742-6dd1-4395-9889-019b1f9d595e",
       "name": "Webhook program Edit",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -720,
-        400
+        -672,
+        2688
       ],
       "webhookId": "pw3"
     },
@@ -871,13 +865,13 @@
           ]
         }
       },
-      "id": "p7",
+      "id": "ffadf9af-d914-409a-a245-c0cbb6976a0e",
       "name": "Auth Edit program",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -512,
-        400
+        -448,
+        2688
       ]
     },
     {
@@ -886,13 +880,13 @@
         "query": "UPDATE public.bapperida_program SET icon = '{{$json.body.icon || \"\"}}', title = '{{$json.body.title ? $json.body.title.replace(/'/g, \"''\") : \"\"}}', cat = '{{$json.body.cat || \"\"}}', \"desc\" = '{{$json.body.desc ? $json.body.desc.replace(/'/g, \"''\") : \"\"}}', status = '{{$json.body.status || \"\"}}', sc = '{{$json.body.sc || \"\"}}', priority = {{$json.body.priority || 0}} WHERE id = {{$json.body.id}} RETURNING *;",
         "options": {}
       },
-      "id": "p8",
+      "id": "05c133c2-6e0e-4e00-85c5-3579faf31a42",
       "name": "DB program Edit",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -320,
-        350
+        -224,
+        2688
       ],
       "credentials": {
         "postgres": {
@@ -908,13 +902,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "p9",
+      "id": "dd6e53a0-f739-4093-a142-20f07078037f",
       "name": "Webhook program Delete",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -720,
-        600
+        -672,
+        2880
       ],
       "webhookId": "pw4"
     },
@@ -929,13 +923,13 @@
           ]
         }
       },
-      "id": "p10",
+      "id": "a1ca6320-d5b1-4470-8ab7-e250137b0f75",
       "name": "Auth Del program",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -512,
-        600
+        -448,
+        2880
       ]
     },
     {
@@ -944,13 +938,13 @@
         "query": "DELETE FROM public.bapperida_program WHERE id = {{$json.body.id}};",
         "options": {}
       },
-      "id": "p11",
+      "id": "8eb60f22-8674-4a47-bced-d19e72727177",
       "name": "DB program Delete",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -320,
-        550
+        -224,
+        2880
       ],
       "credentials": {
         "postgres": {
@@ -967,13 +961,13 @@
           "responseCode": 401
         }
       },
-      "id": "p12",
+      "id": "af25854a-b2f3-4240-a859-929e1c51260b",
       "name": "Unauthorized program",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -320,
-        750
+        -224,
+        2496
       ]
     },
     {
@@ -983,13 +977,13 @@
           "responseHeaders": "{\n  \"Access-Control-Allow-Origin\": \"*\",\n  \"Access-Control-Allow-Methods\": \"GET,POST,OPTIONS\",\n  \"Access-Control-Allow-Headers\": \"*\"\n}"
         }
       },
-      "id": "global-response",
+      "id": "96acc84a-e5c4-46fd-a81d-884fc2ee3604",
       "name": "Respond to Webhook",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -128,
-        -1500
+        -224,
+        -560
       ]
     }
   ],
@@ -1027,6 +1021,17 @@
         ]
       ]
     },
+    "DB berita List": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Webhook berita Add": {
       "main": [
         [
@@ -1050,6 +1055,17 @@
         [
           {
             "node": "Unauthorized berita",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB berita Add": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
             "type": "main",
             "index": 0
           }
@@ -1085,6 +1101,17 @@
         ]
       ]
     },
+    "DB berita Edit": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Webhook berita Delete": {
       "main": [
         [
@@ -1114,11 +1141,33 @@
         ]
       ]
     },
+    "DB berita Delete": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Webhook dokumen List": {
       "main": [
         [
           {
             "node": "DB dokumen List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB dokumen List": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
             "type": "main",
             "index": 0
           }
@@ -1154,6 +1203,17 @@
         ]
       ]
     },
+    "DB dokumen Add": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Webhook dokumen Edit": {
       "main": [
         [
@@ -1177,6 +1237,17 @@
         [
           {
             "node": "Unauthorized dokumen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB dokumen Edit": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
             "type": "main",
             "index": 0
           }
@@ -1212,11 +1283,33 @@
         ]
       ]
     },
+    "DB dokumen Delete": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Webhook slider List": {
       "main": [
         [
           {
             "node": "DB slider List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB slider List": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
             "type": "main",
             "index": 0
           }
@@ -1252,6 +1345,17 @@
         ]
       ]
     },
+    "DB slider Add": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Webhook slider Edit": {
       "main": [
         [
@@ -1275,6 +1379,17 @@
         [
           {
             "node": "Unauthorized slider",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB slider Edit": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
             "type": "main",
             "index": 0
           }
@@ -1310,11 +1425,33 @@
         ]
       ]
     },
+    "DB slider Delete": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Webhook program List": {
       "main": [
         [
           {
             "node": "DB program List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB program List": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
             "type": "main",
             "index": 0
           }
@@ -1350,6 +1487,17 @@
         ]
       ]
     },
+    "DB program Add": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Webhook program Edit": {
       "main": [
         [
@@ -1373,6 +1521,17 @@
         [
           {
             "node": "Unauthorized program",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB program Edit": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
             "type": "main",
             "index": 0
           }

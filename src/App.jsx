@@ -221,34 +221,38 @@ export default function App() {
         return r.json();
       };
       
-      const [resB, resD, resS, resP] = await Promise.all([
-        fetchSafe(api.berita.list),
-        fetchSafe(api.dokumen.list),
-        fetchSafe(api.slider.list),
-        fetchSafe(api.program.list)
-      ]);
-      
-      // Handle n8n-style object responses or plain arrays
       const getList = (res) => {
         if (Array.isArray(res)) return res;
         if (res && res.data && Array.isArray(res.data)) return res.data;
-        if (res && res.json && Array.isArray(res.json)) return res.json; // n8n sometimes wraps in json
+        if (res && res.json && Array.isArray(res.json)) return res.json;
         return [];
       };
 
-      const bList = getList(resB).sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0));
-      const dList = getList(resD);
-      const sList = getList(resS);
-      const pList = getList(resP).sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0));
+      // Fetch each list independently so one failure doesn't break everything
+      try {
+        const resB = await fetchSafe(api.berita.list);
+        setBeritaList(getList(resB).sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
+      } catch (e) { console.error("Berita fetch failed:", e); }
 
-      setBeritaList(bList); 
-      setDokumenList(dList);
-      setSliderList(sList);
-      setProgramList(pList);
+      try {
+        const resD = await fetchSafe(api.dokumen.list);
+        setDokumenList(getList(resD));
+      } catch (e) { console.error("Dokumen fetch failed:", e); }
+
+      try {
+        const resS = await fetchSafe(api.slider.list);
+        setSliderList(getList(resS));
+      } catch (e) { console.error("Slider fetch failed:", e); }
+
+      try {
+        const resP = await fetchSafe(api.program.list);
+        setProgramList(getList(resP).sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
+      } catch (e) { console.error("Program fetch failed:", e); }
+
       setFetchError(null);
     } catch (e) {
-      console.error("Fetch error:", e);
-      setFetchError("Gagal mengambil data dari server. Pastikan n8n sudah aktif.");
+      console.error("General Fetch error:", e);
+      setFetchError("Gagal mengambil data. Pastikan n8n sudah aktif dan tombol 'Active' menyala.");
     } finally {
       setLoading(false);
     }
