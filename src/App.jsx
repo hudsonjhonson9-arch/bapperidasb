@@ -980,7 +980,7 @@ export default function App() {
           </div>
 
           {/* Misi cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 16 }}>
             {[
               { n: "M1", title: "Perencanaan Berkualitas", desc: "Meningkatkan kualitas perencanaan pembangunan daerah yang komprehensif, terintegrasi, dan berbasis data valid." },
               { n: "M2", title: "Partisipasi Masyarakat", desc: "Mendorong keterlibatan aktif masyarakat dalam proses perencanaan pembangunan secara transparan dan akuntabel." },
@@ -1068,13 +1068,13 @@ export default function App() {
             )}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 32 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: 32 }}>
             {programList.map(p => (
               <div key={p.id} className="program-card" style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative" }}>
                 {isAdmin && (
-                  <div style={{ position: "absolute", top: 15, right: 15, display: "flex", gap: 6, zIndex: 10 }}>
-                    <button onClick={() => { setEditItem(p); setShowModal('program'); }} className="btn-admin-small" style={{ background: "rgba(255,255,255,0.9)", color: C.navy, border: "none", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>✎</button>
-                    <button onClick={() => handleDelete('program', p.id)} className="btn-admin-small" style={{ background: "rgba(255,100,100,0.1)", color: "#ef4444", border: "none", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>✕</button>
+                  <div style={{ position: "absolute", top: 15, right: 15, display: "flex", gap: 6, zIndex: 20 }}>
+                    <button onClick={() => { setEditItem(p); setShowModal('program'); }} className="btn-admin-small" style={{ background: "rgba(255,255,255,0.9)", color: C.navy, border: "none", width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", cursor: "pointer" }}>✎</button>
+                    <button onClick={() => handleDelete('program', p.id)} className="btn-admin-small" style={{ background: "rgba(255,100,100,0.1)", color: "#ef4444", border: "none", width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", cursor: "pointer" }}>✕</button>
                   </div>
                 )}
                 <div style={{ padding: "32px", flexGrow: 1, display: "flex", flexDirection: "column" }}>
