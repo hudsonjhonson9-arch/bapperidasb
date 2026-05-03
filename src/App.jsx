@@ -95,34 +95,27 @@ const ImageUploadField = ({ name, defaultValue, label, required }) => {
     setUrl(defaultValue || '');
   }, [defaultValue]);
 
-  const handleFileChange = async (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    setUploading(true);
-    const formData = new FormData();
-    formData.append('image', file);
-    
-    // GANTI DENGAN API KEY IMGBB ANDA SENDIRI
-    // Daftar gratis di https://api.imgbb.com/
-    const apiKey = 'bb11ea2e37f3e926a3071f7d0e85d935';
-
-    try {
-      const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-        method: 'POST',
-        body: formData
-      });
-      const data = await res.json();
-      if (data.success) {
-        setUrl(data.data.url);
-      } else {
-        alert('Upload gagal: ' + data.error.message);
-      }
-    } catch (err) {
-      alert('Terjadi kesalahan saat upload');
-    } finally {
-      setUploading(false);
+    // Batasi ukuran file (misal 1MB) agar database tidak bengkak
+    if (file.size > 1 * 1024 * 1024) {
+      alert('Ukuran file terlalu besar! Maksimal 1MB untuk performa database yang baik.');
+      return;
     }
+
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setUrl(reader.result);
+      setUploading(false);
+    };
+    reader.onerror = () => {
+      alert('Gagal membaca file gambar');
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -146,9 +139,9 @@ const ImageUploadField = ({ name, defaultValue, label, required }) => {
             style={{ padding: '6px 12px', background: '#fff', cursor: 'pointer' }}
           />
           {uploading ? (
-             <span style={{ fontSize: 12, color: '#2563EB', fontWeight: 600 }}>⏳ Mengupload gambar ke server...</span>
+             <span style={{ fontSize: 12, color: C.gold, fontWeight: 600 }}>⏳ Memproses gambar...</span>
           ) : (
-             <span style={{ fontSize: 11, color: '#666' }}>Bisa pilih file gambar (.jpg, .png) atau biarkan kosong jika sudah ada gambar.</span>
+             <span style={{ fontSize: 11, color: '#666' }}>Gambar akan disimpan langsung ke database (Base64). Maks 1MB.</span>
           )}
         </div>
       </div>
@@ -441,7 +434,10 @@ export default function App() {
       setShowModal(null);
       setEditItem(null);
       fetchData();
-    } catch (e) { alert("Gagal menyimpan data"); }
+    } catch (e) { 
+      console.error("Save error:", e);
+      alert("Gagal menyimpan data: " + e.message + "\n\nPastikan n8n sudah aktif dan workflow sudah di-import ulang."); 
+    }
   };
 
   const handleDelete = async (type, id) => {
@@ -1077,6 +1073,15 @@ export default function App() {
                     <button onClick={() => handleDelete('program', p.id)} className="btn-admin-small" style={{ background: "rgba(255,100,100,0.1)", color: "#ef4444", border: "none", width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", cursor: "pointer" }}>✕</button>
                   </div>
                 )}
+                
+                {/* Image / Thumbnail */}
+                {p.gambar_url && (
+                  <div style={{ height: 180, overflow: "hidden", position: "relative" }}>
+                    <img src={p.gambar_url} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(11,36,71,0.4), transparent)" }} />
+                  </div>
+                )}
+
                 <div style={{ padding: "32px", flexGrow: 1, display: "flex", flexDirection: "column" }}>
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
                     <div style={{ fontSize: 42, filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.1))" }}>{p.icon}</div>
@@ -1646,6 +1651,9 @@ export default function App() {
                       <label className="form-label">Nama Program / Kegiatan</label>
                       <input name="title" defaultValue={editItem?.title} className="form-input" required />
                     </div>
+                    
+                    <ImageUploadField name="gambar_url" defaultValue={editItem?.gambar_url} label="Foto Program (Opsional)" required={false} />
+
                     <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                       <div>
                         <label className="form-label">Kategori</label>
@@ -1662,8 +1670,8 @@ export default function App() {
                         <input name="status" defaultValue={editItem?.status || "Berjalan"} className="form-input" required />
                       </div>
                       <div>
-                        <label className="form-label">Warna Status (Hex)</label>
-                        <input name="sc" defaultValue={editItem?.sc || "#16A34A"} className="form-input" placeholder="#000000" />
+                        <label className="form-label">Urutan (Priority)</label>
+                        <input type="number" name="priority" defaultValue={editItem?.priority || 0} className="form-input" />
                       </div>
                     </div>
                     <div className="form-group">

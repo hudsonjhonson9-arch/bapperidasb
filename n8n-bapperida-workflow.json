@@ -173,7 +173,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.headers['x-app-token']}}",
+              "value1": "={{$request.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -231,7 +231,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.headers['x-app-token']}}",
+              "value1": "={{$request.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -343,7 +343,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.headers['x-app-token']}}",
+              "value1": "={{$request.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -401,7 +401,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.headers['x-app-token']}}",
+              "value1": "={{$request.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -459,7 +459,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.headers['x-app-token']}}",
+              "value1": "={{$request.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -629,7 +629,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.headers['x-app-token']}}",
+              "value1": "={{$request.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -687,7 +687,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.headers['x-app-token']}}",
+              "value1": "={{$request.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -799,7 +799,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.headers['x-app-token']}}",
+              "value1": "={{$request.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -817,7 +817,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO public.bapperida_program (icon, title, cat, \"desc\", status, sc, priority) VALUES ('{{$json.body.icon || \"\"}}', '{{$json.body.title ? $json.body.title.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.cat || \"\"}}', '{{$json.body.desc ? $json.body.desc.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.status || \"\"}}', '{{$json.body.sc || \"\"}}', {{$json.body.priority || 0}}) RETURNING *;",
+        "query": "INSERT INTO public.bapperida_program (icon, title, cat, \"desc\", status, sc, priority, gambar_url) VALUES ('{{$json.body.icon || \"\"}}', '{{$json.body.title ? $json.body.title.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.cat || \"\"}}', '{{$json.body.desc ? $json.body.desc.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.status || \"\"}}', '{{$json.body.sc || \"\"}}', {{$json.body.priority || 0}}, '{{$json.body.gambar_url || \"\"}}') RETURNING *;",
         "options": {}
       },
       "id": "091362f1-8550-4a79-9fe3-202c7200b314",
@@ -857,7 +857,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.headers['x-app-token']}}",
+              "value1": "={{$request.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -875,7 +875,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE public.bapperida_program SET icon = '{{$json.body.icon || \"\"}}', title = '{{$json.body.title ? $json.body.title.replace(/'/g, \"''\") : \"\"}}', cat = '{{$json.body.cat || \"\"}}', \"desc\" = '{{$json.body.desc ? $json.body.desc.replace(/'/g, \"''\") : \"\"}}', status = '{{$json.body.status || \"\"}}', sc = '{{$json.body.sc || \"\"}}', priority = {{$json.body.priority || 0}} WHERE id = {{$json.body.id}} RETURNING *;",
+        "query": "UPDATE public.bapperida_program SET icon = '{{$json.body.icon || \"\"}}', title = '{{$json.body.title ? $json.body.title.replace(/'/g, \"''\") : \"\"}}', cat = '{{$json.body.cat || \"\"}}', \"desc\" = '{{$json.body.desc ? $json.body.desc.replace(/'/g, \"''\") : \"\"}}', status = '{{$json.body.status || \"\"}}', sc = '{{$json.body.sc || \"\"}}', priority = {{$json.body.priority || 0}}, gambar_url = '{{$json.body.gambar_url || \"\"}}' WHERE id = {{$json.body.id}} RETURNING *;",
         "options": {}
       },
       "id": "29e02e1b-c8c8-4ede-8b4b-3ad7df458df3",
@@ -915,7 +915,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.headers['x-app-token']}}",
+              "value1": "={{$request.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
