@@ -1089,6 +1089,13 @@ export default function App() {
                 <div style={{ height: 4, background: `linear-gradient(to right, ${C.navy}, ${p.sc || C.gold})`, opacity: 0.8 }} />
               </div>
             ))}
+            {programList.length === 0 && (
+              <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "60px 20px", background: "white", borderRadius: 16, border: "1px dashed #ddd" }}>
+                <div style={{ fontSize: 42, marginBottom: 14 }}>📅</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: C.navy, marginBottom: 6 }}>Belum ada program tersedia</div>
+                <div style={{ fontSize: 14, color: C.textLight }}>Data sedang dimuat atau belum ditambahkan oleh admin.</div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -1608,12 +1615,12 @@ export default function App() {
       )}
 
       {/* ──── MODALS ──── */}
-      {(showModal === 'berita' || showModal === 'dokumen' || showModal === 'slider') && (
+      {(showModal === 'berita' || showModal === 'dokumen' || showModal === 'slider' || showModal === 'program') && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
               <h3 className="display" style={{ fontSize: 18, fontWeight: 700, color: C.navy }}>
-                {editItem ? "Edit" : "Tambah"} {showModal === 'berita' ? "Berita" : showModal === 'dokumen' ? "Dokumen" : "Slider"}
+                {editItem ? "Edit" : "Tambah"} {showModal === 'berita' ? "Berita" : showModal === 'dokumen' ? "Dokumen" : showModal === 'program' ? "Program" : "Slider"}
               </h3>
               <button onClick={() => setShowModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textLight }}><X size={20} /></button>
             </div>
