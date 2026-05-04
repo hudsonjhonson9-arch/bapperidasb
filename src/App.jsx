@@ -323,7 +323,8 @@ export default function App() {
     },
     kontak: {
       submit: `${API_BASE}/bapperida-kontak-submit`
-    }
+    },
+    init: `${API_BASE}/bapperida-init`
   };
 
   const authFetch = (url, options = {}) => {
@@ -360,51 +361,20 @@ export default function App() {
       return [];
     };
 
-    // Optimalisasi: Tarik semua data secara PARALEL agar loading 4x lebih cepat
-    const results = await Promise.allSettled([
-      fetchSafe(api.berita.list),
-      fetchSafe(api.dokumen.list),
-      fetchSafe(api.slider.list),
-      fetchSafe(api.program.list)
-    ]);
+    try {
+      const res = await fetchSafe(api.init);
+      const data = getList(res)[0] || {};
 
-    // Berita
-    if (results[0].status === 'fulfilled') {
-      setBeritaList(getList(results[0].value).sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-    } else {
-      console.error("Berita fail:", results[0].reason);
-      errors.push(`Berita (${results[0].reason.message})`);
-    }
-
-    // Dokumen
-    if (results[1].status === 'fulfilled') {
-      setDokumenList(getList(results[1].value));
-    } else {
-      console.error("Dokumen fail:", results[1].reason);
-      errors.push(`Dokumen (${results[1].reason.message})`);
-    }
-
-    // Slider
-    if (results[2].status === 'fulfilled') {
-      setSliderList(getList(results[2].value));
-    } else {
-      console.error("Slider fail:", results[2].reason);
-      errors.push(`Slider (${results[2].reason.message})`);
-    }
-
-    // Program
-    if (results[3].status === 'fulfilled') {
-      setProgramList(getList(results[3].value).sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-    } else {
-      console.error("Program fail:", results[3].reason);
-      errors.push(`Program (${results[3].reason.message})`);
-    }
-
-    // Hanya set error jika ada yang gagal; hanya reset jika semua sukses
-    if (errors.length > 0) {
-      setFetchError(`Gagal memuat: ${errors.join(", ")}. Cek CORS & koneksi n8n.`);
-    } else {
+      if (data.berita) setBeritaList(data.berita.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
+      if (data.dokumen) setDokumenList(data.dokumen);
+      if (data.slider) setSliderList(data.slider);
+      if (data.program) setProgramList(data.program.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
       setFetchError(null);
+    } catch (err) {
+      console.error("Fetch all fail:", err);
+      setFetchError(`Gagal memuat data: ${err.message}. Pastikan n8n aktif.`);
+    } finally {
+      setLoading(false);
     }
 
     setLoading(false);
