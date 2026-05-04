@@ -99,9 +99,9 @@ const ImageUploadField = ({ name, defaultValue, label, required }) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Batasi ukuran file (misal 1MB) agar database tidak bengkak
-    if (file.size > 1 * 1024 * 1024) {
-      alert('Ukuran file terlalu besar! Maksimal 1MB untuk performa database yang baik.');
+    // Batasi ukuran file (misal 5MB) agar database tidak bengkak
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran file terlalu besar! Maksimal 5MB untuk menjaga performa.');
       return;
     }
 
@@ -141,7 +141,7 @@ const ImageUploadField = ({ name, defaultValue, label, required }) => {
           {uploading ? (
              <span style={{ fontSize: 12, color: C.gold, fontWeight: 600 }}>⏳ Memproses file...</span>
           ) : (
-             <span style={{ fontSize: 11, color: '#666' }}>File akan disimpan langsung ke database (Base64). Maks 1MB.</span>
+             <span style={{ fontSize: 11, color: '#666' }}>File akan disimpan langsung ke database (Base64). Maks 5MB.</span>
           )}
         </div>
       </div>
