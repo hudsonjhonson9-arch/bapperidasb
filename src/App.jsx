@@ -132,16 +132,16 @@ const ImageUploadField = ({ name, defaultValue, label, required }) => {
           {required && !url && <input type="hidden" name={`${name}_required`} required />}
           <input 
             type="file" 
-            accept="image/*" 
+            accept={name === 'url' ? ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" : "image/*"}
             onChange={handleFileChange} 
             className="form-input" 
             disabled={uploading}
             style={{ padding: '6px 12px', background: '#fff', cursor: 'pointer' }}
           />
           {uploading ? (
-             <span style={{ fontSize: 12, color: C.gold, fontWeight: 600 }}>⏳ Memproses gambar...</span>
+             <span style={{ fontSize: 12, color: C.gold, fontWeight: 600 }}>⏳ Memproses file...</span>
           ) : (
-             <span style={{ fontSize: 11, color: '#666' }}>Gambar akan disimpan langsung ke database (Base64). Maks 1MB.</span>
+             <span style={{ fontSize: 11, color: '#666' }}>File akan disimpan langsung ke database (Base64). Maks 1MB.</span>
           )}
         </div>
       </div>
@@ -1074,14 +1074,6 @@ export default function App() {
                   </div>
                 )}
                 
-                {/* Image / Thumbnail */}
-                {p.gambar_url && (
-                  <div style={{ height: 180, overflow: "hidden", position: "relative" }}>
-                    <img src={p.gambar_url} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(11,36,71,0.4), transparent)" }} />
-                  </div>
-                )}
-
                 <div style={{ padding: "32px", flexGrow: 1, display: "flex", flexDirection: "column" }}>
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
                     <div style={{ fontSize: 42, filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.1))" }}>{p.icon}</div>
@@ -1651,8 +1643,6 @@ export default function App() {
                       <label className="form-label">Nama Program / Kegiatan</label>
                       <input name="title" defaultValue={editItem?.title} className="form-input" required />
                     </div>
-                    
-                    <ImageUploadField name="gambar_url" defaultValue={editItem?.gambar_url} label="Foto Program (Opsional)" required={false} />
 
                     <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                       <div>
@@ -1758,8 +1748,9 @@ export default function App() {
                       <input type="date" name="tanggal" defaultValue={editItem?.tanggal || new Date().toISOString().split('T')[0]} className="form-input" required />
                     </div>
                     <div className="form-group">
-                      <label className="form-label">URL Dokumen</label>
-                      <input name="url" defaultValue={editItem?.url} className="form-input" placeholder="https://..." />
+                      <label className="form-label">URL atau Upload Dokumen</label>
+                      <input name="url" defaultValue={editItem?.url} className="form-input" placeholder="https://..." style={{ marginBottom: 10 }} />
+                      <ImageUploadField name="url" defaultValue={editItem?.url} label="Unggah File (Gantikan URL di atas)" required={false} />
                     </div>
                   </>
                 )}

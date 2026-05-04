@@ -75,7 +75,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM public.bapperida_berita ORDER BY priority ASC, id DESC;",
+        "query": "SELECT id, judul, konten, kategori, tanggal, emoji, gambar_data AS gambar_url, is_featured, priority, layout_size, col_span, row_span FROM public.bapperida_berita ORDER BY priority ASC, id DESC;",
         "options": {}
       },
       "id": "eb2fdb5b-5ff2-453c-b785-d257816a9c03",
@@ -98,7 +98,9 @@
         "httpMethod": "POST",
         "path": "bapperida-berita-add",
         "responseMode": "lastNode",
-        "options": {}
+        "options": {
+          "includeHeaders": true
+        }
       },
       "id": "fa4b6739-1f23-4fdf-bd19-b9b124371c0e",
       "name": "Webhook berita Add",
@@ -115,7 +117,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$request.headers['x-app-token']}}",
+              "value1": "={{$json.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -133,7 +135,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO public.bapperida_berita (judul, konten, kategori, tanggal, gambar_url, emoji, priority, layout_size, col_span, row_span, is_featured) VALUES ('{{$json.body.judul ? $json.body.judul.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.konten ? $json.body.konten.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.kategori || \"\"}}', '{{$json.body.tanggal || \"\"}}', '{{$json.body.gambar_url || \"\"}}', '{{$json.body.emoji || \"\"}}', {{$json.body.priority || 0}}, '{{$json.body.layout_size || \"normal\"}}', {{$json.body.col_span || 1}}, {{$json.body.row_span || 1}}, {{$json.body.is_featured ? true : false}}) RETURNING *;",
+        "query": "INSERT INTO public.bapperida_berita (judul, konten, kategori, tanggal, gambar_data, emoji, priority, layout_size, col_span, row_span, is_featured) VALUES ('{{$json.body.judul ? $json.body.judul.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.konten ? $json.body.konten.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.kategori || \"\"}}', '{{$json.body.tanggal || \"\"}}', '{{$json.body.gambar_url || \"\"}}', '{{$json.body.emoji || \"\"}}', {{$json.body.priority || 0}}, '{{$json.body.layout_size || \"normal\"}}', {{$json.body.col_span || 1}}, {{$json.body.row_span || 1}}, {{$json.body.is_featured ? true : false}}) RETURNING *;",
         "options": {}
       },
       "id": "a9253aa3-be10-44a5-96be-c1a59ca86ede",
@@ -156,7 +158,9 @@
         "httpMethod": "POST",
         "path": "bapperida-berita-edit",
         "responseMode": "lastNode",
-        "options": {}
+        "options": {
+          "includeHeaders": true
+        }
       },
       "id": "a2ce6960-b872-43f2-9c25-bbba11cb4f01",
       "name": "Webhook berita Edit",
@@ -173,7 +177,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$request.headers['x-app-token']}}",
+              "value1": "={{$json.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -191,7 +195,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE public.bapperida_berita SET judul = '{{$json.body.judul ? $json.body.judul.replace(/'/g, \"''\") : \"\"}}', konten = '{{$json.body.konten ? $json.body.konten.replace(/'/g, \"''\") : \"\"}}', kategori = '{{$json.body.kategori || \"\"}}', tanggal = '{{$json.body.tanggal || \"\"}}', gambar_url = '{{$json.body.gambar_url || \"\"}}', emoji = '{{$json.body.emoji || \"\"}}', priority = {{$json.body.priority || 0}}, layout_size = '{{$json.body.layout_size || \"normal\"}}', col_span = {{$json.body.col_span || 1}}, row_span = {{$json.body.row_span || 1}}, is_featured = {{$json.body.is_featured ? true : false}} WHERE id = {{$json.body.id}} RETURNING *;",
+        "query": "UPDATE public.bapperida_berita SET judul = '{{$json.body.judul ? $json.body.judul.replace(/'/g, \"''\") : \"\"}}', konten = '{{$json.body.konten ? $json.body.konten.replace(/'/g, \"''\") : \"\"}}', kategori = '{{$json.body.kategori || \"\"}}', tanggal = '{{$json.body.tanggal || \"\"}}', gambar_data = '{{$json.body.gambar_url || \"\"}}', emoji = '{{$json.body.emoji || \"\"}}', priority = {{$json.body.priority || 0}}, layout_size = '{{$json.body.layout_size || \"normal\"}}', col_span = {{$json.body.col_span || 1}}, row_span = {{$json.body.row_span || 1}}, is_featured = {{$json.body.is_featured ? true : false}} WHERE id = {{$json.body.id}} RETURNING *;",
         "options": {}
       },
       "id": "80e53e6b-af38-4437-861c-94a668132fc7",
@@ -214,7 +218,9 @@
         "httpMethod": "POST",
         "path": "bapperida-berita-delete",
         "responseMode": "lastNode",
-        "options": {}
+        "options": {
+          "includeHeaders": true
+        }
       },
       "id": "61abc1fd-6457-4aff-8bee-fe28a8278b01",
       "name": "Webhook berita Delete",
@@ -231,7 +237,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$request.headers['x-app-token']}}",
+              "value1": "={{$json.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -303,7 +309,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM public.bapperida_dokumen ORDER BY id DESC;",
+        "query": "SELECT id, judul, kategori, tipe, ukuran, tanggal, icon_data AS icon, url FROM public.bapperida_dokumen ORDER BY id DESC;",
         "options": {}
       },
       "id": "f95608cf-a6e2-4295-901f-29884152cba4",
@@ -326,7 +332,9 @@
         "httpMethod": "POST",
         "path": "bapperida-dokumen-add",
         "responseMode": "lastNode",
-        "options": {}
+        "options": {
+          "includeHeaders": true
+        }
       },
       "id": "a12d607a-cffe-4039-9c07-490dc1c5903f",
       "name": "Webhook dokumen Add",
@@ -343,7 +351,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$request.headers['x-app-token']}}",
+              "value1": "={{$json.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -361,7 +369,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO public.bapperida_dokumen (judul, kategori, tipe, ukuran, tanggal, icon, url) VALUES ('{{$json.body.judul.replace(/'/g, \"''\")}}', '{{$json.body.kategori}}', '{{$json.body.tipe}}', '{{$json.body.ukuran}}', '{{$json.body.tanggal}}', '{{$json.body.icon}}', '{{$json.body.url}}') RETURNING *;",
+        "query": "INSERT INTO public.bapperida_dokumen (judul, kategori, tipe, ukuran, tanggal, icon_data, url) VALUES ('{{$json.body.judul.replace(/'/g, \"''\")}}', '{{$json.body.kategori}}', '{{$json.body.tipe}}', '{{$json.body.ukuran}}', '{{$json.body.tanggal}}', '{{$json.body.icon}}', '{{$json.body.url}}') RETURNING *;",
         "options": {}
       },
       "id": "034b56c9-17e7-4294-a8be-862423b21c0c",
@@ -384,7 +392,9 @@
         "httpMethod": "POST",
         "path": "bapperida-dokumen-edit",
         "responseMode": "lastNode",
-        "options": {}
+        "options": {
+          "includeHeaders": true
+        }
       },
       "id": "2bf3a2dd-0b60-4246-95c8-59e4ca0c3295",
       "name": "Webhook dokumen Edit",
@@ -401,7 +411,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$request.headers['x-app-token']}}",
+              "value1": "={{$json.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -419,7 +429,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE public.bapperida_dokumen SET judul = '{{$json.body.judul ? $json.body.judul.replace(/'/g, \"''\") : \"\"}}', kategori = '{{$json.body.kategori || \"\"}}', tipe = '{{$json.body.tipe || \"\"}}', ukuran = '{{$json.body.ukuran || \"\"}}', tanggal = '{{$json.body.tanggal || \"\"}}', icon = '{{$json.body.icon || \"\"}}', url = '{{$json.body.url || \"\"}}' WHERE id = {{$json.body.id}} RETURNING *;",
+        "query": "UPDATE public.bapperida_dokumen SET judul = '{{$json.body.judul ? $json.body.judul.replace(/'/g, \"''\") : \"\"}}', kategori = '{{$json.body.kategori || \"\"}}', tipe = '{{$json.body.tipe || \"\"}}', ukuran = '{{$json.body.ukuran || \"\"}}', tanggal = '{{$json.body.tanggal || \"\"}}', icon_data = '{{$json.body.icon || \"\"}}', url = '{{$json.body.url || \"\"}}' WHERE id = {{$json.body.id}} RETURNING *;",
         "options": {}
       },
       "id": "51a201f0-7b76-43a5-a9e9-4358bf13b6a2",
@@ -442,7 +452,9 @@
         "httpMethod": "POST",
         "path": "bapperida-dokumen-delete",
         "responseMode": "lastNode",
-        "options": {}
+        "options": {
+          "includeHeaders": true
+        }
       },
       "id": "f03a9582-cb79-426f-88b6-516ee7c6c34c",
       "name": "Webhook dokumen Delete",
@@ -459,7 +471,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$request.headers['x-app-token']}}",
+              "value1": "={{$json.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -531,7 +543,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM public.bapperida_slider ORDER BY id ASC;",
+        "query": "SELECT id, gambar_data AS gambar_url, judul, subjudul FROM public.bapperida_slider ORDER BY id ASC;",
         "options": {}
       },
       "id": "99aae2a4-6870-45e5-9e34-a7bc74f0c92b",
@@ -554,7 +566,9 @@
         "httpMethod": "POST",
         "path": "bapperida-slider-add",
         "responseMode": "lastNode",
-        "options": {}
+        "options": {
+          "includeHeaders": true
+        }
       },
       "id": "6da5167e-dded-41a3-b14d-bc9a47a1eaea",
       "name": "Webhook slider Add",
@@ -571,7 +585,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$request.headers['x-app-token']}}",
+              "value1": "={{$json.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -589,7 +603,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO public.bapperida_slider (judul, subjudul, gambar_url) VALUES ('{{$json.body.judul ? $json.body.judul.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.subjudul ? $json.body.subjudul.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.gambar_url || \"\"}}') RETURNING *;",
+        "query": "INSERT INTO public.bapperida_slider (judul, subjudul, gambar_data) VALUES ('{{$json.body.judul ? $json.body.judul.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.subjudul ? $json.body.subjudul.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.gambar_url || \"\"}}') RETURNING *;",
         "options": {}
       },
       "id": "90152b88-dfe4-4e8e-b1e2-aab25011c734",
@@ -612,7 +626,9 @@
         "httpMethod": "POST",
         "path": "bapperida-slider-edit",
         "responseMode": "lastNode",
-        "options": {}
+        "options": {
+          "includeHeaders": true
+        }
       },
       "id": "a025a0cc-e4a3-4bd0-9996-9c00aa1e9892",
       "name": "Webhook slider Edit",
@@ -629,7 +645,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$request.headers['x-app-token']}}",
+              "value1": "={{$json.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -647,7 +663,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE public.bapperida_slider SET judul = '{{$json.body.judul ? $json.body.judul.replace(/'/g, \"''\") : \"\"}}', subjudul = '{{$json.body.subjudul ? $json.body.subjudul.replace(/'/g, \"''\") : \"\"}}', gambar_url = '{{$json.body.gambar_url || \"\"}}' WHERE id = {{$json.body.id}} RETURNING *;",
+        "query": "UPDATE public.bapperida_slider SET judul = '{{$json.body.judul ? $json.body.judul.replace(/'/g, \"''\") : \"\"}}', subjudul = '{{$json.body.subjudul ? $json.body.subjudul.replace(/'/g, \"''\") : \"\"}}', gambar_data = '{{$json.body.gambar_url || \"\"}}' WHERE id = {{$json.body.id}} RETURNING *;",
         "options": {}
       },
       "id": "6e8388f9-fcdd-402f-9ca6-875a7a23c6c0",
@@ -670,7 +686,9 @@
         "httpMethod": "POST",
         "path": "bapperida-slider-delete",
         "responseMode": "lastNode",
-        "options": {}
+        "options": {
+          "includeHeaders": true
+        }
       },
       "id": "726ab42c-9a21-45cb-907d-d5f6ee006035",
       "name": "Webhook slider Delete",
@@ -687,7 +705,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$request.headers['x-app-token']}}",
+              "value1": "={{$json.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -759,7 +777,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM public.bapperida_program ORDER BY priority ASC, id ASC;",
+        "query": "SELECT id, icon_data AS icon, title, cat, \"desc\", status, sc, priority FROM public.bapperida_program ORDER BY priority ASC, id ASC;",
         "options": {}
       },
       "id": "ff8be919-0178-4903-9b0e-7319af0add86",
@@ -782,7 +800,9 @@
         "httpMethod": "POST",
         "path": "bapperida-program-add",
         "responseMode": "lastNode",
-        "options": {}
+        "options": {
+          "includeHeaders": true
+        }
       },
       "id": "081f4767-a5dd-4515-8ef5-960e62388007",
       "name": "Webhook program Add",
@@ -799,7 +819,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$request.headers['x-app-token']}}",
+              "value1": "={{$json.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -817,7 +837,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO public.bapperida_program (icon, title, cat, \"desc\", status, sc, priority, gambar_url) VALUES ('{{$json.body.icon || \"\"}}', '{{$json.body.title ? $json.body.title.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.cat || \"\"}}', '{{$json.body.desc ? $json.body.desc.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.status || \"\"}}', '{{$json.body.sc || \"\"}}', {{$json.body.priority || 0}}, '{{$json.body.gambar_url || \"\"}}') RETURNING *;",
+        "query": "INSERT INTO public.bapperida_program (icon_data, title, cat, \"desc\", status, sc, priority) VALUES ('{{$json.body.icon || \"\"}}', '{{$json.body.title ? $json.body.title.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.cat || \"\"}}', '{{$json.body.desc ? $json.body.desc.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.status || \"\"}}', '{{$json.body.sc || \"\"}}', {{$json.body.priority || 0}}) RETURNING *;",
         "options": {}
       },
       "id": "091362f1-8550-4a79-9fe3-202c7200b314",
@@ -840,7 +860,9 @@
         "httpMethod": "POST",
         "path": "bapperida-program-edit",
         "responseMode": "lastNode",
-        "options": {}
+        "options": {
+          "includeHeaders": true
+        }
       },
       "id": "94f8ef42-969d-4914-852a-b7e72ca3b2d5",
       "name": "Webhook program Edit",
@@ -857,7 +879,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$request.headers['x-app-token']}}",
+              "value1": "={{$json.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
@@ -875,7 +897,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE public.bapperida_program SET icon = '{{$json.body.icon || \"\"}}', title = '{{$json.body.title ? $json.body.title.replace(/'/g, \"''\") : \"\"}}', cat = '{{$json.body.cat || \"\"}}', \"desc\" = '{{$json.body.desc ? $json.body.desc.replace(/'/g, \"''\") : \"\"}}', status = '{{$json.body.status || \"\"}}', sc = '{{$json.body.sc || \"\"}}', priority = {{$json.body.priority || 0}}, gambar_url = '{{$json.body.gambar_url || \"\"}}' WHERE id = {{$json.body.id}} RETURNING *;",
+        "query": "UPDATE public.bapperida_program SET icon_data = '{{$json.body.icon || \"\"}}', title = '{{$json.body.title ? $json.body.title.replace(/'/g, \"''\") : \"\"}}', cat = '{{$json.body.cat || \"\"}}', \"desc\" = '{{$json.body.desc ? $json.body.desc.replace(/'/g, \"''\") : \"\"}}', status = '{{$json.body.status || \"\"}}', sc = '{{$json.body.sc || \"\"}}', priority = {{$json.body.priority || 0}} WHERE id = {{$json.body.id}} RETURNING *;",
         "options": {}
       },
       "id": "29e02e1b-c8c8-4ede-8b4b-3ad7df458df3",
@@ -898,7 +920,9 @@
         "httpMethod": "POST",
         "path": "bapperida-program-delete",
         "responseMode": "lastNode",
-        "options": {}
+        "options": {
+          "includeHeaders": true
+        }
       },
       "id": "0f785381-7188-49cf-b545-a60585aef1f9",
       "name": "Webhook program Delete",
@@ -915,7 +939,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$request.headers['x-app-token']}}",
+              "value1": "={{$json.headers['x-app-token']}}",
               "value2": "BAPPERIDA_SECURE_TOKEN_2026"
             }
           ]
