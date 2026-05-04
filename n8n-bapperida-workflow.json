@@ -96,9 +96,10 @@
     {
       "parameters": {
         "path": "bapperida-init",
-        "responseMode": "lastNode",
+        "responseMode": "responseNode",
         "options": {}
       },
+      "webhookId": "bapperida-init-unique-id-2026",
       "id": "init-webhook-id",
       "name": "Webhook Master Init",
       "type": "n8n-nodes-base.webhook",
@@ -128,6 +129,21 @@
           "name": "Postgres account"
         }
       }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "init-respond-id",
+      "name": "Respond Master Init",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        -1800
+      ]
     },
     {
       "parameters": {
@@ -1781,6 +1797,17 @@
         [
           {
             "node": "DB Master Init",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB Master Init": {
+      "main": [
+        [
+          {
+            "node": "Respond Master Init",
             "type": "main",
             "index": 0
           }
