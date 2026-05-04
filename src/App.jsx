@@ -350,12 +350,14 @@ export default function App() {
 
     const getList = (res) => {
       if (Array.isArray(res)) {
-        // Handle n8n allIncomingItems format: [{json: {...}}, ...]
         if (res.length > 0 && res[0] !== null && typeof res[0] === 'object' && 'json' in res[0]) {
           return res.map(item => item.json);
         }
         return res;
       }
+      // Handle unified master data object
+      if (res && (res.berita || res.dokumen || res.slider || res.program)) return [res];
+      
       if (res && res.data && Array.isArray(res.data)) return res.data;
       if (res && res.json && Array.isArray(res.json)) return res.json;
       return [];
