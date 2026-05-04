@@ -120,7 +120,7 @@ const FadeInImage = ({ src, alt, style, className }) => {
   );
 };
 
-const ImageUploadField = ({ name, defaultValue, label, required }) => {
+const ImageUploadField = ({ name, defaultValue, label, required, onMetadata }) => {
   const [url, setUrl] = useState(defaultValue || '');
   const [uploading, setUploading] = useState(false);
 
@@ -139,6 +139,15 @@ const ImageUploadField = ({ name, defaultValue, label, required }) => {
 
     setUploading(true);
     
+    // Extract metadata
+    if (onMetadata) {
+      const sizeStr = file.size > 1024 * 1024 
+        ? (file.size / (1024 * 1024)).toFixed(1) + ' MB' 
+        : (file.size / 1024).toFixed(0) + ' KB';
+      const typeStr = file.name.split('.').pop().toUpperCase();
+      onMetadata({ size: sizeStr, type: typeStr });
+    }
+
     // Jika file adalah gambar, lakukan kompresi
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
@@ -708,6 +717,20 @@ export default function App() {
         .modal-body { padding: 32px; }
         .modal-footer { padding: 24px 32px; border-top: 1px solid ${C.warmGray}; display: flex; justify-content: flex-end; gap: 12px; }
         
+        .btn-admin {
+          width: 36px; height: 36px;
+          border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          border: none; cursor: pointer;
+          backdrop-filter: blur(8px);
+          transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .btn-admin-edit { background: rgba(255,255,255,0.92); color: ${C.navy}; }
+        .btn-admin-edit:hover { background: ${C.gold}; color: white; transform: scale(1.15) rotate(15deg); box-shadow: 0 8px 20px rgba(201,162,39,0.3); }
+        .btn-admin-del { background: rgba(255,255,255,0.92); color: #ef4444; }
+        .btn-admin-del:hover { background: #ef4444; color: white; transform: scale(1.15) rotate(-15deg); box-shadow: 0 8px 20px rgba(239,68,68,0.3); }
+        
         .form-group { marginBottom: 20px; }
         .form-label { display: block; font-size: 13px; font-weight: 600; color: ${C.navy}; marginBottom: 8px; }
         .form-input {
@@ -1115,9 +1138,9 @@ export default function App() {
             {programList.map(p => (
               <div key={p.id} className="program-card" style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative" }}>
                 {isAdmin && (
-                  <div style={{ position: "absolute", top: 15, right: 15, display: "flex", gap: 6, zIndex: 20 }}>
-                    <button onClick={() => { setEditItem(p); setShowModal('program'); }} className="btn-admin-small" style={{ background: "rgba(255,255,255,0.9)", color: C.navy, border: "none", width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", cursor: "pointer" }}>✎</button>
-                    <button onClick={() => handleDelete('program', p.id)} className="btn-admin-small" style={{ background: "rgba(255,100,100,0.1)", color: "#ef4444", border: "none", width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", cursor: "pointer" }}>✕</button>
+                  <div style={{ position: "absolute", top: 20, right: 20, display: "flex", gap: 10, zIndex: 20 }}>
+                    <button onClick={() => { setEditItem(p); setShowModal('program'); }} className="btn-admin btn-admin-edit" title="Edit Program">✎</button>
+                    <button onClick={() => handleDelete('program', p.id)} className="btn-admin btn-admin-del" title="Hapus Program">✕</button>
                   </div>
                 )}
                 
@@ -1227,27 +1250,16 @@ export default function App() {
                           </div>
                         </div>
                         <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                          {isAdmin ? (
+                          <button onClick={() => setPreviewDokumen(dok)} className="btn-admin btn-admin-edit" style={{ width: "auto", padding: "0 14px", borderRadius: 10, fontSize: 12, fontWeight: 700 }} title="Lihat Dokumen">
+                            <Eye size={14} style={{ marginRight: 6 }} /> Lihat
+                          </button>
+                          {isAdmin && (
                             <>
-                              <button onClick={() => setPreviewDokumen(dok)} className="dok-btn" style={{ background: `${C.navy}12`, color: C.navy }}><Eye size={13} /> Lihat</button>
-                              <button onClick={() => { setEditItem(dok); setShowModal('dokumen'); }} style={{ background: C.navy, color: "white" }} className="dok-btn">Edit</button>
-                              <button onClick={() => handleDelete('dokumen', dok.id)} style={{ background: "#ef4444", color: "white" }} className="dok-btn">Hapus</button>
-                            </>
-                          ) : (
-                            <>
-                              <button onClick={() => setPreviewDokumen(dok)} className="dok-btn" style={{ background: `${C.navy}12`, color: C.navy }}><Eye size={13} /> Lihat</button>
-                              <button onClick={() => {
-                                const link = document.createElement('a');
-                                link.href = dok.url;
-                                link.download = dok.judul;
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                              }} className="dok-btn" style={{ background: C.navy, color: "white" }}><Download size={13} /> Unduh</button>
+                              <button onClick={() => { setEditItem(dok); setShowModal('dokumen'); }} className="btn-admin btn-admin-edit" title="Edit Dokumen">✎</button>
+                              <button onClick={() => handleDelete('dokumen', dok.id)} className="btn-admin btn-admin-del" title="Hapus Dokumen">✕</button>
                             </>
                           )}
                         </div>
-                      </div>
                     ))}
                   </div>
                 </div>
@@ -1782,22 +1794,38 @@ export default function App() {
                     </div>
                     <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                       <div>
-                        <label className="form-label">Ukuran File (e.g. 2.4 MB)</label>
-                        <input name="ukuran" defaultValue={editItem?.ukuran} className="form-input" />
+                        <label className="form-label">Ukuran File</label>
+                        <input name="ukuran" defaultValue={editItem?.ukuran} id="doc-size-input" className="form-input" placeholder="Otomatis..." />
                       </div>
+                      <div>
+                        <label className="form-label">Tipe File</label>
+                        <input name="tipe" defaultValue={editItem?.tipe || "PDF"} id="doc-type-input" className="form-input" placeholder="Otomatis..." />
+                      </div>
+                    </div>
+                    <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                       <div>
                         <label className="form-label">Icon (Emoji)</label>
                         <input name="icon" defaultValue={editItem?.icon || "📄"} className="form-input" />
                       </div>
+                      <div>
+                        <label className="form-label">Tanggal Terbit</label>
+                        <input type="date" name="tanggal" defaultValue={editItem?.tanggal || new Date().toISOString().split('T')[0]} className="form-input" required />
+                      </div>
                     </div>
                     <div className="form-group">
-                      <label className="form-label">Tanggal Terbit</label>
-                      <input type="date" name="tanggal" defaultValue={editItem?.tanggal || new Date().toISOString().split('T')[0]} className="form-input" required />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">URL atau Upload Dokumen</label>
-                      <input name="url" defaultValue={editItem?.url} className="form-input" placeholder="https://..." style={{ marginBottom: 10 }} />
-                      <ImageUploadField name="url" defaultValue={editItem?.url} label="Unggah File (Gantikan URL di atas)" required={false} />
+                      <label className="form-label">Pilih File (Otomatis Deteksi)</label>
+                      <ImageUploadField 
+                        name="url" 
+                        defaultValue={editItem?.url} 
+                        label="Klik untuk Upload" 
+                        required={!editItem} 
+                        onMetadata={(meta) => {
+                          const s = document.getElementById('doc-size-input');
+                          const t = document.getElementById('doc-type-input');
+                          if (s) s.value = meta.size;
+                          if (t) t.value = meta.type;
+                        }}
+                      />
                     </div>
                   </>
                 )}
