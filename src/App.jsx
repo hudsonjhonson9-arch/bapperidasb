@@ -87,6 +87,39 @@ const C = {
   textLight: "#8898AA",
 };
 
+const FadeInImage = ({ src, alt, style, className }) => {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
+  return (
+    <div className={className} style={{ ...style, backgroundColor: '#f3f4f6', overflow: 'hidden', position: 'relative' }}>
+      {!loaded && !error && (
+        <div className="shimmer" style={{ position: 'absolute', inset: 0, zIndex: 1 }} />
+      )}
+      {error ? (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: 12 }}>
+          ⚠️
+        </div>
+      ) : (
+        <img
+          src={src}
+          alt={alt}
+          onLoad={() => setLoaded(true)}
+          onError={() => setError(true)}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            opacity: loaded ? 1 : 0,
+            transition: 'opacity 1s ease-in-out'
+          }}
+          loading="lazy"
+        />
+      )}
+    </div>
+  );
+};
+
 const ImageUploadField = ({ name, defaultValue, label, required }) => {
   const [url, setUrl] = useState(defaultValue || '');
   const [uploading, setUploading] = useState(false);
@@ -99,23 +132,52 @@ const ImageUploadField = ({ name, defaultValue, label, required }) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Batasi ukuran file (misal 5MB) agar database tidak bengkak
     if (file.size > 5 * 1024 * 1024) {
-      alert('Ukuran file terlalu besar! Maksimal 5MB untuk menjaga performa.');
+      alert('Ukuran file terlalu besar! Maksimal 5MB.');
       return;
     }
 
     setUploading(true);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setUrl(reader.result);
-      setUploading(false);
-    };
-    reader.onerror = () => {
-      alert('Gagal membaca file gambar');
-      setUploading(false);
-    };
-    reader.readAsDataURL(file);
+    
+    // Jika file adalah gambar, lakukan kompresi
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Resize jika terlalu besar (maks 1200px)
+          const MAX_WIDTH = 1200;
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Kompresi kualitas ke 0.7
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          setUrl(compressedBase64);
+          setUploading(false);
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // Jika bukan gambar (dokumen), baca langsung
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUrl(reader.result);
+        setUploading(false);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -522,6 +584,20 @@ export default function App() {
         body { font-family: 'DM Sans', system-ui, sans-serif; background: ${C.offWhite}; color: ${C.textDark}; }
         ::selection { background: ${C.gold}; color: ${C.navyDark}; }
 
+        @keyframes shimmer {
+          0% { background-position: -468px 0 }
+          100% { background-position: 468px 0 }
+        }
+        .shimmer {
+          animation: shimmer 2s infinite linear;
+          background: linear-gradient(to right, #f6f7f8 8%, #edeef1 18%, #f6f7f8 33%);
+          background-size: 1000px 100%;
+          display: block;
+        }
+        .news-img-container { overflow: hidden; position: relative; }
+        .news-img-container:hover .news-img { transform: scale(1.05); }
+        .news-img { transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+
         .display { font-family: 'Playfair Display', Georgia, serif; }
         .italic { font-style: italic; }
 
@@ -763,14 +839,13 @@ export default function App() {
               key={slide.id}
               style={{
                 position: "absolute", inset: 0,
-                backgroundImage: `url(${slide.gambar_url})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
                 opacity: currentSlide === idx ? 1 : 0,
                 transition: "opacity 1.5s ease-in-out",
                 zIndex: 0
               }}
-            />
+            >
+              <FadeInImage src={slide.gambar_url} alt={slide.judul} style={{ width: "100%", height: "100%" }} />
+            </div>
           ))
         ) : (
           <div style={{ position: "absolute", inset: 0, background: `linear-gradient(150deg, ${C.navyDark} 0%, ${C.navyMid} 45%, #1A4A72 100%)`, zIndex: 0 }} />
@@ -1344,7 +1419,7 @@ export default function App() {
                   }}>
                     <div className="berita-thumb-zoom" style={{ position: "absolute", inset: 0 }}>
                       {item.gambar_url ? (
-                        <img src={item.gambar_url} alt={item.judul} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s ease" }} />
+                        <FadeInImage src={item.gambar_url} alt={item.judul} style={{ width: "100%", height: "100%" }} />
                       ) : (
                         <div style={{ width: "100%", height: "100%", background: `linear-gradient(135deg, ${C.navy} 0%, #1e40af 100%)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <span style={{ fontSize: row === 1 ? 32 : 48 }}>{item.emoji || "📋"}</span>
@@ -1844,7 +1919,7 @@ export default function App() {
                   <div key={item.id} onClick={() => { setShowAllBeritaModal(false); setSelectedBerita(item); }} className="card" style={{ padding: "16px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 16 }}>
                     <div style={{ width: 60, height: 60, borderRadius: 10, background: `${C.navy}14`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0, overflow: "hidden" }}>
                       {item.gambar_url ? (
-                        <img src={item.gambar_url} alt={item.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <FadeInImage src={item.gambar_url} alt={item.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       ) : (
                         item.emoji || "📰"
                       )}
@@ -1872,7 +1947,7 @@ export default function App() {
           <div className="modal-content" style={{ maxWidth: 800, padding: 0 }} onClick={e => e.stopPropagation()}>
             <div style={{ height: 300, background: `linear-gradient(135deg, ${C.navy}, #1A527A)`, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
               {selectedBerita.gambar_url ? (
-                <img src={selectedBerita.gambar_url} alt={selectedBerita.judul} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />
+                <FadeInImage src={selectedBerita.gambar_url} alt={selectedBerita.judul} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />
               ) : (
                 <span style={{ fontSize: 120 }}>{selectedBerita.emoji || "📰"}</span>
               )}
