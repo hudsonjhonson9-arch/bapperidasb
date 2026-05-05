@@ -285,6 +285,9 @@ export default function App() {
   // Slider State
   const [sliderList, setSliderList] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [metricsList, setMetricsList] = useState([]);
+  const [inovasiList, setInovasiList] = useState([]);
+
 
   const active = useScrollSpy();
 
@@ -329,6 +332,14 @@ export default function App() {
       add: `${API_BASE}/bapperida-program-add`,
       edit: `${API_BASE}/bapperida-program-edit`,
       del: `${API_BASE}/bapperida-program-delete`,
+    },
+    metrics: {
+      edit: `${API_BASE}/bapperida-metric-save`,
+    },
+    inovasi: {
+      add: `${API_BASE}/bapperida-inovasi-submit`,
+      edit: `${API_BASE}/bapperida-inovasi-approve`,
+      del: `${API_BASE}/bapperida-inovasi-delete`,
     },
     kontak: {
       submit: `${API_BASE}/bapperida-kontak-submit`
@@ -380,6 +391,8 @@ export default function App() {
       if (data.dokumen) setDokumenList(data.dokumen);
       if (data.slider) setSliderList(data.slider);
       if (data.program) setProgramList(data.program.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
+      if (data.metrics) setMetricsList(data.metrics.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
+      if (data.inovasi) setInovasiList(data.inovasi);
       setFetchError(null);
     } catch (err) {
       console.error("Fetch all fail:", err);
@@ -1065,8 +1078,48 @@ export default function App() {
         </div>
       </section>
 
+      {/* ──── CAPAIAN KINERJA 2025 ──── */}
+      <section id="kinerja" style={{ background: C.white, padding: "96px 28px" }}>
+        <div style={{ maxWidth: 1300, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 50 }}>
+            <div className="gold-bar" style={{ margin: "0 auto 20px" }} />
+            <p className="eyebrow" style={{ marginBottom: 14 }}>Metrik Kinerja</p>
+            <h2 className="section-title">Capaian Kinerja 2025</h2>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
+            {metricsList.map(m => (
+              <div key={m.id} className="card" style={{ padding: "40px 30px", textAlign: "center", position: "relative", display: "flex", flexDirection: "column", justifyContent: "space-between", background: `linear-gradient(to bottom, #ffffff, ${C.offWhite})`, border: `1px solid ${C.warmGray}`, boxShadow: "0 10px 30px rgba(0,0,0,0.03)" }}>
+                {isAdmin && (
+                  <button 
+                    onClick={() => { setEditItem(m); setShowModal('metrics'); }} 
+                    className="btn-admin btn-admin-edit" 
+                    style={{ position: "absolute", top: 15, right: 15, borderRadius: 8, padding: "4px 10px", fontSize: 11 }}
+                    title="Edit Metrik"
+                  >
+                    ✎ Edit
+                  </button>
+                )}
+                <div>
+                  <div style={{ fontSize: 54, marginBottom: 16, filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.1))" }}>{m.icon}</div>
+                  <h3 style={{ fontSize: 15, fontWeight: 600, color: C.textMid, marginBottom: 20, lineHeight: 1.5 }}>{m.label}</h3>
+                </div>
+                <div>
+                  <div style={{ fontSize: 42, fontWeight: 800, color: C.navy, letterSpacing: "-0.02em", background: `linear-gradient(90deg, ${C.navy}, ${C.gold})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    {m.value}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {metricsList.length === 0 && !loading && (
+              <div style={{ gridColumn: "1 / -1", textAlign: "center", color: C.textLight, padding: 40 }}>Metrik belum tersedia.</div>
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* ──── STRUKTUR ORGANISASI ──── */}
-      <section id="struktur" style={{ background: C.white, padding: "96px 28px" }}>
+      <section id="struktur" style={{ background: C.offWhite, padding: "96px 28px" }}>
         <div style={{ maxWidth: 1300, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 60 }}>
             <div className="gold-bar" style={{ margin: "0 auto 20px" }} />
@@ -1497,6 +1550,53 @@ export default function App() {
         </div>
       </section>
 
+      {/* ──── INOVASI DAERAH ──── */}
+      <section id="inovasi" style={{ background: C.offWhite, padding: "96px 28px" }}>
+        <div style={{ maxWidth: 1300, margin: "0 auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 56, flexWrap: "wrap", gap: 20 }}>
+            <div>
+              <div className="gold-bar" style={{ marginBottom: 20 }} />
+              <p className="eyebrow" style={{ marginBottom: 14 }}>Klinik Inovasi IGA</p>
+              <h2 className="section-title" style={{ maxWidth: 520 }}>Galeri Inovasi Daerah</h2>
+            </div>
+            <button className="btn-gold" onClick={() => { setEditItem(null); setShowModal('inovasi-submit'); }} style={{ background: C.gold, color: C.navyDark }}>
+              + Kirim Inovasi (Portal OPD)
+            </button>
+          </div>
+
+          {inovasiList.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "60px 20px", color: C.textLight, background: "white", borderRadius: 16 }}>
+              Belum ada inovasi yang di-approve. Jadilah yang pertama!
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
+              {inovasiList.map(inv => (
+                <div key={inv.id} className="card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 14 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, background: `${C.gold}22`, color: C.gold, padding: "4px 10px", borderRadius: 12 }}>{inv.kategori_skor?.toUpperCase() || "INOVATIF"}</span>
+                    <span style={{ fontSize: 11, color: C.textLight }}>Skor IGA: {inv.skor_iga}</span>
+                  </div>
+                  <h3 style={{ fontSize: 16, fontWeight: 600, color: C.navy, lineHeight: 1.4 }}>{inv.judul_inovasi}</h3>
+                  <div style={{ fontSize: 13, color: C.textMid, fontWeight: 500 }}>🏢 {inv.opd_nama}</div>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: "auto", paddingTop: 14, borderTop: `1px solid ${C.warmGray}` }}>
+                    <span style={{ fontSize: 11, color: C.textLight }}>🔹 {inv.jenis_inovasi}</span>
+                    <span style={{ fontSize: 11, color: C.textLight }}>🔸 Tahap: {inv.tahapan_inovasi}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {isAdmin && (
+            <div style={{ marginTop: 40, textAlign: "center" }}>
+              <button className="btn-admin" onClick={() => setShowModal('inovasi-admin')} style={{ padding: "12px 24px" }}>
+                🔒 Buka Dashboard Admin Inovasi (Review Pending)
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* ──── KONTAK ──── */}
       <section id="kontak" style={{ background: `linear-gradient(145deg, ${C.navyDark} 0%, ${C.navyLight} 100%)`, padding: "96px 28px", color: "white" }}>
         <div style={{ maxWidth: 1300, margin: "0 auto" }}>
@@ -1672,12 +1772,12 @@ export default function App() {
       )}
 
       {/* ──── MODALS ──── */}
-      {(showModal === 'berita' || showModal === 'dokumen' || showModal === 'slider' || showModal === 'program') && (
+      {(showModal === 'berita' || showModal === 'dokumen' || showModal === 'slider' || showModal === 'program' || showModal === 'metrics') && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
               <h3 className="display" style={{ fontSize: 18, fontWeight: 700, color: C.navy }}>
-                {editItem ? "Edit" : "Tambah"} {showModal === 'berita' ? "Berita" : showModal === 'dokumen' ? "Dokumen" : showModal === 'program' ? "Program" : "Slider"}
+                {editItem ? "Edit" : "Tambah"} {showModal === 'berita' ? "Berita" : showModal === 'dokumen' ? "Dokumen" : showModal === 'program' ? "Program" : showModal === 'metrics' ? "Metrik" : "Slider"}
               </h3>
               <button onClick={() => setShowModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textLight }}><X size={20} /></button>
             </div>
@@ -1697,7 +1797,19 @@ export default function App() {
               }}
             >
               <div className="modal-body">
-                {showModal === 'program' ? (
+                {showModal === 'metrics' ? (
+                  <>
+                    <div className="form-group">
+                      <label className="form-label">Nama Metrik / Label</label>
+                      <input name="label" defaultValue={editItem?.label} className="form-input" disabled style={{ background: '#f5f5f5', color: '#888' }} />
+                      <input type="hidden" name="id" value={editItem?.id} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Nilai Saat Ini (Skor / Angka)</label>
+                      <input name="value" defaultValue={editItem?.value} className="form-input" placeholder="Masukkan nilai terbaru..." required />
+                    </div>
+                  </>
+                ) : showModal === 'program' ? (
                   <>
                     <div className="form-group">
                       <label className="form-label">Nama Program / Kegiatan</label>
@@ -1972,6 +2084,148 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* ──── MODAL: INOVASI SUBMIT (OPD) ──── */}
+      {showModal === 'inovasi-submit' && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: 700 }}>
+            <div className="modal-header">
+              <h3 className="display" style={{ fontSize: 18, fontWeight: 700, color: C.navy }}>Klinik Inovasi IGA (Portal OPD)</h3>
+              <button onClick={() => setShowModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textLight }}><X size={20} /></button>
+            </div>
+            <form id="inovasi-form" onSubmit={(e) => {
+              e.preventDefault();
+              const fd = new FormData(e.target);
+              const data = Object.fromEntries(fd.entries());
+              data.skor_iga = parseInt(data.skor_iga || 0);
+              data.dokumen_dukung = data.dokumen_dukung ? [{ name: "Dokumen", url: data.dokumen_dukung }] : [];
+              handleSave('inovasi', data);
+            }} onChange={() => {
+              let score = 0;
+              const form = document.getElementById('inovasi-form');
+              if (!form) return;
+              const fd = new FormData(form);
+              if (fd.get('rancang_bangun')?.length > 300) score += 20;
+              if (fd.get('tahapan_inovasi') === 'Penerapan') score += 20;
+              else if (fd.get('tahapan_inovasi') === 'Uji Coba') score += 10;
+              if (fd.get('link_video')?.length > 10) score += 10;
+              if (fd.get('dokumen_dukung')?.length > 10) score += 20;
+              
+              document.getElementById('iga-score-display').innerText = score;
+              document.getElementById('iga-score-input').value = score;
+              
+              let cat = "Kurang Inovatif";
+              if (score >= 60) cat = "Sangat Inovatif";
+              else if (score >= 30) cat = "Inovatif";
+              document.getElementById('iga-cat-input').value = cat;
+              document.getElementById('iga-cat-display').innerText = cat;
+            }}>
+              <div className="modal-body">
+                <div style={{ background: `${C.gold}12`, border: `1px solid ${C.gold}44`, padding: 15, borderRadius: 8, marginBottom: 20 }}>
+                  <div style={{ fontSize: 12, color: C.gold, fontWeight: 700 }}>Estimasi Skor IGA Otomatis: <span id="iga-score-display" style={{ fontSize: 18 }}>0</span>/100 (<span id="iga-cat-display">Kurang Inovatif</span>)</div>
+                  <input type="hidden" id="iga-score-input" name="skor_iga" value="0" />
+                  <input type="hidden" id="iga-cat-input" name="kategori_skor" value="Kurang Inovatif" />
+                </div>
+                
+                <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label className="form-label">Nama Instansi / OPD</label>
+                    <input name="opd_nama" className="form-input" placeholder="Contoh: Dinas Kesehatan" required />
+                  </div>
+                  <div>
+                    <label className="form-label">Judul Inovasi</label>
+                    <input name="judul_inovasi" className="form-input" required />
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label className="form-label">Urusan Inovasi</label>
+                    <select name="jenis_inovasi" className="form-input" required>
+                      <option>Pelayanan Publik</option>
+                      <option>Tata Kelola Pemerintahan</option>
+                      <option>Bentuk Lainnya</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Tahapan Inovasi</label>
+                    <select name="tahapan_inovasi" className="form-input" required>
+                      <option>Inisiatif</option>
+                      <option>Uji Coba</option>
+                      <option>Penerapan</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Rancang Bangun & Pokok Perubahan (+20 Poin jika >300 huruf)</label>
+                  <textarea name="rancang_bangun" className="form-input" style={{ minHeight: 120 }} placeholder="Jelaskan latar belakang, penjaringan ide, pemilihan ide, manfaat, dan dampak inovasi..." required />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Link Video YouTube Inovasi (+10 Poin)</label>
+                  <input name="link_video" type="url" className="form-input" placeholder="https://youtube.com/..." />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Upload Dokumen Pendukung (SK/SOP/dll) (+20 Poin)</label>
+                  <ImageUploadField name="dokumen_dukung" label="Klik untuk Upload Dokumen PDF" />
+                </div>
+
+              </div>
+              <div className="modal-footer">
+                <button type="submit" className="btn-gold">Kirim Inovasi ke BAPPERIDA</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ──── MODAL: INOVASI ADMIN (REVIEW) ──── */}
+      {showModal === 'inovasi-admin' && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: 800 }}>
+            <div className="modal-header">
+              <h3 className="display" style={{ fontSize: 18, fontWeight: 700, color: C.navy }}>Dashboard Admin Inovasi</h3>
+              <button onClick={() => setShowModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textLight }}><X size={20} /></button>
+            </div>
+            <div className="modal-body" style={{ maxHeight: "60vh", overflowY: "auto" }}>
+              {inovasiList.length === 0 && <div style={{ padding: 20, textAlign: "center", color: C.textLight }}>Tidak ada inovasi.</div>}
+              {inovasiList.map(inv => (
+                <div key={inv.id} style={{ border: `1px solid ${C.warmGray}`, borderRadius: 12, padding: 16, marginBottom: 16 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                    <div>
+                      <h4 style={{ fontSize: 16, fontWeight: 700, color: C.navy }}>{inv.judul_inovasi}</h4>
+                      <div style={{ fontSize: 13, color: C.textMid }}>{inv.opd_nama} • {inv.jenis_inovasi}</div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: C.gold }}>Skor: {inv.skor_iga} ({inv.kategori_skor})</div>
+                      <div style={{ fontSize: 11, color: inv.status_approval === 'Approved' ? 'green' : 'orange' }}>Status: {inv.status_approval}</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 12, color: C.textMid, background: C.offWhite, padding: 10, borderRadius: 6, marginBottom: 10 }}>
+                    {inv.rancang_bangun}
+                  </div>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    {inv.status_approval !== 'Approved' && (
+                      <button onClick={() => handleSave('inovasi', { id: inv.id, action: 'approve' }).then(() => {
+                        // Optimistic UI update or fetch
+                        fetchData();
+                      })} style={{ background: "green", color: "white", padding: "6px 12px", borderRadius: 4, border: "none", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>
+                        ✓ Approve (Tampilkan di Publik)
+                      </button>
+                    )}
+                    <button onClick={() => handleDelete('inovasi', inv.id)} style={{ background: "#ef4444", color: "white", padding: "6px 12px", borderRadius: 4, border: "none", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>
+                      ✕ Hapus
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ──── MODAL: LAYOUT EDITOR ──── */}
       {showModal === 'layout' && (
         <div className="modal-overlay" onClick={() => setShowModal(null)}>

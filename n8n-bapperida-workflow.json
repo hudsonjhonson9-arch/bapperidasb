@@ -112,7 +112,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \n  (SELECT json_agg(t) FROM (SELECT id, judul, konten, kategori, tanggal, emoji, gambar_data AS gambar_url, is_featured, priority, layout_size, col_span, row_span FROM public.bapperida_berita ORDER BY priority ASC, id DESC) t) AS berita,\n  (SELECT json_agg(t) FROM (SELECT id, judul, kategori, tipe, ukuran, tanggal, icon_data AS icon, url FROM public.bapperida_dokumen ORDER BY id DESC) t) AS dokumen,\n  (SELECT json_agg(t) FROM (SELECT id, gambar_data AS gambar_url, judul, subjudul FROM public.bapperida_slider ORDER BY id ASC) t) AS slider,\n  (SELECT json_agg(t) FROM (SELECT id, icon_data AS icon, title, cat, \"desc\", status, sc, priority FROM public.bapperida_program ORDER BY priority ASC, id ASC) t) AS program;",
+        "query": "CREATE TABLE IF NOT EXISTS public.bapperida_metrics (id VARCHAR(50) PRIMARY KEY, label VARCHAR(255), value VARCHAR(255), icon VARCHAR(50), priority INT);\nINSERT INTO public.bapperida_metrics (id, label, value, icon, priority) VALUES ('ipd_2025', 'Indeks Pembangunan Daerah Kabupaten Sumba Barat', 'Menunggu Data', '📈', 1), ('iprid_2025', 'Indeks Pemanfaatan Riset dan Inovasi Daerah', 'Menunggu Data', '🔬', 2), ('sakip_2025', 'NILAI SAKIP Bapperida Tahun 2025', 'Menunggu Data', '🏆', 3) ON CONFLICT DO NOTHING;\nCREATE TABLE IF NOT EXISTS public.bapperida_inovasi (id SERIAL PRIMARY KEY, opd_nama VARCHAR(255), judul_inovasi VARCHAR(255), jenis_inovasi VARCHAR(100), tahapan_inovasi VARCHAR(100), rancang_bangun TEXT, waktu_uji_coba DATE, waktu_penerapan DATE, link_video VARCHAR(255), dokumen_dukung JSONB, skor_iga INT DEFAULT 0, kategori_skor VARCHAR(50), status_approval VARCHAR(50) DEFAULT 'Pending', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);\n\nSELECT \n  (SELECT json_agg(t) FROM (SELECT id, judul, konten, kategori, tanggal, emoji, gambar_data AS gambar_url, is_featured, priority, layout_size, col_span, row_span FROM public.bapperida_berita ORDER BY priority ASC, id DESC) t) AS berita,\n  (SELECT json_agg(t) FROM (SELECT id, judul, kategori, tipe, ukuran, tanggal, icon_data AS icon, url FROM public.bapperida_dokumen ORDER BY id DESC) t) AS dokumen,\n  (SELECT json_agg(t) FROM (SELECT id, gambar_data AS gambar_url, judul, subjudul FROM public.bapperida_slider ORDER BY id ASC) t) AS slider,\n  (SELECT json_agg(t) FROM (SELECT id, icon_data AS icon, title, cat, \"desc\", status, sc, priority FROM public.bapperida_program ORDER BY priority ASC, id ASC) t) AS program,\n  (SELECT json_agg(t) FROM (SELECT id, label, value, icon FROM public.bapperida_metrics ORDER BY priority ASC) t) AS metrics,\n  (SELECT json_agg(t) FROM (SELECT * FROM public.bapperida_inovasi WHERE status_approval = 'Approved' ORDER BY skor_iga DESC, id DESC) t) AS inovasi;",
         "options": {}
       },
       "id": "init-db-id",
@@ -1155,6 +1155,243 @@
         448,
         -832
       ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"error\": \"Unauthorized\"\n}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "id": "de6e2c64-97d7-477b-8195-4a25d5b8851e",
+      "name": "Respond Unauthorized",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        224,
+        3000
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bapperida-metric-save",
+        "responseMode": "lastNode",
+        "options": {
+          "includeHeaders": true
+        }
+      },
+      "id": "e3266ed4-4af1-4993-be40-5b0a69108135",
+      "name": "Webhook Metric Edit",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        2000
+      ],
+      "webhookId": "cc5a2215-3fd5-4d3f-bba3-6043be40642b"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.headers['x-app-token']}}",
+              "value2": "BAPPERIDA_SECURE_TOKEN_2026"
+            }
+          ]
+        }
+      },
+      "id": "98cb3678-be01-4eb3-9740-6fc65ca66956",
+      "name": "Auth Metric Edit",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        224,
+        2000
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE public.bapperida_metrics SET value = '{{$json.body.value ? $json.body.value.replace(/'/g, \"''\") : \"\"}}' WHERE id = '{{$json.body.id}}' RETURNING *;",
+        "options": {}
+      },
+      "id": "f687740d-32eb-4aae-84e7-639547c01942",
+      "name": "DB Metric Edit",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        448,
+        2000
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bapperida-inovasi-submit",
+        "responseMode": "lastNode",
+        "options": {
+          "includeHeaders": true
+        }
+      },
+      "id": "b491f25d-6d35-4d26-a048-8014db4a890d",
+      "name": "Webhook Inovasi Submit",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        2300
+      ],
+      "webhookId": "d57a0e3b-8f85-44f2-8dcc-c436eaeaa636"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.bapperida_inovasi (opd_nama, judul_inovasi, jenis_inovasi, tahapan_inovasi, rancang_bangun, link_video, dokumen_dukung, skor_iga, kategori_skor) VALUES ('{{$json.body.opd_nama ? $json.body.opd_nama.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.judul_inovasi ? $json.body.judul_inovasi.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.jenis_inovasi || \"\"}}', '{{$json.body.tahapan_inovasi || \"\"}}', '{{$json.body.rancang_bangun ? $json.body.rancang_bangun.replace(/'/g, \"''\") : \"\"}}', '{{$json.body.link_video || \"\"}}', '{{$json.body.dokumen_dukung ? JSON.stringify($json.body.dokumen_dukung) : \"[]\"}}'::jsonb, {{$json.body.skor_iga || 0}}, '{{$json.body.kategori_skor || \"Kurang\"}}') RETURNING *;",
+        "options": {}
+      },
+      "id": "9dcb21ba-87e3-4ecf-ad29-79cfdf1003e1",
+      "name": "DB Inovasi Submit",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        448,
+        2300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bapperida-inovasi-approve",
+        "responseMode": "lastNode",
+        "options": {
+          "includeHeaders": true
+        }
+      },
+      "id": "3994d7c0-ac2a-4a35-8398-4b9760953683",
+      "name": "Webhook Inovasi Approve",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        2600
+      ],
+      "webhookId": "224cfa30-d686-4aa4-92bd-59d1d92a5f4d"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.headers['x-app-token']}}",
+              "value2": "BAPPERIDA_SECURE_TOKEN_2026"
+            }
+          ]
+        }
+      },
+      "id": "df6550b0-3093-4454-b2f7-e56c395306a2",
+      "name": "Auth Inovasi Approve",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        224,
+        2600
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE public.bapperida_inovasi SET status_approval = 'Approved' WHERE id = {{$json.body.id}} RETURNING *;",
+        "options": {}
+      },
+      "id": "d84a57a9-f02c-4ea3-ba45-7f9461561ae4",
+      "name": "DB Inovasi Approve",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        448,
+        2600
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bapperida-inovasi-delete",
+        "responseMode": "lastNode",
+        "options": {
+          "includeHeaders": true
+        }
+      },
+      "id": "4a9deea0-41f8-432a-a7ad-e0318ae445d8",
+      "name": "Webhook Inovasi Delete",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        2900
+      ],
+      "webhookId": "a222aba0-318d-430c-a291-5cc06587c9cb"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.headers['x-app-token']}}",
+              "value2": "BAPPERIDA_SECURE_TOKEN_2026"
+            }
+          ]
+        }
+      },
+      "id": "32460ca3-8e53-4593-b4bf-3f8310176df3",
+      "name": "Auth Inovasi Delete",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        224,
+        2900
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM public.bapperida_inovasi WHERE id = {{$json.body.id}} RETURNING *;",
+        "options": {}
+      },
+      "id": "56f1969d-b8f8-4f29-a525-9ffc4be4e27a",
+      "name": "DB Inovasi Delete",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        448,
+        2900
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
     }
   ],
   "connections": {
@@ -1808,6 +2045,148 @@
         [
           {
             "node": "Respond Master Init",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Metric Edit": {
+      "main": [
+        [
+          {
+            "node": "Auth Metric Edit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auth Metric Edit": {
+      "main": [
+        [
+          {
+            "node": "DB Metric Edit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Unauthorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB Metric Edit": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Inovasi Submit": {
+      "main": [
+        [
+          {
+            "node": "DB Inovasi Submit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB Inovasi Submit": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Inovasi Approve": {
+      "main": [
+        [
+          {
+            "node": "Auth Inovasi Approve",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auth Inovasi Approve": {
+      "main": [
+        [
+          {
+            "node": "DB Inovasi Approve",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Unauthorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB Inovasi Approve": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Inovasi Delete": {
+      "main": [
+        [
+          {
+            "node": "Auth Inovasi Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auth Inovasi Delete": {
+      "main": [
+        [
+          {
+            "node": "DB Inovasi Delete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Unauthorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB Inovasi Delete": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
             "type": "main",
             "index": 0
           }
