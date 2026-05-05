@@ -1589,7 +1589,7 @@ export default function App() {
 
           {isAdmin && (
             <div style={{ marginTop: 40, textAlign: "center" }}>
-              <button className="btn-admin" onClick={() => setShowModal('inovasi-admin')} style={{ padding: "12px 24px" }}>
+              <button onClick={() => setShowModal('inovasi-admin')} style={{ padding: "12px 24px", background: C.navy, color: "white", borderRadius: 8, border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(11,36,71,0.2)", display: "inline-flex", alignItems: "center", gap: 8 }}>
                 🔒 Buka Dashboard Admin Inovasi (Review Pending)
               </button>
             </div>
@@ -1993,13 +1993,24 @@ export default function App() {
             </div>
             <div style={{ flex: 1, background: "#f1f5f9", position: "relative" }}>
               {previewDokumen.url ? (
-                <iframe
-                  src={previewDokumen.url}
-                  width="100%"
-                  height="100%"
-                  style={{ border: "none", position: "absolute", inset: 0 }}
-                  title="PDF Preview"
-                />
+                isMobile ? (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: C.textLight, padding: 40, textAlign: "center" }}>
+                    <div style={{ fontSize: 48, marginBottom: 16 }}>📱</div>
+                    <div style={{ fontSize: 16, color: C.navy, fontWeight: 600, marginBottom: 8 }}>Pratinjau Tidak Didukung</div>
+                    <div style={{ marginBottom: 20 }}>Pratinjau dokumen PDF langsung tidak selalu didukung di browser mobile. Silakan buka dokumen di tab baru.</div>
+                    <button onClick={() => window.open(previewDokumen.url, '_blank')} className="btn-gold" style={{ padding: "10px 20px" }}>
+                      Buka Dokumen
+                    </button>
+                  </div>
+                ) : (
+                  <iframe
+                    src={previewDokumen.url}
+                    width="100%"
+                    height="100%"
+                    style={{ border: "none", position: "absolute", inset: 0 }}
+                    title="PDF Preview"
+                  />
+                )
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: C.textLight, padding: 40, textAlign: "center" }}>
                   <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
