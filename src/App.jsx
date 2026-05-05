@@ -2158,7 +2158,7 @@ export default function App() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Rancang Bangun & Pokok Perubahan (+20 Poin jika >300 huruf)</label>
+                  <label className="form-label">Rancang Bangun & Pokok Perubahan (+20 Poin jika &gt;300 huruf)</label>
                   <textarea name="rancang_bangun" className="form-input" style={{ minHeight: 120 }} placeholder="Jelaskan latar belakang, penjaringan ide, pemilihan ide, manfaat, dan dampak inovasi..." required />
                 </div>
 
