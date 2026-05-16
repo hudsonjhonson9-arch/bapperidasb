@@ -511,6 +511,34 @@ export default function App() {
     });
   };
 
+  const handleViewDocument = (d) => {
+    if (!d) return;
+    const target = d.url || d.data;
+    if (!target) return;
+    
+    if (target.startsWith('data:')) {
+      try {
+        const parts = target.split(',');
+        const mime = parts[0].match(/:(.*?);/)[1];
+        const b64Data = parts[1];
+        const byteCharacters = atob(b64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: mime });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      } catch (e) {
+        console.error("Blob conversion failed, falling back to direct open:", e);
+        window.open(target, '_blank');
+      }
+    } else {
+      window.open(target, '_blank');
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     const errors = [];
@@ -533,6 +561,10 @@ export default function App() {
       
       if (res && res.data && Array.isArray(res.data)) return res.data;
       if (res && res.json && Array.isArray(res.json)) return res.json;
+      
+      // If it's a single object that looks like a data row (e.g. has an 'id'), wrap it in an array
+      if (res && typeof res === 'object' && (res.id || res.judul_inovasi || res.judul)) return [res];
+      
       return [];
     };
 
@@ -545,7 +577,25 @@ export default function App() {
       if (data.slider) setSliderList(data.slider);
       if (data.program) setProgramList(data.program.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
       if (data.metrics) setMetricsList(data.metrics.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-      if (data.inovasi) setInovasiList(data.inovasi);
+      if (data.inovasi) {
+        setInovasiList(data.inovasi);
+      }
+      
+      // Always fetch all innovations for Admin Review if separate endpoint exists
+      try {
+        const invRes = await fetch(`${API_BASE}/bapperida-inovasi-list`, {
+          headers: { "X-App-Token": APP_SECRET }
+        });
+        if (invRes.ok) {
+          const invData = await invRes.json();
+          const invList = getList(invData);
+          if (invList && invList.length > 0) {
+            setInovasiList(invList);
+          }
+        }
+      } catch (e) {
+        console.warn("Inovasi separate fetch failed, using init data:", e);
+      }
       setFetchError(null);
     } catch (err) {
       console.error("Fetch all fail:", err);
@@ -1782,13 +1832,13 @@ export default function App() {
             </button>
           </div>
 
-          {inovasiList.length === 0 ? (
+          {inovasiList.filter(inv => inv.status_approval === 'Approved').length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 20px", color: C.textLight, background: "white", borderRadius: 16 }}>
               Belum ada inovasi yang di-approve. Jadilah yang pertama!
             </div>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
-              {inovasiList.map(inv => (
+              {inovasiList.filter(inv => inv.status_approval === 'Approved').map(inv => (
                 <div key={inv.id} className="card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 14 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <span style={{ fontSize: 10, fontWeight: 700, background: `${C.gold}22`, color: C.gold, padding: "4px 10px", borderRadius: 12 }}>{inv.kategori_skor?.toUpperCase() || "INOVATIF"}</span>
@@ -2454,13 +2504,43 @@ export default function App() {
                   <div style={{ fontSize: 12, color: C.textMid, background: C.offWhite, padding: 10, borderRadius: 6, marginBottom: 10 }}>
                     {inv.rancang_bangun}
                   </div>
+
+                  {inv.link_video && (
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, marginBottom: 5, textTransform: "uppercase" }}>Video Inovasi:</div>
+                      <a href={inv.link_video} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "#f43f5e", display: "flex", alignItems: "center", gap: 6, textDecoration: "none", fontWeight: 700 }}>
+                        <Globe size={14} /> Video YouTube Inovasi
+                      </a>
+                    </div>
+                  )}
+
                   {inv.dokumen_dukung && inv.dokumen_dukung.length > 0 && (
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
-                      {inv.dokumen_dukung.map((d, i) => (
-                        <a key={i} href={d.url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: C.navy, background: `${C.gold}22`, padding: "4px 10px", borderRadius: 4, textDecoration: "none", fontWeight: 600 }}>
-                          📄 {d.name}
-                        </a>
-                      ))}
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, marginBottom: 8, textTransform: "uppercase" }}>Dokumen Pendukung:</div>
+                      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        {inv.dokumen_dukung.map((d, i) => (
+                          <button 
+                            key={i} 
+                            onClick={() => handleViewDocument(d)}
+                            style={{ 
+                              fontSize: 11, 
+                              color: C.navy, 
+                              background: `${C.gold}22`, 
+                              padding: "4px 10px", 
+                              borderRadius: 4, 
+                              border: "none",
+                              cursor: "pointer",
+                              textDecoration: "none", 
+                              fontWeight: 600,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4
+                            }}
+                          >
+                            📄 {d.name}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                   <div style={{ display: "flex", gap: 10 }}>
