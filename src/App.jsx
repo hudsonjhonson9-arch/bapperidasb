@@ -1774,7 +1774,7 @@ export default function App() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 56, flexWrap: "wrap", gap: 20 }}>
             <div>
               <div className="gold-bar" style={{ marginBottom: 20 }} />
-              <p className="eyebrow" style={{ marginBottom: 14 }}>Klinik Inovasi BAPPERIDA Sumba Barat</p>
+              <p className="eyebrow" style={{ marginBottom: 14 }}>Klinik Inovasi BAPPERIDA Kabupaten Sumba Barat</p>
               <h2 className="section-title" style={{ maxWidth: 520 }}>Galeri Inovasi Daerah</h2>
             </div>
             <button className="btn-gold" onClick={() => { setEditItem(null); setShowModal('inovasi-submit'); }} style={{ background: C.gold, color: C.navyDark }}>
