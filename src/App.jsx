@@ -221,6 +221,159 @@ const ImageUploadField = ({ name, defaultValue, label, required, onMetadata }) =
 };
 
 
+const MultiFileUploadField = ({ name, label, helpText }) => {
+  const [files, setFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileChange = async (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    if (selectedFiles.length === 0) return;
+
+    setUploading(true);
+    const newFiles = [...files];
+
+    for (const file of selectedFiles) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`File ${file.name} terlalu besar! Maksimal 5MB.`);
+        continue;
+      }
+
+      const reader = new FileReader();
+      const promise = new Promise((resolve) => {
+        reader.onloadend = () => {
+          resolve({
+            name: file.name,
+            url: reader.result,
+            type: file.name.split('.').pop().toUpperCase(),
+            size: file.size > 1024 * 1024 
+              ? (file.size / (1024 * 1024)).toFixed(1) + ' MB' 
+              : (file.size / 1024).toFixed(0) + ' KB'
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+
+      const fileData = await promise;
+      newFiles.push(fileData);
+    }
+
+    setFiles(newFiles);
+    setUploading(false);
+    e.target.value = ''; // Reset input
+  };
+
+  const removeFile = (index) => {
+    setFiles(files.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="form-group">
+      <label className="form-label">{label}</label>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <input 
+          type="file" 
+          multiple 
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*"
+          onChange={handleFileChange} 
+          className="form-input" 
+          disabled={uploading}
+          style={{ padding: '10px 16px', background: '#fff', cursor: 'pointer', border: '1px dashed #ccc' }}
+        />
+        
+        {uploading && <div style={{ fontSize: 12, color: C.gold, fontWeight: 600 }}>⏳ Memproses file...</div>}
+        
+        {files.length > 0 && (
+          <div style={{ display: 'grid', gap: 8 }}>
+            {files.map((f, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'white', padding: '8px 12px', borderRadius: 8, border: '1px solid #eee' }}>
+                <div style={{ width: 32, height: 32, borderRadius: 6, background: `${C.navy}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
+                  {f.type === 'PDF' ? '📕' : '📄'}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: C.navy, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</div>
+                  <div style={{ fontSize: 11, color: C.textLight }}>{f.size} • {f.type}</div>
+                </div>
+                <button type="button" onClick={() => removeFile(i)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 4 }}>
+                  <X size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        <input type="hidden" name={name} value={JSON.stringify(files)} />
+        <p style={{ fontSize: 11, color: '#666', margin: 0 }}>{helpText || "Bisa pilih lebih dari 1 file. Maks 5MB per file."}</p>
+      </div>
+    </div>
+  );
+};
+
+
+const OrgBox = ({ data, color, isLeader, isBidang }) => {
+  const [hovered, setHovered] = useState(false);
+  
+  return (
+    <div 
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ 
+        width: isLeader ? 260 : 220,
+        background: hovered ? "white" : "rgba(255,255,255,0.9)",
+        backdropFilter: "blur(10px)",
+        borderRadius: 20,
+        overflow: "hidden",
+        border: `1px solid ${hovered ? color : "#e2e8f0"}`,
+        boxShadow: hovered 
+          ? `0 20px 40px ${color}15, 0 1px 3px rgba(0,0,0,0.05)` 
+          : "0 4px 12px rgba(0,0,0,0.03)",
+        display: "flex",
+        flexDirection: "column",
+        transition: "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+        transform: hovered ? "translateY(-8px) scale(1.02)" : "translateY(0) scale(1)",
+        zIndex: hovered ? 10 : 1,
+        cursor: "pointer"
+      }}>
+      <div style={{ 
+        background: color, 
+        color: "white", 
+        padding: "16px", 
+        textAlign: "center", 
+        position: "relative",
+        minHeight: 60,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center"
+      }}>
+        <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", opacity: 0.8, textTransform: "uppercase", lineHeight: 1.4 }}>{data.title}</div>
+        {hovered && <div style={{ position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)", width: 40, height: 3, background: "rgba(255,255,255,0.5)", borderRadius: "2px 2px 0 0" }} />}
+      </div>
+      <div style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 12 }}>
+        <div style={{ position: "relative" }}>
+          <div style={{ 
+            width: 72, height: 72, borderRadius: "24px", 
+            background: hovered ? `${color}15` : "#f8fafc", 
+            border: `2px solid ${hovered ? color : "#f1f5f9"}`, 
+            display: "flex", alignItems: "center", justifyContent: "center", 
+            fontSize: 28, transition: "all 0.4s ease",
+            transform: hovered ? "rotate(5deg)" : "rotate(0)"
+          }}>
+            👤
+          </div>
+          {isLeader && (
+            <div style={{ position: "absolute", top: -5, right: -5, background: C.gold, color: "white", width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, border: "2px solid white" }}>⭐</div>
+          )}
+        </div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.navy, lineHeight: 1.3, marginBottom: 4 }}>{data.name}</div>
+          <div style={{ fontSize: 10, color: C.textLight, fontWeight: 600, letterSpacing: "0.02em" }}>NIP. {data.nip}</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 function useScrollSpy() {
   const [active, setActive] = useState("beranda");
   useEffect(() => {
@@ -1128,49 +1281,95 @@ export default function App() {
             <p style={{ fontSize: 15.5, color: C.textMid, marginTop: 14, maxWidth: 600, margin: "14px auto 0" }}>Berdasarkan Peraturan Bupati Sumba Barat tentang Kedudukan, Susunan Organisasi, Tugas dan Fungsi serta Tata Kerja Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah</p>
           </div>
 
-          <div className="org-image-container" style={{ width: "100%", padding: "40px 0", background: "white", display: "flex", justifyContent: "center" }}>
-            <img 
-              src="/Struktur_Organisasi_BAPPERIDA.png" 
-              alt="Struktur Organisasi BAPPERIDA" 
-              style={{ 
-                maxWidth: "100%", 
-                height: "auto", 
-                borderRadius: 8,
-                cursor: "zoom-in",
-                transition: "transform 0.3s ease"
-              }}
-              onClick={() => setShowOrgZoom(true)}
-              onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.01)"}
-              onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
-            />
-          </div>
+          <div style={{ 
+            width: "100%", 
+            padding: "60px 0", 
+            background: "transparent", 
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center"
+          }}>
+            <div style={{ width: "100%", maxWidth: 1300, display: "flex", flexDirection: "column", alignItems: "center" }}>
+              
+              {/* KEPALA BADAN (CENTER) */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", width: "100%" }}>
+                <OrgBox data={ORG_DATA.kepala} color={C.navy} isLeader />
+                <div style={{ width: 3, height: 100, background: `linear-gradient(to bottom, ${C.navy}, #cbd5e1)`, borderRadius: 2 }}></div>
+              </div>
 
-          {/* Premium Zoom Modal */}
-          {showOrgZoom && (
-            <div 
-              style={{ 
-                position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", 
-                background: "rgba(11, 36, 71, 0.95)", backdropFilter: "blur(10px)",
-                zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "zoom-out", padding: 40, animation: "fadeIn 0.3s ease"
-              }}
-              onClick={() => setShowOrgZoom(false)}
-            >
-              <button 
-                style={{ position: "absolute", top: 30, right: 30, background: "white", border: "none", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 20, fontWeight: "bold" }}
-                onClick={() => setShowOrgZoom(false)}
-              >
-                ✕
-              </button>
-              <img 
-                src="/Struktur_Organisasi_BAPPERIDA.png" 
-                alt="Zoomed" 
-                style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 4, boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }} 
-              />
+              {/* MANAGEMENT HUB */}
+              <div style={{ position: "relative", width: "100%", display: "flex", justifyContent: "center", height: 560 }}>
+                {/* Horizontal connection line at the top of the hub */}
+                <div style={{ 
+                  position: "absolute", top: 0, left: "50%", width: "40%", height: 80, 
+                  borderTop: "3px solid #cbd5e1", borderLeft: "3px solid #cbd5e1", borderRight: "3px solid #cbd5e1",
+                  borderRadius: "24px 24px 0 0", transform: "translateX(-50%)"
+                }}></div>
+                
+                {/* Main vertical trunk through the center */}
+                <div style={{ width: 3, height: "100%", background: "#cbd5e1", position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)" }}></div>
+
+                {/* Left side: KELOMPOK JABATAN */}
+                <div style={{ position: "absolute", left: "30%", top: 80, transform: "translateX(-50%)", width: 260, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div style={{ 
+                    padding: "24px 30px", background: "rgba(255,255,255,0.95)", backdropFilter: "blur(10px)", color: "#38bdf8", borderRadius: 24, fontWeight: 800, fontSize: 13, textAlign: "center", 
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.04)", width: "100%", border: "1px solid #e2e8f0"
+                  }}>
+                    <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 12, letterSpacing: "0.1em", fontWeight: 900 }}>KELOMPOK JABATAN</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div style={{ padding: "8px 12px", background: "#38bdf810", borderRadius: 12 }}>FUNGSIONAL</div>
+                      <div style={{ padding: "8px 12px", background: "#38bdf810", borderRadius: 12 }}>PELAKSANA</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right side: SEKRETARIS & KASUBAG */}
+                <div style={{ position: "absolute", left: "70%", top: 80, transform: "translateX(-50%)", width: 260, display: "flex", flexDirection: "column", alignItems: "center", gap: 0 }}>
+                  <OrgBox data={ORG_DATA.sekretaris} color={C.navy} />
+                  <div style={{ width: 3, height: 40, background: "#cbd5e1" }}></div>
+                  <OrgBox data={ORG_DATA.kasubag} color="#0ea5e9" />
+                </div>
+              </div>
+
+              {/* VERTICAL CONNECTOR TO BOTTOM */}
+              <div style={{ width: 3, height: 80, background: "#cbd5e1" }}></div>
+
+              {/* OPERATIONAL LEVEL (BIDANG) */}
+              <div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <div style={{ width: 1180, height: 60, position: "relative" }}>
+                  {/* The main horizontal line spanning between the centers of the 1st and 5th boxes */}
+                  {/* For 5 boxes of 220px with 20px gap, total width is 1180px. Centers: 110, 350, 590, 830, 1070 */}
+                  <div style={{ position: "absolute", top: 0, left: 110, right: 110, height: 3, background: "#cbd5e1" }}></div>
+                  
+                  {/* Fixed markers at exact centers of each 220px slot */}
+                  {[110, 350, 590, 830, 1070].map(pos => (
+                    <div key={pos} style={{ 
+                      position: "absolute", top: 0, left: pos, width: 3, height: 60, 
+                      background: "#cbd5e1", marginLeft: -1.5 
+                    }}></div>
+                  ))}
+                </div>
+
+                <div style={{ 
+                  display: "flex", 
+                  justifyContent: "center",
+                  gap: 20, 
+                  width: 1180
+                }}>
+                  {ORG_DATA.bidang.map((b, i) => (
+                    <OrgBox key={i} data={b} color="#0ea5e9" isBidang />
+                  ))}
+                </div>
+              </div>
+
             </div>
-          )}
+          </div>
         </div>
       </section>
+
+
+
 
 
       {/* ──── PROGRAM & KEGIATAN ──── */}
@@ -1397,7 +1596,7 @@ export default function App() {
             gap: isLayoutMode ? 16 : 32, 
             marginBottom: 60 
           }}>
-            {beritaList.slice(0, 12).map((item, idx) => {
+            {beritaList.slice(0, 6).map((item, idx) => {
               // Priority: col_span/row_span from DB, fallback to legacy layout_size, fallback to default
               let col = item.col_span || 1;
               let row = item.row_span || 1;
@@ -1547,6 +1746,25 @@ export default function App() {
               );
             })}
           </div>
+
+          {beritaList.length > 6 && (
+            <div style={{ textAlign: "center" }}>
+              <button 
+                onClick={() => setShowAllBeritaModal(true)} 
+                className="btn-gold" 
+                style={{ 
+                  background: "transparent", 
+                  border: `2px solid ${C.gold}`, 
+                  color: C.gold, 
+                  padding: "12px 32px",
+                  fontSize: 14,
+                  fontWeight: 700
+                }}
+              >
+                Lihat Berita Lainnya <ArrowRight size={16} style={{ marginLeft: 8 }} />
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -1556,7 +1774,7 @@ export default function App() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 56, flexWrap: "wrap", gap: 20 }}>
             <div>
               <div className="gold-bar" style={{ marginBottom: 20 }} />
-              <p className="eyebrow" style={{ marginBottom: 14 }}>Klinik Inovasi IGA</p>
+              <p className="eyebrow" style={{ marginBottom: 14 }}>Klinik Inovasi BAPPERIDA Sumba Barat</p>
               <h2 className="section-title" style={{ maxWidth: 520 }}>Galeri Inovasi Daerah</h2>
             </div>
             <button className="btn-gold" onClick={() => { setEditItem(null); setShowModal('inovasi-submit'); }} style={{ background: C.gold, color: C.navyDark }}>
@@ -1574,10 +1792,11 @@ export default function App() {
                 <div key={inv.id} className="card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 14 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <span style={{ fontSize: 10, fontWeight: 700, background: `${C.gold}22`, color: C.gold, padding: "4px 10px", borderRadius: 12 }}>{inv.kategori_skor?.toUpperCase() || "INOVATIF"}</span>
-                    <span style={{ fontSize: 11, color: C.textLight }}>Skor IGA: {inv.skor_iga}</span>
+                    <span style={{ fontSize: 11, color: C.textLight }}>Skor Inovasi: {inv.skor_iga}</span>
                   </div>
                   <h3 style={{ fontSize: 16, fontWeight: 600, color: C.navy, lineHeight: 1.4 }}>{inv.judul_inovasi}</h3>
                   <div style={{ fontSize: 13, color: C.textMid, fontWeight: 500 }}>🏢 {inv.opd_nama}</div>
+                  <div style={{ fontSize: 12, color: C.textLight }}>👤 {inv.nama_inovator || "Tim Inovator"}</div>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: "auto", paddingTop: 14, borderTop: `1px solid ${C.warmGray}` }}>
                     <span style={{ fontSize: 11, color: C.textLight }}>🔹 {inv.jenis_inovasi}</span>
                     <span style={{ fontSize: 11, color: C.textLight }}>🔸 Tahap: {inv.tahapan_inovasi}</span>
@@ -2101,7 +2320,7 @@ export default function App() {
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: 700 }}>
             <div className="modal-header">
-              <h3 className="display" style={{ fontSize: 18, fontWeight: 700, color: C.navy }}>Klinik Inovasi IGA (Portal OPD)</h3>
+              <h3 className="display" style={{ fontSize: 18, fontWeight: 700, color: C.navy }}>Klinik Inovasi BAPPERIDA Sumba Barat (Portal OPD)</h3>
               <button onClick={() => setShowModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textLight }}><X size={20} /></button>
             </div>
             <form id="inovasi-form" onSubmit={(e) => {
@@ -2109,7 +2328,14 @@ export default function App() {
               const fd = new FormData(e.target);
               const data = Object.fromEntries(fd.entries());
               data.skor_iga = parseInt(data.skor_iga || 0);
-              data.dokumen_dukung = data.dokumen_dukung ? [{ name: "Dokumen", url: data.dokumen_dukung }] : [];
+              
+              // Handle multiple documents from JSON string
+              try {
+                data.dokumen_dukung = JSON.parse(data.dokumen_dukung || "[]");
+              } catch (e) {
+                data.dokumen_dukung = [];
+              }
+              
               handleSave('inovasi', data);
             }} onChange={() => {
               let score = 0;
@@ -2120,7 +2346,12 @@ export default function App() {
               if (fd.get('tahapan_inovasi') === 'Penerapan') score += 20;
               else if (fd.get('tahapan_inovasi') === 'Uji Coba') score += 10;
               if (fd.get('link_video')?.length > 10) score += 10;
-              if (fd.get('dokumen_dukung')?.length > 10) score += 20;
+              
+              // Cek dokumen (JSON array string)
+              try {
+                const docs = JSON.parse(fd.get('dokumen_dukung') || "[]");
+                if (docs.length > 0) score += 20;
+              } catch (e) {}
               
               document.getElementById('iga-score-display').innerText = score;
               document.getElementById('iga-score-input').value = score;
@@ -2133,7 +2364,7 @@ export default function App() {
             }}>
               <div className="modal-body">
                 <div style={{ background: `${C.gold}12`, border: `1px solid ${C.gold}44`, padding: 15, borderRadius: 8, marginBottom: 20 }}>
-                  <div style={{ fontSize: 12, color: C.gold, fontWeight: 700 }}>Estimasi Skor IGA Otomatis: <span id="iga-score-display" style={{ fontSize: 18 }}>0</span>/100 (<span id="iga-cat-display">Kurang Inovatif</span>)</div>
+                  <div style={{ fontSize: 12, color: C.gold, fontWeight: 700 }}>Estimasi Skor Inovasi: <span id="iga-score-display" style={{ fontSize: 18 }}>0</span>/100 (<span id="iga-cat-display">Kurang Inovatif</span>)</div>
                   <input type="hidden" id="iga-score-input" name="skor_iga" value="0" />
                   <input type="hidden" id="iga-cat-input" name="kategori_skor" value="Kurang Inovatif" />
                 </div>
@@ -2144,9 +2375,14 @@ export default function App() {
                     <input name="opd_nama" className="form-input" placeholder="Contoh: Dinas Kesehatan" required />
                   </div>
                   <div>
-                    <label className="form-label">Judul Inovasi</label>
-                    <input name="judul_inovasi" className="form-input" required />
+                    <label className="form-label">Nama Inovator / Tim</label>
+                    <input name="nama_inovator" className="form-input" placeholder="Nama lengkap atau tim..." required />
                   </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Judul Inovasi</label>
+                  <input name="judul_inovasi" className="form-input" required />
                 </div>
 
                 <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -2180,7 +2416,7 @@ export default function App() {
 
                 <div className="form-group">
                   <label className="form-label">Upload Dokumen Pendukung (SK/SOP/dll) (+20 Poin)</label>
-                  <ImageUploadField name="dokumen_dukung" label="Klik untuk Upload Dokumen PDF" />
+                  <MultiFileUploadField name="dokumen_dukung" label="Klik untuk Upload Dokumen PDF / Gambar" />
                 </div>
 
               </div>
@@ -2208,6 +2444,7 @@ export default function App() {
                     <div>
                       <h4 style={{ fontSize: 16, fontWeight: 700, color: C.navy }}>{inv.judul_inovasi}</h4>
                       <div style={{ fontSize: 13, color: C.textMid }}>{inv.opd_nama} • {inv.jenis_inovasi}</div>
+                      <div style={{ fontSize: 12, color: C.gold, fontWeight: 700 }}>Inovator: {inv.nama_inovator || "-"}</div>
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: C.gold }}>Skor: {inv.skor_iga} ({inv.kategori_skor})</div>
@@ -2217,6 +2454,15 @@ export default function App() {
                   <div style={{ fontSize: 12, color: C.textMid, background: C.offWhite, padding: 10, borderRadius: 6, marginBottom: 10 }}>
                     {inv.rancang_bangun}
                   </div>
+                  {inv.dokumen_dukung && inv.dokumen_dukung.length > 0 && (
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
+                      {inv.dokumen_dukung.map((d, i) => (
+                        <a key={i} href={d.url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: C.navy, background: `${C.gold}22`, padding: "4px 10px", borderRadius: 4, textDecoration: "none", fontWeight: 600 }}>
+                          📄 {d.name}
+                        </a>
+                      ))}
+                    </div>
+                  )}
                   <div style={{ display: "flex", gap: 10 }}>
                     {inv.status_approval !== 'Approved' && (
                       <button onClick={() => handleSave('inovasi', { id: inv.id, action: 'approve' }).then(() => {
