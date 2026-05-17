@@ -431,6 +431,11 @@ const PublicInovasiCard = ({ inv }) => {
           <div style={{ fontSize: 13, color: C.textLight, display: "flex", alignItems: "center", gap: 6 }}>
             <span>👤</span> {inv.nama_inovator || "Tim Inovator"}
           </div>
+          <div style={{ fontSize: 11, color: C.textLight, display: "flex", flexWrap: "wrap", gap: "8px 16px", marginTop: 4 }}>
+            <span>⚖️ <strong>Regulasi:</strong> {inv.regulasi_inovasi || "SOP"}</span>
+            <span>💰 <strong>Anggaran:</strong> {inv.anggaran_inovasi === "Ada" ? "DPA (Ada)" : "Tidak Ada"}</span>
+            <span>📅 <strong>Penerapan:</strong> {inv.waktu_penerapan || "-"}</span>
+          </div>
         </div>
       </div>
 
@@ -2614,8 +2619,10 @@ export default function App() {
               if (!form) return;
               const fd = new FormData(form);
               
-              // 1. Rancang Bangun (>300 chars) = +20 points
-              if (fd.get('rancang_bangun')?.length > 300) score += 20;
+              // 1. Rancang Bangun (>=300 words) = +20 points
+              const rbText = fd.get('rancang_bangun')?.trim() || "";
+              const rbWordsCount = rbText ? rbText.split(/\s+/).filter(Boolean).length : 0;
+              if (rbWordsCount >= 300) score += 20;
               
               // 2. Tahapan Inovasi: Penerapan = +20, Uji Coba = +10, Inisiatif = +5
               const tahapan = fd.get('tahapan_inovasi');
@@ -2711,8 +2718,19 @@ export default function App() {
                   </div>
                 </div>
 
+                <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label className="form-label">Tanggal Uji Coba</label>
+                    <input name="waktu_uji_coba" type="date" className="form-input" required />
+                  </div>
+                  <div>
+                    <label className="form-label">Tanggal Penerapan / Implementasi</label>
+                    <input name="waktu_penerapan" type="date" className="form-input" required />
+                  </div>
+                </div>
+
                 <div className="form-group">
-                  <label className="form-label">Rancang Bangun & Pokok Perubahan (+20 Poin jika &gt;300 huruf)</label>
+                  <label className="form-label">Rancang Bangun & Pokok Perubahan (+20 Poin jika &gt;=300 kata)</label>
                   <textarea name="rancang_bangun" className="form-input" style={{ minHeight: 120 }} placeholder="Jelaskan latar belakang, penjaringan ide, pemilihan ide, manfaat, dan dampak inovasi..." required />
                 </div>
 
@@ -2752,6 +2770,14 @@ export default function App() {
                       <h4 style={{ fontSize: 16, fontWeight: 700, color: C.navy }}>{inv.judul_inovasi}</h4>
                       <div style={{ fontSize: 13, color: C.textMid }}>{inv.opd_nama} • {inv.jenis_inovasi}</div>
                       <div style={{ fontSize: 12, color: C.gold, fontWeight: 700 }}>Inovator: {inv.nama_inovator || "-"}</div>
+                      <div style={{ fontSize: 11, color: C.textLight, marginTop: 4 }}>
+                        Regulasi: <strong>{inv.regulasi_inovasi || "SOP"}</strong> | 
+                        Anggaran: <strong>{inv.anggaran_inovasi === "Ada" ? "DPA (Ada)" : "Tidak Ada"}</strong>
+                      </div>
+                      <div style={{ fontSize: 11, color: C.textLight }}>
+                        Uji Coba: <strong>{inv.waktu_uji_coba || "-"}</strong> | 
+                        Penerapan: <strong>{inv.waktu_penerapan || "-"}</strong>
+                      </div>
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: C.gold }}>Skor: {inv.skor_iga} ({inv.kategori_skor})</div>
