@@ -622,7 +622,10 @@ export default function App() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [metricsList, setMetricsList] = useState([]);
   const [inovasiList, setInovasiList] = useState([]);
-  const [orgZoom, setOrgZoom] = useState(window.innerWidth < 1024 ? 0.45 : 1);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const orgScale = windowWidth < 1024 
+    ? Math.min(0.9, Math.max(0.15, (windowWidth - 96) / 1200)) 
+    : 1.0;
 
 
   const active = useScrollSpy();
@@ -933,7 +936,10 @@ export default function App() {
     document.head.appendChild(link);
 
     const onScroll = () => setScrolled(window.scrollY > 60);
-    const onResize = () => setIsMobile(window.innerWidth < 1024);
+    const onResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+      setWindowWidth(window.innerWidth);
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onResize);
 
@@ -953,6 +959,32 @@ export default function App() {
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleHashScroll = () => {
+      const hash = window.location.hash;
+      if (hash) {
+        const id = hash.replace("#", "");
+        let retries = 0;
+        const scrollAttempt = setInterval(() => {
+          const element = document.getElementById(id);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "start" });
+            clearInterval(scrollAttempt);
+          }
+          retries++;
+          if (retries > 15) clearInterval(scrollAttempt);
+        }, 100);
+      }
+    };
+    
+    const t = setTimeout(handleHashScroll, 600);
+    window.addEventListener("hashchange", handleHashScroll);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("hashchange", handleHashScroll);
     };
   }, []);
 
@@ -1510,50 +1542,6 @@ export default function App() {
             <p style={{ fontSize: 15.5, color: C.textMid, marginTop: 14, maxWidth: 600, margin: "14px auto 0" }}>Berdasarkan Peraturan Bupati Sumba Barat tentang Kedudukan, Susunan Organisasi, Tugas dan Fungsi serta Tata Kerja Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah</p>
           </div>
 
-          {/* Premium Zoom Control Bar */}
-          <div style={{ 
-            display: "flex", 
-            justifyContent: "center", 
-            alignItems: "center", 
-            gap: 12, 
-            background: "white",
-            padding: "8px 20px",
-            borderRadius: 30,
-            boxShadow: "0 4px 15px rgba(0,0,0,0.04)",
-            width: "fit-content",
-            margin: "0 auto 24px",
-            border: `1px solid ${C.warmGray}66`
-          }}>
-            <button 
-              onClick={() => setOrgZoom(prev => Math.max(0.35, prev - 0.05))} 
-              style={{ background: C.offWhite, border: "none", width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: "bold", color: C.navy, cursor: "pointer", transition: "background 0.2s" }}
-              title="Zoom Out"
-            >
-              -
-            </button>
-            <span style={{ fontSize: 13, fontWeight: 700, color: C.navy, minWidth: 60, textAlign: "center" }}>
-              {Math.round(orgZoom * 100)}%
-            </span>
-            <button 
-              onClick={() => setOrgZoom(prev => Math.min(1.5, prev + 0.05))} 
-              style={{ background: C.offWhite, border: "none", width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: "bold", color: C.navy, cursor: "pointer", transition: "background 0.2s" }}
-              title="Zoom In"
-            >
-              +
-            </button>
-            <button 
-              onClick={() => setOrgZoom(window.innerWidth < 1024 ? 0.45 : 1)} 
-              style={{ background: C.navy, border: "none", padding: "6px 14px", borderRadius: 20, color: "white", fontSize: 11, fontWeight: 700, cursor: "pointer", marginLeft: 8, transition: "background 0.2s" }}
-            >
-              Reset Fit
-            </button>
-          </div>
-
-          {/* Swipe Hint on Mobile */}
-          <div className="swipe-hint" style={{ display: "none", alignItems: "center", justifyContent: "center", gap: 8, color: C.navy, fontSize: 12, fontWeight: 600, marginBottom: 16 }}>
-            <span>↔️</span> Geser ke samping untuk melihat seluruh bagan
-          </div>
-
           <div style={{ 
             width: "100%", 
             background: "transparent", 
@@ -1565,25 +1553,25 @@ export default function App() {
           }}>
             {/* Height-compensated container using computed scaled height */}
             <div style={{ 
-              width: 1200,
-              height: 1200 * orgZoom,
+              width: 1200 * orgScale,
+              height: 1400 * orgScale,
               overflow: "hidden",
               margin: "0 auto",
               position: "relative",
-              transition: "height 0.2s ease"
+              transition: "width 0.3s ease, height 0.3s ease"
             }}>
               <div style={{ 
                 width: 1200,
-                height: 1200,
+                height: 1400,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                transform: `scale(${orgZoom})`,
+                transform: `translateX(-50%) scale(${orgScale})`,
                 transformOrigin: "top center",
-                transition: "transform 0.2s ease",
+                transition: "transform 0.3s ease",
                 position: "absolute",
                 top: 0,
-                left: 0
+                left: "50%"
               }}>
                 
                 {/* KEPALA BADAN (CENTER) */}
@@ -1593,7 +1581,7 @@ export default function App() {
                 </div>
 
                 {/* MANAGEMENT HUB */}
-                <div style={{ position: "relative", width: "100%", display: "flex", justifyContent: "center", height: 560 }}>
+                <div style={{ position: "relative", width: "100%", display: "flex", justifyContent: "center", height: 640 }}>
                   {/* Horizontal connection line at the top of the hub */}
                   <div style={{ 
                     position: "absolute", top: 0, left: "50%", width: "40%", height: 80, 
@@ -1627,11 +1615,11 @@ export default function App() {
                 </div>
 
                 {/* VERTICAL CONNECTOR TO BOTTOM */}
-                <div style={{ width: 3, height: 80, background: "#cbd5e1" }}></div>
+                <div style={{ width: 3, height: 120, background: "#cbd5e1" }}></div>
 
                 {/* OPERATIONAL LEVEL (BIDANG) */}
                 <div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <div style={{ width: 1180, height: 60, position: "relative" }}>
+                  <div style={{ width: 1180, height: 80, position: "relative" }}>
                     {/* The main horizontal line spanning between the centers of the 1st and 5th boxes */}
                     {/* For 5 boxes of 220px with 20px gap, total width is 1180px. Centers: 110, 350, 590, 830, 1070 */}
                     <div style={{ position: "absolute", top: 0, left: 110, right: 110, height: 3, background: "#cbd5e1" }}></div>
@@ -1639,7 +1627,7 @@ export default function App() {
                     {/* Fixed markers at exact centers of each 220px slot */}
                     {[110, 350, 590, 830, 1070].map(pos => (
                       <div key={pos} style={{ 
-                        position: "absolute", top: 0, left: pos, width: 3, height: 60, 
+                        position: "absolute", top: 0, left: pos, width: 3, height: 80, 
                         background: "#cbd5e1", marginLeft: -1.5 
                       }}></div>
                     ))}
@@ -2625,12 +2613,30 @@ export default function App() {
               const form = document.getElementById('inovasi-form');
               if (!form) return;
               const fd = new FormData(form);
+              
+              // 1. Rancang Bangun (>300 chars) = +20 points
               if (fd.get('rancang_bangun')?.length > 300) score += 20;
-              if (fd.get('tahapan_inovasi') === 'Penerapan') score += 20;
-              else if (fd.get('tahapan_inovasi') === 'Uji Coba') score += 10;
+              
+              // 2. Tahapan Inovasi: Penerapan = +20, Uji Coba = +10, Inisiatif = +5
+              const tahapan = fd.get('tahapan_inovasi');
+              if (tahapan === 'Penerapan') score += 20;
+              else if (tahapan === 'Uji Coba') score += 10;
+              else if (tahapan === 'Inisiatif') score += 5;
+              
+              // 3. Regulasi / Dasar Hukum: Perbup = +15, SK Kepala OPD = +10, SOP = +5
+              const regulasi = fd.get('regulasi_inovasi');
+              if (regulasi === 'Perbup') score += 15;
+              else if (regulasi === 'SK Kepala OPD') score += 10;
+              else if (regulasi === 'SOP') score += 5;
+              
+              // 4. Anggaran Pendukung: Ada = +15, Tidak Ada = +0
+              const anggaran = fd.get('anggaran_inovasi');
+              if (anggaran === 'Ada') score += 15;
+              
+              // 5. Link Video YouTube = +10 points
               if (fd.get('link_video')?.length > 10) score += 10;
               
-              // Cek dokumen (JSON array string)
+              // 6. Cek dokumen = +20 points
               try {
                 const docs = JSON.parse(fd.get('dokumen_dukung') || "[]");
                 if (docs.length > 0) score += 20;
@@ -2640,8 +2646,8 @@ export default function App() {
               document.getElementById('iga-score-input').value = score;
               
               let cat = "Kurang Inovatif";
-              if (score >= 60) cat = "Sangat Inovatif";
-              else if (score >= 30) cat = "Inovatif";
+              if (score >= 80) cat = "Sangat Inovatif";
+              else if (score >= 50) cat = "Inovatif";
               document.getElementById('iga-cat-input').value = cat;
               document.getElementById('iga-cat-display').innerText = cat;
             }}>
@@ -2683,6 +2689,24 @@ export default function App() {
                       <option>Inisiatif</option>
                       <option>Uji Coba</option>
                       <option>Penerapan</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label className="form-label">Regulasi / Dasar Hukum Inovasi</label>
+                    <select name="regulasi_inovasi" className="form-input" required>
+                      <option value="Perbup">Peraturan Daerah / Perbup (+15 Poin)</option>
+                      <option value="SK Kepala OPD">SK Kepala OPD (+10 Poin)</option>
+                      <option value="SOP">SOP Pelaksanaan (+5 Poin)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Ketersediaan Anggaran Pendukung</label>
+                    <select name="anggaran_inovasi" className="form-input" required>
+                      <option value="Ada">Ada Anggaran Khusus (DPA-OPD) (+15 Poin)</option>
+                      <option value="Tidak Ada">Tidak Ada Anggaran khusus (+0 Poin)</option>
                     </select>
                   </div>
                 </div>
