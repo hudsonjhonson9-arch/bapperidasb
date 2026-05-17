@@ -372,6 +372,34 @@ const OrgBox = ({ data, color, isLeader, isBidang }) => {
     </div>
   );
 };
+const MobileOrgCard = ({ title, name, nip, color, isLeader }) => (
+  <div style={{
+    width: "100%", background: "white", borderRadius: 16, overflow: "hidden",
+    border: `1px solid ${color}33`, boxShadow: `0 8px 24px ${color}12`
+  }}>
+    <div style={{ background: color, padding: "12px 16px", textAlign: "center" }}>
+      <div style={{ fontSize: 10, fontWeight: 900, color: "white", letterSpacing: "0.1em" }}>{title}</div>
+    </div>
+    <div style={{ padding: "20px 16px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+      <div style={{ position: "relative" }}>
+        <div style={{ width: 60, height: 60, borderRadius: "50%", background: `${color}10`, border: `2px solid ${color}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>👤</div>
+        {isLeader && (
+          <div style={{ position: "absolute", top: -4, right: -4, background: "#C9A227", width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, border: "2px solid white" }}>⭐</div>
+        )}
+      </div>
+      <div style={{ fontSize: 14, fontWeight: 800, color: "#0B2447", lineHeight: 1.3 }}>{name}</div>
+      <div style={{ fontSize: 11, color: "#8898AA", fontWeight: 500 }}>NIP. {nip}</div>
+    </div>
+  </div>
+);
+
+const MobileConnector = () => (
+  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", margin: "4px 0" }}>
+    <div style={{ width: 2, height: 28, background: "#CBD5E1" }} />
+    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#CBD5E1" }} />
+    <div style={{ width: 2, height: 10, background: "#CBD5E1" }} />
+  </div>
+);
 
 
 const PublicInovasiCard = ({ inv }) => {
@@ -1509,93 +1537,139 @@ export default function App() {
             <div className="gold-bar" style={{ margin: "0 auto 20px" }} />
             <p className="eyebrow" style={{ marginBottom: 14 }}>Organisasi</p>
             <h2 className="section-title">Struktur Organisasi BAPPERIDA<br />Kabupaten Sumba Barat</h2>
-            <p style={{ fontSize: 15.5, color: C.textMid, marginTop: 14, maxWidth: 600, margin: "14px auto 0" }}>Berdasarkan Peraturan Bupati Sumba Barat tentang Kedudukan, Susunan Organisasi, Tugas dan Fungsi serta Tata Kerja Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah</p>
+            <p style={{ fontSize: 15.5, color: C.textMid, marginTop: 14, maxWidth: 600, margin: "14px auto 0" }}>
+              Berdasarkan Peraturan Bupati Sumba Barat tentang Kedudukan, Susunan Organisasi, Tugas dan Fungsi serta Tata Kerja Badan Perencanaan Pembangunan, Riset dan Inovasi Daerah
+            </p>
           </div>
-
-          <div style={{ 
-            width: "100%", 
-            padding: "60px 0", 
-            background: "transparent", 
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center"
-          }}>
-            <div style={{ width: "100%", maxWidth: 1300, display: "flex", flexDirection: "column", alignItems: "center" }}>
-              
-              {/* KEPALA BADAN (CENTER) */}
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", width: "100%" }}>
-                <OrgBox data={ORG_DATA.kepala} color={C.navy} isLeader />
-                <div style={{ width: 3, height: 100, background: `linear-gradient(to bottom, ${C.navy}, #cbd5e1)`, borderRadius: 2 }}></div>
-              </div>
-
-              {/* MANAGEMENT HUB */}
-              <div style={{ position: "relative", width: "100%", display: "flex", justifyContent: "center", height: 560 }}>
-                {/* Horizontal connection line at the top of the hub */}
-                <div style={{ 
-                  position: "absolute", top: 0, left: "50%", width: "40%", height: 80, 
-                  borderTop: "3px solid #cbd5e1", borderLeft: "3px solid #cbd5e1", borderRight: "3px solid #cbd5e1",
-                  borderRadius: "24px 24px 0 0", transform: "translateX(-50%)"
-                }}></div>
-                
-                {/* Main vertical trunk through the center */}
-                <div style={{ width: 3, height: "100%", background: "#cbd5e1", position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)" }}></div>
-
-                {/* Left side: KELOMPOK JABATAN */}
-                <div style={{ position: "absolute", left: "30%", top: 80, transform: "translateX(-50%)", width: 260, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <div style={{ 
-                    padding: "24px 30px", background: "rgba(255,255,255,0.95)", backdropFilter: "blur(10px)", color: "#38bdf8", borderRadius: 24, fontWeight: 800, fontSize: 13, textAlign: "center", 
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.04)", width: "100%", border: "1px solid #e2e8f0"
-                  }}>
-                    <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 12, letterSpacing: "0.1em", fontWeight: 900 }}>KELOMPOK JABATAN</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                      <div style={{ padding: "8px 12px", background: "#38bdf810", borderRadius: 12 }}>FUNGSIONAL</div>
-                      <div style={{ padding: "8px 12px", background: "#38bdf810", borderRadius: 12 }}>PELAKSANA</div>
+      
+          {isMobile ? (
+            /* ── MOBILE: Layout vertikal ── */
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0 }}>
+      
+              <MobileOrgCard
+                title="KEPALA BADAN"
+                name={ORG_DATA.kepala.name}
+                nip={ORG_DATA.kepala.nip}
+                color={C.navy}
+                isLeader
+              />
+      
+              <MobileConnector />
+      
+              {/* Kelompok Jabatan + Sekretaris side by side */}
+              <div style={{ width: "100%", display: "flex", gap: 10 }}>
+                {/* Kiri: Kelompok Jabatan */}
+                <div style={{ flex: 1, background: "white", borderRadius: 14, overflow: "hidden", border: "1px solid #e2e8f0", boxShadow: "0 4px 12px rgba(0,0,0,0.04)" }}>
+                  <div style={{ background: "#38bdf8", padding: "10px 12px", textAlign: "center" }}>
+                    <div style={{ fontSize: 9, fontWeight: 900, color: "white", letterSpacing: "0.08em" }}>KELOMPOK JABATAN</div>
+                  </div>
+                  <div style={{ padding: "12px 10px", display: "flex", flexDirection: "column", gap: 8 }}>
+                    {["FUNGSIONAL", "PELAKSANA"].map(k => (
+                      <div key={k} style={{ background: "#38bdf810", border: "1px solid #38bdf830", borderRadius: 8, padding: "8px 10px", textAlign: "center", fontSize: 11, fontWeight: 700, color: "#0ea5e9" }}>
+                        {k}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+      
+                {/* Kanan: Sekretaris + Kasubag stacked */}
+                <div style={{ flex: 1.2, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ background: "white", borderRadius: 14, overflow: "hidden", border: `1px solid ${C.navy}33`, boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}>
+                    <div style={{ background: C.navy, padding: "10px 12px", textAlign: "center" }}>
+                      <div style={{ fontSize: 9, fontWeight: 900, color: "white", letterSpacing: "0.08em" }}>SEKRETARIS</div>
+                    </div>
+                    <div style={{ padding: "14px 12px", textAlign: "center" }}>
+                      <div style={{ width: 44, height: 44, borderRadius: "50%", background: `${C.navy}10`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px", fontSize: 20 }}>👤</div>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: C.navy, lineHeight: 1.3, marginBottom: 4 }}>{ORG_DATA.sekretaris.name}</div>
+                      <div style={{ fontSize: 9, color: C.textLight }}>NIP. {ORG_DATA.sekretaris.nip}</div>
+                    </div>
+                  </div>
+                  <div style={{ background: "white", borderRadius: 14, overflow: "hidden", border: "1px solid #0ea5e933", boxShadow: "0 4px 12px rgba(0,0,0,0.04)" }}>
+                    <div style={{ background: "#0ea5e9", padding: "8px 12px", textAlign: "center" }}>
+                      <div style={{ fontSize: 8, fontWeight: 900, color: "white", letterSpacing: "0.06em", lineHeight: 1.4 }}>KASUBAG UMUM &amp; KEPEGAWAIAN</div>
+                    </div>
+                    <div style={{ padding: "12px 10px", textAlign: "center" }}>
+                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: "#0ea5e910", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px", fontSize: 18 }}>👤</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: C.navy, lineHeight: 1.3, marginBottom: 3 }}>{ORG_DATA.kasubag.name}</div>
+                      <div style={{ fontSize: 9, color: C.textLight }}>NIP. {ORG_DATA.kasubag.nip}</div>
                     </div>
                   </div>
                 </div>
-
-                {/* Right side: SEKRETARIS & KASUBAG */}
-                <div style={{ position: "absolute", left: "70%", top: 80, transform: "translateX(-50%)", width: 260, display: "flex", flexDirection: "column", alignItems: "center", gap: 0 }}>
-                  <OrgBox data={ORG_DATA.sekretaris} color={C.navy} />
-                  <div style={{ width: 3, height: 40, background: "#cbd5e1" }}></div>
-                  <OrgBox data={ORG_DATA.kasubag} color="#0ea5e9" />
-                </div>
               </div>
-
-              {/* VERTICAL CONNECTOR TO BOTTOM */}
-              <div style={{ width: 3, height: 80, background: "#cbd5e1" }}></div>
-
-              {/* OPERATIONAL LEVEL (BIDANG) */}
-              <div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <div style={{ width: 1180, height: 60, position: "relative" }}>
-                  {/* The main horizontal line spanning between the centers of the 1st and 5th boxes */}
-                  {/* For 5 boxes of 220px with 20px gap, total width is 1180px. Centers: 110, 350, 590, 830, 1070 */}
-                  <div style={{ position: "absolute", top: 0, left: 110, right: 110, height: 3, background: "#cbd5e1" }}></div>
-                  
-                  {/* Fixed markers at exact centers of each 220px slot */}
-                  {[110, 350, 590, 830, 1070].map(pos => (
-                    <div key={pos} style={{ 
-                      position: "absolute", top: 0, left: pos, width: 3, height: 60, 
-                      background: "#cbd5e1", marginLeft: -1.5 
-                    }}></div>
-                  ))}
-                </div>
-
-                <div style={{ 
-                  display: "flex", 
-                  justifyContent: "center",
-                  gap: 20, 
-                  width: 1180
-                }}>
-                  {ORG_DATA.bidang.map((b, i) => (
-                    <OrgBox key={i} data={b} color="#0ea5e9" isBidang />
-                  ))}
-                </div>
+      
+              <MobileConnector />
+      
+              {/* Label Bidang */}
+              <div style={{ background: `linear-gradient(90deg, ${C.navy}, #0ea5e9)`, color: "white", borderRadius: 20, padding: "6px 18px", fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", marginBottom: 14 }}>
+                KEPALA BIDANG
               </div>
-
+      
+              {/* Grid 2 kolom untuk Bidang */}
+              <div style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {ORG_DATA.bidang.map((b, i) => (
+                  <div key={i} style={{
+                    background: "white", borderRadius: 14, overflow: "hidden",
+                    border: "1px solid #0ea5e922", boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+                    ...(ORG_DATA.bidang.length % 2 !== 0 && i === ORG_DATA.bidang.length - 1
+                      ? { gridColumn: "1 / -1", maxWidth: "60%", margin: "0 auto", width: "100%" }
+                      : {})
+                  }}>
+                    <div style={{ background: "#0ea5e9", padding: "10px 10px", textAlign: "center" }}>
+                      <div style={{ fontSize: 8, fontWeight: 900, color: "white", letterSpacing: "0.06em", lineHeight: 1.5 }}>{b.title}</div>
+                    </div>
+                    <div style={{ padding: "14px 10px", textAlign: "center" }}>
+                      <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#0ea5e912", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px", fontSize: 18 }}>👤</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: C.navy, lineHeight: 1.3, marginBottom: 4 }}>{b.name}</div>
+                      <div style={{ fontSize: 9, color: C.textLight }}>NIP. {b.nip}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+      
             </div>
-          </div>
+          ) : (
+            /* ── DESKTOP: Layout horizontal (tidak berubah) ── */
+            <div style={{ width: "100%", padding: "60px 0", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ width: "100%", maxWidth: 1300, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", width: "100%" }}>
+                  <OrgBox data={ORG_DATA.kepala} color={C.navy} isLeader />
+                  <div style={{ width: 3, height: 100, background: `linear-gradient(to bottom, ${C.navy}, #cbd5e1)`, borderRadius: 2 }}></div>
+                </div>
+                <div style={{ position: "relative", width: "100%", display: "flex", justifyContent: "center", height: 560 }}>
+                  <div style={{ position: "absolute", top: 0, left: "50%", width: "40%", height: 80, borderTop: "3px solid #cbd5e1", borderLeft: "3px solid #cbd5e1", borderRight: "3px solid #cbd5e1", borderRadius: "24px 24px 0 0", transform: "translateX(-50%)" }}></div>
+                  <div style={{ width: 3, height: "100%", background: "#cbd5e1", position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)" }}></div>
+                  <div style={{ position: "absolute", left: "30%", top: 80, transform: "translateX(-50%)", width: 260 }}>
+                    <div style={{ padding: "24px 30px", background: "rgba(255,255,255,0.95)", borderRadius: 24, fontWeight: 800, fontSize: 13, textAlign: "center", boxShadow: "0 10px 30px rgba(0,0,0,0.04)", width: "100%", border: "1px solid #e2e8f0" }}>
+                      <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 12, letterSpacing: "0.1em", fontWeight: 900 }}>KELOMPOK JABATAN</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <div style={{ padding: "8px 12px", background: "#38bdf810", borderRadius: 12, color: "#38bdf8" }}>FUNGSIONAL</div>
+                        <div style={{ padding: "8px 12px", background: "#38bdf810", borderRadius: 12, color: "#38bdf8" }}>PELAKSANA</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ position: "absolute", left: "70%", top: 80, transform: "translateX(-50%)", width: 260, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <OrgBox data={ORG_DATA.sekretaris} color={C.navy} />
+                    <div style={{ width: 3, height: 40, background: "#cbd5e1" }}></div>
+                    <OrgBox data={ORG_DATA.kasubag} color="#0ea5e9" />
+                  </div>
+                </div>
+                <div style={{ width: 3, height: 80, background: "#cbd5e1" }}></div>
+                <div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div style={{ width: 1180, height: 60, position: "relative" }}>
+                    <div style={{ position: "absolute", top: 0, left: 110, right: 110, height: 3, background: "#cbd5e1" }}></div>
+                    {[110, 350, 590, 830, 1070].map(pos => (
+                      <div key={pos} style={{ position: "absolute", top: 0, left: pos, width: 3, height: 60, background: "#cbd5e1", marginLeft: -1.5 }}></div>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "center", gap: 20, width: 1180 }}>
+                    {ORG_DATA.bidang.map((b, i) => (
+                      <OrgBox key={i} data={b} color="#0ea5e9" isBidang />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
