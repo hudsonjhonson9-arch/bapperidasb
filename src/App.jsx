@@ -4,7 +4,7 @@ const LOGO_URL = "/logo.png";
 import {
   MapPin, Phone, Mail, ChevronDown, Menu, X,
   ArrowRight, Users, User, Calendar, FileText, Download, Eye, Search,
-  Target, Lightbulb, BarChart2, BookOpen, Globe, Shield, Maximize2
+  Target, Lightbulb, BarChart2, BookOpen, Globe, Shield, Maximize2, Play
 } from "lucide-react";
 
 const NAV = [
@@ -368,6 +368,187 @@ const OrgBox = ({ data, color, isLeader, isBidang }) => {
           <div style={{ fontSize: 13, fontWeight: 800, color: C.navy, lineHeight: 1.3, marginBottom: 4 }}>{data.name}</div>
           <div style={{ fontSize: 10, color: C.textLight, fontWeight: 600, letterSpacing: "0.02em" }}>NIP. {data.nip}</div>
         </div>
+      </div>
+    </div>
+  );
+};
+
+
+const PublicInovasiCard = ({ inv }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const maxChars = 150;
+  const showToggle = inv.rancang_bangun && inv.rancang_bangun.length > maxChars;
+  
+  const displayText = isExpanded 
+    ? inv.rancang_bangun 
+    : (inv.rancang_bangun ? inv.rancang_bangun.slice(0, maxChars) + "..." : "Tidak ada deskripsi rancang bangun.");
+
+  return (
+    <div className="card" style={{ 
+      padding: 24, 
+      display: "flex", 
+      flexDirection: "column", 
+      gap: 16,
+      background: "white",
+      borderRadius: 16,
+      boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
+      border: `1px solid ${C.warmGray}55`,
+      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      position: "relative"
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ 
+          fontSize: 10, 
+          fontWeight: 800, 
+          background: `${C.gold}15`, 
+          color: C.gold, 
+          padding: "4px 12px", 
+          borderRadius: 20,
+          letterSpacing: "0.05em"
+        }}>
+          {inv.kategori_skor?.toUpperCase() || "INOVATIF"}
+        </span>
+        <span style={{ fontSize: 12, color: C.textLight, fontWeight: 600 }}>
+          Skor IGA: <strong style={{ color: C.navy }}>{inv.skor_iga}</strong>
+        </span>
+      </div>
+      
+      <div>
+        <h3 style={{ 
+          fontSize: 18, 
+          fontWeight: 700, 
+          color: C.navy, 
+          lineHeight: 1.4, 
+          marginBottom: 8 
+        }}>
+          {inv.judul_inovasi}
+        </h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ fontSize: 13, color: C.textMid, display: "flex", alignItems: "center", gap: 6, fontWeight: 500 }}>
+            <span>🏢</span> {inv.opd_nama}
+          </div>
+          <div style={{ fontSize: 13, color: C.textLight, display: "flex", alignItems: "center", gap: 6 }}>
+            <span>👤</span> {inv.nama_inovator || "Tim Inovator"}
+          </div>
+        </div>
+      </div>
+
+      {/* Rancang Bangun Section */}
+      <div style={{ 
+        background: C.offWhite, 
+        padding: "14px 16px", 
+        borderRadius: 12, 
+        borderLeft: `3px solid ${C.gold}`,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8
+      }}>
+        <div style={{ 
+          fontSize: 11, 
+          fontWeight: 800, 
+          color: C.navy, 
+          textTransform: "uppercase", 
+          letterSpacing: "0.05em",
+          opacity: 0.8
+        }}>
+          Rancang Bangun & Pokok Perubahan
+        </div>
+        <p style={{ 
+          fontSize: 12.5, 
+          color: C.textDark, 
+          lineHeight: 1.6, 
+          margin: 0,
+          whiteSpace: "pre-line"
+        }}>
+          {displayText}
+        </p>
+        {showToggle && (
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)}
+            style={{ 
+              alignSelf: "flex-start",
+              background: "none", 
+              border: "none", 
+              color: C.gold, 
+              fontSize: 11, 
+              fontWeight: 700, 
+              cursor: "pointer", 
+              padding: "2px 0",
+              textTransform: "uppercase",
+              letterSpacing: "0.02em",
+              display: "flex",
+              alignItems: "center",
+              gap: 4
+            }}
+          >
+            {isExpanded ? "Sembunyikan" : "Baca Selengkapnya"}
+          </button>
+        )}
+      </div>
+
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "space-between", 
+        alignItems: "center", 
+        marginTop: "auto", 
+        paddingTop: 14, 
+        borderTop: `1px solid ${C.warmGray}77` 
+      }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ 
+            fontSize: 11, 
+            color: C.textLight, 
+            background: "#f1f5f9", 
+            padding: "2px 8px", 
+            borderRadius: 4,
+            fontWeight: 500
+          }}>
+            🔹 {inv.jenis_inovasi}
+          </span>
+          <span style={{ 
+            fontSize: 11, 
+            color: C.textLight, 
+            background: "#f1f5f9", 
+            padding: "2px 8px", 
+            borderRadius: 4,
+            fontWeight: 500
+          }}>
+            🔸 Tahap: {inv.tahapan_inovasi}
+          </span>
+        </div>
+
+        {/* Video Link */}
+        {inv.link_video && (
+          <a 
+            href={inv.link_video} 
+            target="_blank" 
+            rel="noreferrer" 
+            style={{ 
+              display: "inline-flex", 
+              alignItems: "center", 
+              gap: 6, 
+              fontSize: 11.5, 
+              fontWeight: 800, 
+              color: "#e11d48", 
+              background: "#fff1f2", 
+              padding: "6px 12px", 
+              borderRadius: 6, 
+              textDecoration: "none", 
+              border: "1px solid #fecdd3",
+              transition: "all 0.2s ease-in-out"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#ffe4e6";
+              e.currentTarget.style.transform = "translateY(-1px)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#fff1f2";
+              e.currentTarget.style.transform = "translateY(0)";
+            }}
+          >
+            <Play size={10} fill="#e11d48" /> Tonton Video
+          </a>
+        )}
       </div>
     </div>
   );
@@ -1839,19 +2020,7 @@ export default function App() {
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
               {inovasiList.filter(inv => inv.status_approval === 'Approved').map(inv => (
-                <div key={inv.id} className="card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 14 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, background: `${C.gold}22`, color: C.gold, padding: "4px 10px", borderRadius: 12 }}>{inv.kategori_skor?.toUpperCase() || "INOVATIF"}</span>
-                    <span style={{ fontSize: 11, color: C.textLight }}>Skor Inovasi: {inv.skor_iga}</span>
-                  </div>
-                  <h3 style={{ fontSize: 16, fontWeight: 600, color: C.navy, lineHeight: 1.4 }}>{inv.judul_inovasi}</h3>
-                  <div style={{ fontSize: 13, color: C.textMid, fontWeight: 500 }}>🏢 {inv.opd_nama}</div>
-                  <div style={{ fontSize: 12, color: C.textLight }}>👤 {inv.nama_inovator || "Tim Inovator"}</div>
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: "auto", paddingTop: 14, borderTop: `1px solid ${C.warmGray}` }}>
-                    <span style={{ fontSize: 11, color: C.textLight }}>🔹 {inv.jenis_inovasi}</span>
-                    <span style={{ fontSize: 11, color: C.textLight }}>🔸 Tahap: {inv.tahapan_inovasi}</span>
-                  </div>
-                </div>
+                <PublicInovasiCard key={inv.id} inv={inv} />
               ))}
             </div>
           )}
