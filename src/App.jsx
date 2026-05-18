@@ -2693,9 +2693,9 @@ export default function App() {
                   <div>
                     <label className="form-label">Tahapan Inovasi</label>
                     <select name="tahapan_inovasi" className="form-input" required>
-                      <option>Inisiatif (+35 Poin)</option>
-                      <option>Uji Coba (+40 Poin)</option>
-                      <option>Penerapan (+50 Poin)</option>
+                      <option>Inisiatif</option>
+                      <option>Uji Coba</option>
+                      <option>Penerapan</option>
                     </select>
                   </div>
                 </div>
