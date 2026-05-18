@@ -519,7 +519,7 @@ const PublicInovasiCard = ({ inv }) => {
             borderRadius: 4,
             fontWeight: 500
           }}>
-            🔸 Tahap: {inv.tahapan_inovasi}
+            🔸 Tahap: {inv._inovasi}
           </span>
         </div>
 
@@ -2693,9 +2693,9 @@ export default function App() {
                   <div>
                     <label className="form-label">Tahapan Inovasi</label>
                     <select name="tahapan_inovasi" className="form-input" required>
-                      <option>Inisiatif</option>
-                      <option>Uji Coba</option>
-                      <option>Penerapan</option>
+                      <option>Inisiatif (+35 Poin)</option>
+                      <option>Uji Coba (+40 Poin)</option>
+                      <option>Penerapan (+50 Poin)</option>
                     </select>
                   </div>
                 </div>
