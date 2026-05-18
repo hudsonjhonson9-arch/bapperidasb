@@ -2685,6 +2685,7 @@ export default function App() {
                   <div>
                     <label className="form-label">Urusan Inovasi</label>
                     <select name="jenis_inovasi" className="form-input" required>
+                      <option>--Pilih Urusan Inovasi--</option>
                       <option>Pelayanan Publik</option>
                       <option>Tata Kelola Pemerintahan</option>
                       <option>Bentuk Lainnya</option>
@@ -2693,9 +2694,10 @@ export default function App() {
                   <div>
                     <label className="form-label">Tahapan Inovasi</label>
                     <select name="tahapan_inovasi" className="form-input" required>
-                      <option>Inisiatif</option>
-                      <option>Uji Coba</option>
-                      <option>Penerapan</option>
+                      <option>--Pilih Tahapan Inovasi--</option>
+                      <option value="Inisiatif">Inisiatif (+5 Poin)</option>
+                      <option value="Uji Coba">Uji Coba (+10 Poin)</option>
+                      <option value="Penerapan">Penerapan (+20 Point)</option>
                     </select>
                   </div>
                 </div>
@@ -2704,6 +2706,7 @@ export default function App() {
                   <div>
                     <label className="form-label">Regulasi / Dasar Hukum Inovasi</label>
                     <select name="regulasi_inovasi" className="form-input" required>
+                      <option>--Pilih Regulasi Inovasi--</option>
                       <option value="Perbup">Peraturan Daerah / Perbup (+15 Poin)</option>
                       <option value="SK Kepala OPD">SK Kepala OPD (+10 Poin)</option>
                       <option value="SOP">SOP Pelaksanaan (+5 Poin)</option>
@@ -2712,6 +2715,7 @@ export default function App() {
                   <div>
                     <label className="form-label">Ketersediaan Anggaran Pendukung</label>
                     <select name="anggaran_inovasi" className="form-input" required>
+                      <option>--Pilih Ketersediaan Anggaran Pendukung--</option>
                       <option value="Ada">Ada Anggaran Khusus (DPA-OPD) (+15 Poin)</option>
                       <option value="Tidak Ada">Tidak Ada Anggaran khusus (+0 Poin)</option>
                     </select>
