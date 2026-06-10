@@ -519,7 +519,7 @@ const PublicInovasiCard = ({ inv }) => {
             borderRadius: 4,
             fontWeight: 500
           }}>
-            🔸 Tahap: {inv._inovasi}
+            🔸 Tahap: {inv.tahapan_inovasi}
           </span>
         </div>
 
@@ -609,6 +609,12 @@ export default function App() {
   const [programList, setProgramList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
+  const [notification, setNotification] = useState(null);
+
+  const showNotification = (message, type = "success") => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   // CMS States
   const [showModal, setShowModal] = useState(null); // 'berita' | 'dokumen' | 'layout'
@@ -760,33 +766,35 @@ export default function App() {
     };
 
     try {
-      const res = await fetchSafe(api.init);
-      const data = getList(res)[0] || {};
+      const [initResult, inovasiResult] = await Promise.allSettled([
+        fetchSafe(api.init),
+        fetch(`${API_BASE}/bapperida-inovasi-list`, {
+          headers: { "X-App-Token": APP_SECRET }
+        }).then(r => {
+          if (!r.ok) throw new Error("Inovasi list fetch failed");
+          return r.json();
+        })
+      ]);
 
-      if (data.berita) setBeritaList(data.berita.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-      if (data.dokumen) setDokumenList(data.dokumen);
-      if (data.slider) setSliderList(data.slider);
-      if (data.program) setProgramList(data.program.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-      if (data.metrics) setMetricsList(data.metrics.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-      if (data.inovasi) {
-        setInovasiList(data.inovasi);
+      if (initResult.status === "fulfilled") {
+        const data = getList(initResult.value)[0] || {};
+        if (data.berita) setBeritaList(data.berita.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
+        if (data.dokumen) setDokumenList(data.dokumen);
+        if (data.slider) setSliderList(data.slider);
+        if (data.program) setProgramList(data.program.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
+        if (data.metrics) setMetricsList(data.metrics.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
+        if (data.inovasi) setInovasiList(data.inovasi);
+      } else {
+        throw new Error(initResult.reason);
       }
       
-      // Always fetch all innovations for Admin Review if separate endpoint exists
-      try {
-        const invRes = await fetch(`${API_BASE}/bapperida-inovasi-list`, {
-          headers: { "X-App-Token": APP_SECRET }
-        });
-        if (invRes.ok) {
-          const invData = await invRes.json();
-          const invList = getList(invData);
-          if (invList && invList.length > 0) {
-            setInovasiList(invList);
-          }
-        }
-      } catch (e) {
-        console.warn("Inovasi separate fetch failed, using init data:", e);
+      if (inovasiResult.status === "fulfilled") {
+        const invList = getList(inovasiResult.value);
+        if (invList && invList.length > 0) setInovasiList(invList);
+      } else {
+        console.warn("Inovasi separate fetch failed, using init data:", inovasiResult.reason);
       }
+
       setFetchError(null);
     } catch (err) {
       console.error("Fetch all fail:", err);
@@ -883,10 +891,11 @@ export default function App() {
       });
       setShowModal(null);
       setEditItem(null);
+      showNotification(data.id ? "Data berhasil diperbarui!" : "Data berhasil ditambahkan!", "success");
       fetchData();
     } catch (e) { 
       console.error("Save error:", e);
-      alert("Gagal menyimpan data: " + e.message + "\n\nPastikan n8n sudah aktif dan workflow sudah di-import ulang."); 
+      showNotification("Gagal menyimpan data: " + e.message, "error"); 
     }
   };
 
@@ -897,8 +906,9 @@ export default function App() {
         method: "POST",
         body: JSON.stringify({ id })
       });
+      showNotification("Data berhasil dihapus!", "success");
       fetchData();
-    } catch (e) { alert("Gagal menghapus data"); }
+    } catch (e) { showNotification("Gagal menghapus data.", "error"); }
   };
 
   const handleKontakSubmit = async (e) => {
@@ -995,7 +1005,33 @@ export default function App() {
 
   return (
     <>
+      {notification && (
+        <div style={{
+          position: "fixed",
+          top: 20,
+          right: 20,
+          zIndex: 99999,
+          background: notification.type === "success" ? "#10b981" : "#ef4444",
+          color: "white",
+          padding: "16px 24px",
+          borderRadius: "8px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          animation: "slideIn 0.3s ease-out forwards",
+          fontWeight: 600,
+          fontSize: 14
+        }}>
+          {notification.type === "success" ? "✅" : "❌"}
+          {notification.message}
+        </div>
+      )}
       <style>{`
+        @keyframes slideIn {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
         body { font-family: 'DM Sans', system-ui, sans-serif; background: ${C.offWhite}; color: ${C.textDark}; }
