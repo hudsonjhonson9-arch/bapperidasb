@@ -906,6 +906,7 @@ export default function App() {
 
   const handleDelete = async (type, id) => {
     if (!confirm("Hapus data ini?")) return;
+    setIsSaving(true);
     try {
       await authFetch(api[type].del, {
         method: "POST",
@@ -913,7 +914,11 @@ export default function App() {
       });
       showNotification("Data berhasil dihapus!", "success");
       fetchData();
-    } catch (e) { showNotification("Gagal menghapus data.", "error"); }
+    } catch (e) { 
+      showNotification("Gagal menghapus data.", "error"); 
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleKontakSubmit = async (e) => {
@@ -2875,15 +2880,20 @@ export default function App() {
                   )}
                   <div style={{ display: "flex", gap: 10 }}>
                     {inv.status_approval !== 'Approved' && (
-                      <button onClick={() => handleSave('inovasi', { id: inv.id, action: 'approve' }).then(() => {
-                        // Optimistic UI update or fetch
-                        fetchData();
-                      })} style={{ background: "green", color: "white", padding: "6px 12px", borderRadius: 4, border: "none", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>
-                        ✓ Approve (Tampilkan di Publik)
+                      <button 
+                        disabled={isSaving}
+                        onClick={() => handleSave('inovasi', { id: inv.id, action: 'approve' }).then(() => fetchData())} 
+                        style={{ background: isSaving ? "#9ca3af" : "green", color: "white", padding: "6px 12px", borderRadius: 4, border: "none", fontSize: 12, cursor: isSaving ? "not-allowed" : "pointer", fontWeight: 700 }}
+                      >
+                        {isSaving ? "⏳ Proses..." : "✓ Approve (Tampilkan di Publik)"}
                       </button>
                     )}
-                    <button onClick={() => handleDelete('inovasi', inv.id)} style={{ background: "#ef4444", color: "white", padding: "6px 12px", borderRadius: 4, border: "none", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>
-                      ✕ Hapus
+                    <button 
+                      disabled={isSaving}
+                      onClick={() => handleDelete('inovasi', inv.id)} 
+                      style={{ background: isSaving ? "#9ca3af" : "#ef4444", color: "white", padding: "6px 12px", borderRadius: 4, border: "none", fontSize: 12, cursor: isSaving ? "not-allowed" : "pointer", fontWeight: 700 }}
+                    >
+                      {isSaving ? "⏳ Proses..." : "✕ Hapus"}
                     </button>
                   </div>
                 </div>
