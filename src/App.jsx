@@ -610,6 +610,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const showNotification = (message, type = "success") => {
     setNotification({ message, type });
@@ -883,19 +884,23 @@ export default function App() {
   };
 
   const handleSave = async (type, data) => {
+    setIsSaving(true);
     const endpoint = data.id ? api[type].edit : api[type].add;
     try {
-      await authFetch(endpoint, {
+      const res = await authFetch(endpoint, {
         method: "POST",
         body: JSON.stringify(data)
       });
+      if (!res.ok) throw new Error("Server error: " + res.status);
       setShowModal(null);
       setEditItem(null);
-      showNotification(data.id ? "Data berhasil diperbarui!" : "Data berhasil ditambahkan!", "success");
+      showNotification(data.id ? "Data berhasil diperbarui!" : "Data berhasil dikirim!", "success");
       fetchData();
     } catch (e) { 
       console.error("Save error:", e);
-      showNotification("Gagal menyimpan data: " + e.message, "error"); 
+      showNotification("Gagal mengirim data: " + e.message, "error"); 
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -2786,7 +2791,9 @@ export default function App() {
 
               </div>
               <div className="modal-footer">
-                <button type="submit" className="btn-gold">Kirim Inovasi ke BAPPERIDA</button>
+                <button type="submit" className="btn-gold" disabled={isSaving}>
+                  {isSaving ? "⏳ Sedang Mengirim..." : "Kirim Inovasi ke BAPPERIDA"}
+                </button>
               </div>
             </form>
           </div>
