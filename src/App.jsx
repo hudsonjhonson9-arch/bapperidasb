@@ -892,9 +892,17 @@ export default function App() {
         body: JSON.stringify(data)
       });
       if (!res.ok) throw new Error("Server error: " + res.status);
-      setShowModal(null);
+      
+      if (showModal !== 'inovasi-admin') {
+        setShowModal(null);
+      }
       setEditItem(null);
       showNotification(data.id ? "Data berhasil diperbarui!" : "Data berhasil dikirim!", "success");
+      
+      if (type === 'inovasi' && data.action === 'approve') {
+        setInovasiList(prev => prev.map(item => item.id === data.id ? { ...item, status_approval: 'Approved' } : item));
+      }
+      
       fetchData();
     } catch (e) { 
       console.error("Save error:", e);
@@ -913,6 +921,13 @@ export default function App() {
         body: JSON.stringify({ id })
       });
       showNotification("Data berhasil dihapus!", "success");
+      
+      if (type === 'inovasi') setInovasiList(prev => prev.filter(item => item.id !== id));
+      else if (type === 'berita') setBeritaList(prev => prev.filter(item => item.id !== id));
+      else if (type === 'dokumen') setDokumenList(prev => prev.filter(item => item.id !== id));
+      else if (type === 'program') setProgramList(prev => prev.filter(item => item.id !== id));
+      else if (type === 'slider') setSliderList(prev => prev.filter(item => item.id !== id));
+      
       fetchData();
     } catch (e) { 
       showNotification("Gagal menghapus data.", "error"); 
