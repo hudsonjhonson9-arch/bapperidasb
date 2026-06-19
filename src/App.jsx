@@ -1820,12 +1820,52 @@ export default function App() {
                           </div>
                         </div>
                         <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                          <button onClick={() => setPreviewDokumen(dok)} className="btn-admin btn-admin-edit" style={{ width: "auto", padding: "0 14px", borderRadius: 10, fontSize: 12, fontWeight: 700 }} title="Lihat Dokumen">
+                          <button onClick={async () => {
+                            if (!dok.url) {
+                              try {
+                                const res = await fetch(`${api.dokumen.list}?id=${dok.id}`);
+                                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                                const result = await res.json();
+                                const docList = Array.isArray(result) ? result : (result.data || []);
+                                if (docList[0] && docList[0].url) {
+                                  setPreviewDokumen({ ...dok, url: docList[0].url });
+                                } else {
+                                  throw new Error("File tidak ditemukan");
+                                }
+                              } catch (e) {
+                                console.error("Failed to load document preview:", e);
+                                alert("Gagal memuat dokumen: " + e.message);
+                              }
+                            } else {
+                              setPreviewDokumen(dok);
+                            }
+                          }} className="btn-admin btn-admin-edit" style={{ width: "auto", padding: "0 14px", borderRadius: 10, fontSize: 12, fontWeight: 700 }} title="Lihat Dokumen">
                             <Eye size={14} style={{ marginRight: 6 }} /> Lihat
                           </button>
                           {isAdmin && (
                             <>
-                              <button onClick={() => { setEditItem(dok); setShowModal('dokumen'); }} className="btn-admin btn-admin-edit" title="Edit Dokumen">✎</button>
+                              <button onClick={async () => {
+                                if (!dok.url) {
+                                  try {
+                                    const res = await fetch(`${api.dokumen.list}?id=${dok.id}`);
+                                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                                    const result = await res.json();
+                                    const docList = Array.isArray(result) ? result : (result.data || []);
+                                    if (docList[0] && docList[0].url) {
+                                      setEditItem({ ...dok, url: docList[0].url });
+                                      setShowModal('dokumen');
+                                    } else {
+                                      throw new Error("File tidak ditemukan");
+                                    }
+                                  } catch (e) {
+                                    console.error("Failed to load document for edit:", e);
+                                    alert("Gagal memuat dokumen: " + e.message);
+                                  }
+                                } else {
+                                  setEditItem(dok);
+                                  setShowModal('dokumen');
+                                }
+                              }} className="btn-admin btn-admin-edit" title="Edit Dokumen">✎</button>
                               <button onClick={() => handleDelete('dokumen', dok.id)} className="btn-admin btn-admin-del" title="Hapus Dokumen">✕</button>
                             </>
                           )}
