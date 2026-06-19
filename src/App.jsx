@@ -739,13 +739,6 @@ export default function App() {
 
   const fetchData = async () => {
     setLoading(true);
-    const errors = [];
-
-    const fetchSafe = async (url) => {
-      const r = await fetch(url);
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.json();
-    };
 
     const getList = (res) => {
       if (Array.isArray(res)) {
@@ -754,47 +747,25 @@ export default function App() {
         }
         return res;
       }
-      // Handle unified master data object
       if (res && (res.berita || res.dokumen || res.slider || res.program)) return [res];
-      
       if (res && res.data && Array.isArray(res.data)) return res.data;
       if (res && res.json && Array.isArray(res.json)) return res.json;
-      
-      // If it's a single object that looks like a data row (e.g. has an 'id'), wrap it in an array
       if (res && typeof res === 'object' && (res.id || res.judul_inovasi || res.judul)) return [res];
-      
       return [];
     };
 
     try {
-      const [initResult, inovasiResult] = await Promise.allSettled([
-        fetchSafe(api.init),
-        fetch(`${API_BASE}/bapperida-inovasi-list`, {
-          headers: { "X-App-Token": APP_SECRET }
-        }).then(r => {
-          if (!r.ok) throw new Error("Inovasi list fetch failed");
-          return r.json();
-        })
-      ]);
+      const r = await fetch(api.init);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const raw = await r.json();
+      const data = getList(raw)[0] || {};
 
-      if (initResult.status === "fulfilled") {
-        const data = getList(initResult.value)[0] || {};
-        if (data.berita) setBeritaList(data.berita.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-        if (data.dokumen) setDokumenList(data.dokumen);
-        if (data.slider) setSliderList(data.slider);
-        if (data.program) setProgramList(data.program.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-        if (data.metrics) setMetricsList(data.metrics.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-        if (data.inovasi) setInovasiList(data.inovasi);
-      } else {
-        throw new Error(initResult.reason);
-      }
-      
-      if (inovasiResult.status === "fulfilled") {
-        const invList = getList(inovasiResult.value);
-        if (invList && invList.length > 0) setInovasiList(invList);
-      } else {
-        console.warn("Inovasi separate fetch failed, using init data:", inovasiResult.reason);
-      }
+      if (data.berita)   setBeritaList(data.berita.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
+      if (data.dokumen)  setDokumenList(data.dokumen);
+      if (data.slider)   setSliderList(data.slider);
+      if (data.program)  setProgramList(data.program.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
+      if (data.metrics)  setMetricsList(data.metrics.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
+      if (data.inovasi)  setInovasiList(data.inovasi);
 
       setFetchError(null);
     } catch (err) {
@@ -803,8 +774,6 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-
-    setLoading(false);
   };
 
   useEffect(() => {
