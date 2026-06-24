@@ -121,99 +121,91 @@ const FadeInImage = ({ src, alt, style, className }) => {
   );
 };
 
+const UPLOAD_API = "https://mindcloud.my.id/webhook/bapperida-upload-file";
+
+const getDriveThumb = (url) => {
+  if (!url) return url;
+  const m = url.match(/\/d\/([^/]+)/);
+  return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=s400` : url;
+};
+
 const ImageUploadField = ({ name, defaultValue, label, required, onMetadata }) => {
   const [url, setUrl] = useState(defaultValue || '');
   const [uploading, setUploading] = useState(false);
+  const [mode, setMode] = useState(defaultValue && !defaultValue.startsWith('data:') ? 'link' : 'file');
 
   useEffect(() => {
     setUrl(defaultValue || '');
+    if (defaultValue && !defaultValue.startsWith('data:')) setMode('link');
   }, [defaultValue]);
 
-  const handleFileChange = (e) => {
+  const uploadToDrive = async (file) => {
+    const reader = new FileReader();
+    return new Promise((resolve, reject) => {
+      reader.onload = async (event) => {
+        try {
+          const res = await fetch(UPLOAD_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: file.name, base64: event.target.result, mimeType: file.type })
+          });
+          const data = await res.json();
+          resolve(data.url);
+        } catch (e) { reject(e); }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Ukuran file terlalu besar! Maksimal 5MB.');
-      return;
-    }
-
-    setUploading(true);
-    
-    // Extract metadata
+    if (file.size > 5 * 1024 * 1024) { alert('Ukuran file terlalu besar! Maksimal 5MB.'); return; }
     if (onMetadata) {
-      const sizeStr = file.size > 1024 * 1024 
-        ? (file.size / (1024 * 1024)).toFixed(1) + ' MB' 
-        : (file.size / 1024).toFixed(0) + ' KB';
-      const typeStr = file.name.split('.').pop().toUpperCase();
-      onMetadata({ size: sizeStr, type: typeStr });
+      const sizeStr = file.size > 1024 * 1024 ? (file.size / (1024 * 1024)).toFixed(1) + ' MB' : (file.size / 1024).toFixed(0) + ' KB';
+      onMetadata({ size: sizeStr, type: file.name.split('.').pop().toUpperCase() });
     }
-
-    // Jika file adalah gambar, lakukan kompresi
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-
-          // Resize jika terlalu besar (maks 1200px)
-          const MAX_WIDTH = 1200;
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Kompresi kualitas ke 0.7
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-          setUrl(compressedBase64);
-          setUploading(false);
-        };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-    } else {
-      // Jika bukan gambar (dokumen), baca langsung
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUrl(reader.result);
-        setUploading(false);
-      };
-      reader.readAsDataURL(file);
+    setUploading(true);
+    try {
+      setUrl(await uploadToDrive(file));
+    } catch (err) {
+      alert('Gagal upload ke Google Drive. Coba lagi.');
     }
+    setUploading(false);
   };
+
+  const isImageField = name !== 'url';
 
   return (
     <div className="form-group">
       <label className="form-label">{label}</label>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        <button type="button" onClick={() => setMode('file')} style={{ flex: 1, padding: '6px 12px', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600, background: mode === 'file' ? C.gold : C.warmGray, color: mode === 'file' ? C.navyDark : C.textMid }}>Upload File</button>
+        <button type="button" onClick={() => setMode('link')} style={{ flex: 1, padding: '6px 12px', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600, background: mode === 'link' ? C.gold : C.warmGray, color: mode === 'link' ? C.navyDark : C.textMid }}>Link URL</button>
+      </div>
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
         {url ? (
-          <img src={url} alt="Preview" style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 4, background: '#eee', flexShrink: 0, border: '1px solid #ddd' }} />
+          isImageField ? (
+            <img src={getDriveThumb(url)} alt="Preview" style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 4, background: '#eee', flexShrink: 0, border: '1px solid #ddd' }} />
+          ) : (
+            <div style={{ width: 80, height: 60, borderRadius: 4, background: '#f5f5f5', border: '1px dashed #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: '#aaa', flexShrink: 0 }}>📄</div>
+          )
         ) : (
-          <div style={{ width: 80, height: 60, borderRadius: 4, background: '#f5f5f5', border: '1px dashed #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#aaa', flexShrink: 0 }}>No Image</div>
+          <div style={{ width: 80, height: 60, borderRadius: 4, background: '#f5f5f5', border: '1px dashed #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#aaa', flexShrink: 0 }}>No File</div>
         )}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <input type="hidden" name={name} value={url} />
           {required && !url && <input type="hidden" name={`${name}_required`} required />}
-          <input 
-            type="file" 
-            accept={name === 'url' ? ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" : "image/*"}
-            onChange={handleFileChange} 
-            className="form-input" 
-            disabled={uploading}
-            style={{ padding: '6px 12px', background: '#fff', cursor: 'pointer' }}
-          />
-          {uploading ? (
-             <span style={{ fontSize: 12, color: C.gold, fontWeight: 600 }}>⏳ Memproses file...</span>
+          {mode === 'file' ? (
+            <input type="file" accept={name === 'url' ? ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" : "image/*"} onChange={handleFileChange} className="form-input" disabled={uploading} style={{ padding: '6px 12px', background: '#fff', cursor: 'pointer' }} />
           ) : (
-             <span style={{ fontSize: 11, color: '#666' }}>File akan disimpan langsung ke database (Base64). Maks 5MB.</span>
+            <input type="url" placeholder="https://drive.google.com/..." value={url} onChange={e => setUrl(e.target.value)} className="form-input" style={{ padding: '6px 12px' }} />
+          )}
+          {uploading ? (
+            <span style={{ fontSize: 12, color: C.gold, fontWeight: 600 }}>⏳ Upload ke Google Drive...</span>
+          ) : (
+            <span style={{ fontSize: 11, color: '#666' }}>{mode === 'file' ? 'File diupload ke Google Drive. Maks 5MB.' : 'Tempel link Google Drive atau URL lainnya.'}</span>
           )}
         </div>
       </div>
@@ -225,42 +217,45 @@ const ImageUploadField = ({ name, defaultValue, label, required, onMetadata }) =
 const MultiFileUploadField = ({ name, label, helpText }) => {
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [linkInput, setLinkInput] = useState('');
+
+  const uploadToDrive = async (file) => {
+    const reader = new FileReader();
+    return new Promise((resolve, reject) => {
+      reader.onload = async (event) => {
+        try {
+          const res = await fetch(UPLOAD_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: file.name, base64: event.target.result, mimeType: file.type })
+          });
+          const data = await res.json();
+          resolve({ name: file.name, url: data.url, type: file.name.split('.').pop().toUpperCase(), size: file.size > 1024 * 1024 ? (file.size / (1024 * 1024)).toFixed(1) + ' MB' : (file.size / 1024).toFixed(0) + ' KB' });
+        } catch (e) { reject(e); }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
 
   const handleFileChange = async (e) => {
     const selectedFiles = Array.from(e.target.files);
     if (selectedFiles.length === 0) return;
-
     setUploading(true);
     const newFiles = [...files];
-
     for (const file of selectedFiles) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert(`File ${file.name} terlalu besar! Maksimal 5MB.`);
-        continue;
-      }
-
-      const reader = new FileReader();
-      const promise = new Promise((resolve) => {
-        reader.onloadend = () => {
-          resolve({
-            name: file.name,
-            url: reader.result,
-            type: file.name.split('.').pop().toUpperCase(),
-            size: file.size > 1024 * 1024 
-              ? (file.size / (1024 * 1024)).toFixed(1) + ' MB' 
-              : (file.size / 1024).toFixed(0) + ' KB'
-          });
-        };
-        reader.readAsDataURL(file);
-      });
-
-      const fileData = await promise;
-      newFiles.push(fileData);
+      if (file.size > 5 * 1024 * 1024) { alert(`File ${file.name} terlalu besar! Maksimal 5MB.`); continue; }
+      try { newFiles.push(await uploadToDrive(file)); } catch (err) { alert(`Gagal upload ${file.name}.`); }
     }
-
     setFiles(newFiles);
     setUploading(false);
-    e.target.value = ''; // Reset input
+    e.target.value = '';
+  };
+
+  const addLink = () => {
+    if (!linkInput.trim()) return;
+    setFiles([...files, { name: linkInput.trim(), url: linkInput.trim(), type: 'LINK', size: '-' }]);
+    setLinkInput('');
   };
 
   const removeFile = (index) => {
@@ -271,39 +266,30 @@ const MultiFileUploadField = ({ name, label, helpText }) => {
     <div className="form-group">
       <label className="form-label">{label}</label>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <input 
-          type="file" 
-          multiple 
-          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*"
-          onChange={handleFileChange} 
-          className="form-input" 
-          disabled={uploading}
-          style={{ padding: '10px 16px', background: '#fff', cursor: 'pointer', border: '1px dashed #ccc' }}
-        />
-        
-        {uploading && <div style={{ fontSize: 12, color: C.gold, fontWeight: 600 }}>⏳ Memproses file...</div>}
-        
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input type="url" placeholder="Atau tempel link dokumen..." value={linkInput} onChange={e => setLinkInput(e.target.value)} className="form-input" style={{ flex: 1, padding: '10px 16px' }} />
+          <button type="button" onClick={addLink} style={{ padding: '10px 16px', background: C.navy, color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 12, whiteSpace: 'nowrap' }}>Tambah Link</button>
+        </div>
+        <input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*" onChange={handleFileChange} className="form-input" disabled={uploading} style={{ padding: '10px 16px', background: '#fff', cursor: 'pointer', border: '1px dashed #ccc' }} />
+        {uploading && <div style={{ fontSize: 12, color: C.gold, fontWeight: 600 }}>⏳ Upload ke Google Drive...</div>}
         {files.length > 0 && (
           <div style={{ display: 'grid', gap: 8 }}>
             {files.map((f, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'white', padding: '8px 12px', borderRadius: 8, border: '1px solid #eee' }}>
                 <div style={{ width: 32, height: 32, borderRadius: 6, background: `${C.navy}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
-                  {f.type === 'PDF' ? '📕' : '📄'}
+                  {f.type === 'LINK' ? '🔗' : f.type === 'PDF' ? '📕' : '📄'}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: C.navy, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</div>
                   <div style={{ fontSize: 11, color: C.textLight }}>{f.size} • {f.type}</div>
                 </div>
-                <button type="button" onClick={() => removeFile(i)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 4 }}>
-                  <X size={16} />
-                </button>
+                <button type="button" onClick={() => removeFile(i)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 4 }}><X size={16} /></button>
               </div>
             ))}
           </div>
         )}
-        
         <input type="hidden" name={name} value={JSON.stringify(files)} />
-        <p style={{ fontSize: 11, color: '#666', margin: 0 }}>{helpText || "Bisa pilih lebih dari 1 file. Maks 5MB per file."}</p>
+        <p style={{ fontSize: 11, color: '#666', margin: 0 }}>{helpText || "Upload file (PDF/Gambar) ke Google Drive atau tambah link URL."}</p>
       </div>
     </div>
   );
@@ -1301,7 +1287,7 @@ export default function App() {
                 zIndex: 0
               }}
             >
-              <FadeInImage src={slide.gambar_url} alt={slide.judul} style={{ width: "100%", height: "100%" }} />
+              <FadeInImage src={getDriveThumb(slide.gambar_url)} alt={slide.judul} style={{ width: "100%", height: "100%" }} />
             </div>
           ))
         ) : (
@@ -2014,7 +2000,7 @@ export default function App() {
                   }}>
                     <div className="berita-thumb-zoom" style={{ position: "absolute", inset: 0 }}>
                       {item.gambar_url ? (
-                        <FadeInImage src={item.gambar_url} alt={item.judul} style={{ width: "100%", height: "100%" }} />
+                        <FadeInImage src={getDriveThumb(item.gambar_url)} alt={item.judul} style={{ width: "100%", height: "100%" }} />
                       ) : (
                         <div style={{ width: "100%", height: "100%", background: `linear-gradient(135deg, ${C.navy} 0%, #1e40af 100%)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <span style={{ fontSize: row === 1 ? 32 : 48 }}>{item.emoji || "📋"}</span>
@@ -2317,7 +2303,7 @@ export default function App() {
             <div style={{ display: "grid", gap: 16 }}>
               {sliderList.map(item => (
                 <div key={item.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
-                  <img src={item.gambar_url} alt="Slider" style={{ width: 120, height: 70, objectFit: "cover", borderRadius: 8, background: "#eee" }} />
+                  <img src={getDriveThumb(item.gambar_url)} alt="Slider" style={{ width: 120, height: 70, objectFit: "cover", borderRadius: 8, background: "#eee" }} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600, color: C.navy }}>{item.judul || "(Tanpa Judul)"}</div>
                     <div style={{ fontSize: 12, color: C.textLight }}>{item.subjudul || "(Tanpa Subjudul)"}</div>
@@ -2608,7 +2594,7 @@ export default function App() {
                   <div key={item.id} onClick={() => { setShowAllBeritaModal(false); setSelectedBerita(item); }} className="card" style={{ padding: "16px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 16 }}>
                     <div style={{ width: 60, height: 60, borderRadius: 10, background: `${C.navy}14`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0, overflow: "hidden" }}>
                       {item.gambar_url ? (
-                        <FadeInImage src={item.gambar_url} alt={item.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <FadeInImage src={getDriveThumb(item.gambar_url)} alt={item.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       ) : (
                         item.emoji || "📰"
                       )}
@@ -2636,7 +2622,7 @@ export default function App() {
           <div className="modal-content" style={{ maxWidth: 800, padding: 0 }} onClick={e => e.stopPropagation()}>
             <div style={{ height: 300, background: `linear-gradient(135deg, ${C.navy}, #1A527A)`, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
               {selectedBerita.gambar_url ? (
-                <FadeInImage src={selectedBerita.gambar_url} alt={selectedBerita.judul} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />
+                <FadeInImage src={getDriveThumb(selectedBerita.gambar_url)} alt={selectedBerita.judul} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />
               ) : (
                 <span style={{ fontSize: 120 }}>{selectedBerita.emoji || "📰"}</span>
               )}
