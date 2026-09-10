@@ -762,7 +762,7 @@ export default function App() {
       const data = getList(raw)[0] || {};
 
       if (data.berita)   setBeritaList(data.berita.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-      if (data.dokumen)  setDokumenList(data.dokumen);
+      if (data.dokumen)  setDokumenList(data.dokumen.filter(d => d.publik === true || d.publik === 'true' || d.publik === 1));
       if (data.slider)   setSliderList(data.slider);
       if (data.program)  setProgramList(data.program.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
       if (data.metrics)  setMetricsList(data.metrics.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
