@@ -762,7 +762,7 @@ export default function App() {
       const data = getList(raw)[0] || {};
 
       if (data.berita)   setBeritaList(data.berita.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-      if (data.dokumen)  setDokumenList(data.dokumen.filter(d => d.publik === true || d.publik === 'true' || d.publik === 1));
+      if (data.dokumen)  setDokumenList(data.dokumen);
       if (data.slider)   setSliderList(data.slider);
       if (data.program)  setProgramList(data.program.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
       if (data.metrics)  setMetricsList(data.metrics.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
@@ -1248,8 +1248,8 @@ export default function App() {
               </div>
             </div>
             <div>
-              <div style={{ color: "white", fontWeight: 700, fontSize: 14, lineHeight: 1.2, letterSpacing: "0.02em" }}>ARSIP DIGITAL</div>
-              <div style={{ color: C.gold, fontSize: 10.5, fontWeight: 400, letterSpacing: "0.05em" }}>Bapperida Kabupaten Sumba Barat</div>
+              <div style={{ color: "white", fontWeight: 700, fontSize: 15, lineHeight: 1.2, letterSpacing: "0.02em" }}>BAPPERIDA</div>
+              <div style={{ color: C.gold, fontSize: 10.5, fontWeight: 400, letterSpacing: "0.05em" }}>Kabupaten Sumba Barat</div>
             </div>
           </div>
 
@@ -2392,8 +2392,8 @@ export default function App() {
                   </div>
                 </div>
                 <div>
-                  <div style={{ color: "white", fontWeight: 700, fontSize: 14 }}>ARSIP DIGITAL</div>
-                  <div style={{ color: C.gold, fontSize: 11 }}>Bapperida Kabupaten Sumba Barat</div>
+                  <div style={{ color: "white", fontWeight: 700, fontSize: 15 }}>BAPPERIDA</div>
+                  <div style={{ color: C.gold, fontSize: 11 }}>Kabupaten Sumba Barat</div>
                 </div>
               </div>
               <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.38)", lineHeight: 1.9, maxWidth: 290 }}>
