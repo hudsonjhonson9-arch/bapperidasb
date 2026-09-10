@@ -1743,6 +1743,144 @@ export default function App() {
         </div>
       </section>
 
+      {/* ──── STANDAR PELAYANAN ──── */}
+      <section style={{ background: C.white, padding: "96px 28px" }}>
+        <div style={{ maxWidth: 1300, margin: "0 auto" }}>
+          <div className="gold-bar" style={{ marginBottom: 20 }} />
+          <p className="eyebrow" style={{ marginBottom: 14 }}>Standar Pelayanan</p>
+          <h2 className="section-title" style={{ marginBottom: 48 }}>Standar Pelayanan BAPPERIDA</h2>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 32 }}>
+            {[
+              {
+                judul: "Fasilitasi Perencanaan Pembangunan",
+                tags: ["Perekonomian & SDA", "Pemerintahan", "Pembangunan Manusia", "Infrastruktur", "Kewilayakan"],
+                alurLabel: "Alur mengikuti Permendagri No. 86/2017",
+                persyaratan: [
+                  "Surat pengantar Kepala PD",
+                  "Data kinerja berjalan",
+                  "Rancangan awal RKPD & Renstra PD",
+                  "Rancangan Renja PD",
+                  "Hasil Musrenbang Kecamatan",
+                ],
+                alur: [
+                  { judul: "Ajukan usulan", desc: "Renja/usulan program ke BAPPERIDA" },
+                  { judul: "Verifikasi awal", desc: "Cek kesesuaian dengan RKPD & Musrenbang" },
+                  { judul: "Forum Perangkat Daerah", desc: "Sepakati program & pagu indikatif" },
+                  { judul: "Berita Acara", desc: "Catat hasil kesepakatan Forum PD" },
+                  { judul: "Verifikasi akhir", desc: "Cocokkan dengan RKPD final" },
+                  { judul: "Rekomendasi terbit", desc: "Dasar penetapan Renja PD" },
+                ],
+                waktu: "14 hari kerja",
+                produk: ["Rekomendasi verifikasi Renja-RKPD", "Berita Acara Forum PD"],
+              },
+              {
+                judul: "Fasilitasi Pelaporan Inovasi Daerah",
+                tags: ["Bidang Riset dan Inovasi"],
+                persyaratan: [
+                  "Formulir usulan inovasi",
+                  "SK penetapan inovasi",
+                  "Surat pengantar pimpinan PD",
+                  "Laporan & dokumentasi kegiatan",
+                ],
+                alur: [
+                  { judul: "Sampaikan data", desc: "Manual atau lewat aplikasi IID" },
+                  { judul: "Verifikasi data", desc: "Cek kelengkapan & validitas" },
+                  { judul: "Kompilasi & reviu", desc: "Seluruh usulan Perangkat Daerah" },
+                  { judul: "Susun laporan", desc: "Indeks inovasi daerah" },
+                  { judul: "Unggah laporan", desc: "Ke sistem pelaporan Kemendagri" },
+                  { judul: "Bukti pelaporan", desc: "Diserahkan ke Perangkat Daerah" },
+                ],
+                waktu: "3 hari kerja",
+                produk: ["Laporan/Indeks Inovasi Daerah", "Tanda bukti pelaporan"],
+              },
+            ].map((layanan, idx) => (
+              <div key={idx} style={{ background: "#f8fafc", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
+                {/* Header */}
+                <div style={{ background: C.navy, padding: "24px 28px" }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: "white", marginBottom: 12 }}>{layanan.judul}</h3>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {layanan.tags.map(tag => (
+                      <span key={tag} style={{ background: `${C.gold}22`, color: C.gold, fontSize: 10, fontWeight: 700, padding: "4px 12px", borderRadius: 20, border: `1px solid ${C.gold}44` }}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ padding: "28px 28px 24px" }}>
+                  {/* A: Persyaratan */}
+                  <div style={{ marginBottom: 28 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: C.gold, color: "white", fontSize: 11, fontWeight: 800 }}>A</span>
+                      <h4 style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>Persyaratan Pelayanan</h4>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 8 }}>
+                      {layanan.persyaratan.map((p, i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: C.textMid, lineHeight: 1.5 }}>
+                          <span style={{ color: C.gold, fontSize: 10, marginTop: 5, flexShrink: 0 }}>◆</span>
+                          {p}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {layanan.alurLabel && (
+                    <p style={{ fontSize: 11.5, color: C.textLight, marginBottom: 16, fontStyle: "italic" }}>{layanan.alurLabel}</p>
+                  )}
+                  {/* Alur */}
+                  <div style={{ marginBottom: 28 }}>
+                    <h4 style={{ fontSize: 13, fontWeight: 700, color: C.navy, marginBottom: 14 }}>Alur Pelayanan</h4>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                      {layanan.alur.map((step, i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 32, flexShrink: 0 }}>
+                            <div style={{ width: 28, height: 28, borderRadius: "50%", background: C.navy, color: "white", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{i + 1}</div>
+                            {i < layanan.alur.length - 1 && <div style={{ width: 2, flex: 1, minHeight: 16, background: `${C.navy}22`, margin: "4px 0" }} />}
+                          </div>
+                          <div style={{ paddingBottom: i < layanan.alur.length - 1 ? 16 : 0 }}>
+                            <div style={{ fontSize: 13.5, fontWeight: 700, color: C.navy, marginBottom: 2 }}>{step.judul}</div>
+                            <div style={{ fontSize: 12.5, color: C.textLight }}>{step.desc}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Info boxes */}
+                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                    <div style={{ background: "white", border: `1px solid ${C.gold}33`, borderRadius: 10, padding: "14px 18px", flex: "1 1 140px" }}>
+                      <div style={{ fontSize: 11, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Waktu pelayanan</div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: C.gold }}>{layanan.waktu}</div>
+                    </div>
+                    <div style={{ background: "white", border: `1px solid ${C.gold}33`, borderRadius: 10, padding: "14px 18px", flex: "1 1 140px" }}>
+                      <div style={{ fontSize: 11, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Biaya / Tarif</div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: C.gold }}>Gratis</div>
+                    </div>
+                  </div>
+                  {/* Produk */}
+                  <div style={{ marginTop: 20, borderTop: `1px solid ${C.navy}12`, paddingTop: 16 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 8 }}>Produk Pelayanan</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      {layanan.produk.map((p, i) => (
+                        <div key={i} style={{ fontSize: 13, color: C.textMid, display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ color: C.gold, fontSize: 10 }}>◆</span>{p}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Pengelolaan pengaduan */}
+          <div style={{ marginTop: 40, background: `rgba(11,36,71,0.04)`, borderRadius: 12, padding: "20px 26px", display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 6 }}>Pengelolaan pengaduan</div>
+              <div style={{ fontSize: 13, color: C.textMid, lineHeight: 1.6 }}>
+                Kantor BAPPERIDA, Jl. Wee Karou, Waikabubak, NTT — bapperidasb@gmail.com — Melalui SP4N-LAPOR!
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ──── DOKUMEN PUBLIK ──── */}
       <section id="dokumen" style={{ background: C.offWhite, padding: "96px 28px" }}>
         <div style={{ maxWidth: 1300, margin: "0 auto" }}>
