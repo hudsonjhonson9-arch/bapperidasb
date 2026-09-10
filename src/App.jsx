@@ -569,6 +569,19 @@ function scrollTo(id) {
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function PaginationControls({ page, totalPages, onChange }) {
+  if (totalPages <= 1) return null;
+  return (
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 28, flexWrap: "wrap" }}>
+      <button className="pagination-btn" disabled={page <= 1} onClick={() => onChange(page - 1)}>‹</button>
+      {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+        <button key={p} className={`pagination-btn ${p === page ? "active" : ""}`} onClick={() => onChange(p)}>{p}</button>
+      ))}
+      <button className="pagination-btn" disabled={page >= totalPages} onClick={() => onChange(page + 1)}>›</button>
+    </div>
+  );
+}
+
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -576,6 +589,8 @@ export default function App() {
   const [isLongPress, setIsLongPress] = useState(false);
   const [dokSearch, setDokSearch] = useState("");
   const [dokFilter, setDokFilter] = useState("Semua");
+  const [dokPage, setDokPage] = useState(1);
+  const [beritaPage, setBeritaPage] = useState(1);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
   useEffect(() => {
@@ -1141,6 +1156,11 @@ export default function App() {
         .filter-btn{padding:8px 18px;border-radius:20px;font-size:12.5px;font-weight:500;cursor:pointer;border:1.5px solid #E8E3D9;background:transparent;color:#8898AA;font-family:'DM Sans',sans-serif;transition:all .18s;white-space:nowrap}
         .filter-btn.active{background:#0B2447;border-color:#0B2447;color:#fff}
         .filter-btn:not(.active):hover{border-color:#C9A227;color:#C9A227}
+
+        .pagination-btn{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid #E8E3D9;background:#fff;color:#0B2447;font-family:'DM Sans',sans-serif;transition:all .18s;min-width:36px}
+        .pagination-btn.active{background:#C9A227;border-color:#C9A227;color:#fff}
+        .pagination-btn:not(:disabled):hover:not(.active){border-color:#C9A227;color:#C9A227}
+        .pagination-btn:disabled{opacity:.4;cursor:not-allowed}
 
         .hover-gold:hover { color: ${C.gold} !important; }
 
@@ -1751,13 +1771,13 @@ export default function App() {
                 type="text"
                 placeholder="Cari dokumen..."
                 value={dokSearch}
-                onChange={e => setDokSearch(e.target.value)}
+                onChange={e => { setDokSearch(e.target.value); setDokPage(1); }}
               />
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 {["Semua", ...[...new Set(dokumenList.map(d => d.kategori).filter(Boolean))]].map(kat => (
-                  <button key={kat} className={`filter-btn ${dokFilter === kat ? "active" : ""}`} onClick={() => setDokFilter(kat)}>
+                  <button key={kat} className={`filter-btn ${dokFilter === kat ? "active" : ""}`} onClick={() => { setDokFilter(kat); setDokPage(1); }}>
                     {kat === "Semua" ? "Semua Kategori" : kat}
                   </button>
                 ))}
@@ -1768,27 +1788,21 @@ export default function App() {
             </div>
           </div>
 
-          {/* Dokumen Groups */}
+          {/* Dokumen List */}
           {(() => {
-            const categories = [...new Set(dokumenList.map(d => d.kategori))];
-            const displayCategories = dokFilter === "Semua" ? categories : [dokFilter];
+            const filtered = dokumenList.filter(d =>
+              (dokFilter === "Semua" || d.kategori === dokFilter) &&
+              (dokSearch === "" || d.judul.toLowerCase().includes(dokSearch.toLowerCase()))
+            );
+            const pageSize = 10;
+            const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+            const curPage = Math.min(dokPage, totalPages);
+            const items = filtered.slice((curPage - 1) * pageSize, curPage * pageSize);
 
-            return displayCategories.map(cat => {
-              const items = dokumenList.filter(d =>
-                d.kategori === cat &&
-                (dokSearch === "" || d.judul.toLowerCase().includes(dokSearch.toLowerCase()))
-              );
-              if (items.length === 0) return null;
-
-              return (
-                <div key={cat} style={{ marginBottom: 36 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                    <div style={{ width: 4, height: 22, background: C.navy, borderRadius: 3 }} />
-                    <h3 style={{ fontSize: 15, fontWeight: 600, color: C.navy }}>{cat}</h3>
-                    <span style={{ background: `${C.navy}14`, color: C.navy, fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20 }}>{items.length} dokumen</span>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {items.map(dok => (
+            return (
+              <>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {items.map(dok => (
                       <div key={dok.id} className="dok-card">
                         <div style={{ width: 46, height: 46, borderRadius: 10, background: `${C.navy}12`, border: `1px solid ${C.navy}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
                           {dok.icon || "📄"}
@@ -1858,10 +1872,10 @@ export default function App() {
                         </div>
                       </div>
                     ))}
-                  </div>
                 </div>
-              );
-            });
+                <PaginationControls page={curPage} totalPages={totalPages} onChange={setDokPage} />
+              </>
+            );
           })()}
 
           {/* Empty state */}
@@ -1915,7 +1929,7 @@ export default function App() {
                   <Menu size={16} /> {isLayoutMode ? "Simpan Layout" : "Grid Builder"}
                 </button>
               )}
-              <button className="btn-gold" onClick={() => setShowAllBeritaModal(true)}>Lihat Semua Berita <ArrowRight size={14} /></button>
+              <button className="btn-gold" onClick={() => { setBeritaPage(1); setShowAllBeritaModal(true); }}>Lihat Semua Berita <ArrowRight size={14} /></button>
               {isAdmin && (
                 <button className="btn-gold" onClick={() => { setEditItem(null); setShowModal('berita'); }} style={{ background: C.navy, color: "white" }}>+ Tambah Berita</button>
               )}
@@ -2094,7 +2108,7 @@ export default function App() {
           {beritaList.length > 6 && (
             <div style={{ textAlign: "center" }}>
               <button 
-                onClick={() => setShowAllBeritaModal(true)} 
+                onClick={() => { setBeritaPage(1); setShowAllBeritaModal(true); }} 
                 className="btn-gold" 
                 style={{ 
                   background: "transparent", 
@@ -2589,28 +2603,39 @@ export default function App() {
               <button onClick={() => setShowAllBeritaModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textLight }}><X size={20} /></button>
             </div>
             <div className="modal-body" style={{ flex: 1, overflowY: "auto", padding: 24, background: "#f8fafc" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
-                {beritaList.map(item => (
-                  <div key={item.id} onClick={() => { setShowAllBeritaModal(false); setSelectedBerita(item); }} className="card" style={{ padding: "16px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 16 }}>
-                    <div style={{ width: 60, height: 60, borderRadius: 10, background: `${C.navy}14`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0, overflow: "hidden" }}>
-                      {item.gambar_url ? (
-                        <FadeInImage src={getDriveThumb(item.gambar_url)} alt={item.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      ) : (
-                        item.emoji || "📰"
-                      )}
+              {(() => {
+                const pageSize = 8;
+                const totalPages = Math.max(1, Math.ceil(beritaList.length / pageSize));
+                const curPage = Math.min(beritaPage, totalPages);
+                const items = beritaList.slice((curPage - 1) * pageSize, curPage * pageSize);
+                return (
+                  <>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+                      {items.map(item => (
+                        <div key={item.id} onClick={() => { setShowAllBeritaModal(false); setSelectedBerita(item); }} className="card" style={{ padding: "16px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 16 }}>
+                          <div style={{ width: 60, height: 60, borderRadius: 10, background: `${C.navy}14`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0, overflow: "hidden" }}>
+                            {item.gambar_url ? (
+                              <FadeInImage src={getDriveThumb(item.gambar_url)} alt={item.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            ) : (
+                              item.emoji || "📰"
+                            )}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                              <span style={{ background: `${C.navy}14`, color: C.navy, fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20 }}>{item.kategori}</span>
+                              <span style={{ color: C.textLight, fontSize: 12 }}>{item.tanggal}</span>
+                              {item.is_featured && <span style={{ color: C.gold, fontSize: 11, fontWeight: 700 }}>★ Unggulan</span>}
+                            </div>
+                            <h4 style={{ fontSize: 15, fontWeight: 600, color: C.navy, lineHeight: 1.4 }}>{item.judul}</h4>
+                          </div>
+                          <ArrowRight size={18} color={C.textLight} style={{ flexShrink: 0 }} />
+                        </div>
+                      ))}
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                        <span style={{ background: `${C.navy}14`, color: C.navy, fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20 }}>{item.kategori}</span>
-                        <span style={{ color: C.textLight, fontSize: 12 }}>{item.tanggal}</span>
-                        {item.is_featured && <span style={{ color: C.gold, fontSize: 11, fontWeight: 700 }}>★ Unggulan</span>}
-                      </div>
-                      <h4 style={{ fontSize: 15, fontWeight: 600, color: C.navy, lineHeight: 1.4 }}>{item.judul}</h4>
-                    </div>
-                    <ArrowRight size={18} color={C.textLight} style={{ flexShrink: 0 }} />
-                  </div>
-                ))}
-              </div>
+                    <PaginationControls page={curPage} totalPages={totalPages} onChange={setBeritaPage} />
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
