@@ -2707,7 +2707,7 @@ export default function App() {
                   </div>
                 ) : (
                   <iframe
-                    src={previewDokumen.url}
+                    src={previewDokumen.url.replace(/\/(edit|view)(\?[^/]*)?$/, '/preview$2')}
                     width="100%"
                     height="100%"
                     style={{ border: "none", position: "absolute", inset: 0 }}
