@@ -112,15 +112,24 @@ export async function unggahFile(file) {
 
   const base64 = await bacaSebagaiBase64(file);
 
+  // Kunci API dikirim di dalam body, bukan hanya di header. Apps Script
+  // membalas POST dengan redirect 302 ke script.googleusercontent.com, dan
+  // redirect itu membuang header kustom milik kita. Akibatnya header
+  // 'x-gas-key' sampai ke doPost dalam keadaan kosong, sementara body
+  // diteruskan apa adanya. Kunci di body sekaligus menutup upload langsung dari
+  // panel admin yang tidak lewat client ini.
   let res;
   try {
     res = await fetch(GAS_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'upload',
+        name: file.name,
+        base64,
+        mimeType: file.type,
         ...(GAS_KEY ? { 'x-gas-key': GAS_KEY } : {}),
-      },
-      body: JSON.stringify({ action: 'upload', name: file.name, base64, mimeType: file.type }),
+      }),
     });
   } catch {
     throw new ApiError('Gagal menghubungi Google Drive. Periksa koneksi Anda.', 0);

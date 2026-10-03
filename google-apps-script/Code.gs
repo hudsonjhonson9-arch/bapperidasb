@@ -52,10 +52,16 @@ function doPost(e) {
 
     // Gerbang API key. Tanpa ini, URL web app Anyone bisa dipakai siapa saja untuk
     // menaruh file mentah ke Drive dan membebani kuota.
+    //
+    // Urutan pembacaan penting. Apps Script menjawab POST ke /exec dengan
+    // redirect 302 ke script.googleusercontent.com, dan redirect itu membuang
+    // header kustom milik pemanggil. Jadi e.postData.headers['x-gas-key']
+    // praktis selalu kosong saat upload datang dari browser - kunci wajib
+    // dibawa di dalam body params, bukan di header.
     if (API_KEY) {
-      var key = (e.parameter && e.parameter['x-gas-key']) ||
-                (params['x-gas-key']) ||
-                (e.postData.headers && e.postData.headers['x-gas-key']);
+      var key = (params && params['x-gas-key']) ||
+                (e.parameter && e.parameter['x-gas-key']) ||
+                (e.postData && e.postData.headers && e.postData.headers['x-gas-key']);
       if (key !== API_KEY) {
         return json({ error: 'API key tidak valid' });
       }

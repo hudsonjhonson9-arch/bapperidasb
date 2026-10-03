@@ -850,13 +850,15 @@ async function hapusDiDrive(url) {
           || String(url).match(/\/folders\/([a-zA-Z0-9_-]+)/)?.[1];
   if (!id) return;
 
+  // Kunci API dikirim di body, bukan di header. Apps Script membalas POST
+  // dengan redirect 302 yang membuang header kustom, sehingga 'x-gas-key' dari
+  // header tidak pernah sampai ke doPost. Body diteruskan apa adanya, jadi ini
+  // satu-satunya cara yang benar. Lihat juga catatan di src/api.js.
+  const kunci = process.env.GAS_API_KEY;
   const res = await fetch(gas, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(process.env.GAS_API_KEY ? { 'x-gas-key': process.env.GAS_API_KEY } : {}),
-    },
-    body: JSON.stringify({ action: 'deleteFile', fileId: id }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'deleteFile', fileId: id, ...(kunci ? { 'x-gas-key': kunci } : {}) }),
   });
   if (!res.ok) console.error(`GAS deleteFile ${id} gagal: HTTP ${res.status}`);
 }
