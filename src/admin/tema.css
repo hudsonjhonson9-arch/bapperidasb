@@ -90,7 +90,7 @@
 .kosong { padding:40px textAlign:center color:var(--text-medium) fontSize:13.5; }
 
 /* Tag/status */
-.tag { display:inline-block padding:3px 10px borderRadius:20 fontSize:11 fontWeight:800 color:var(--text-light); background:var(--navi-light); }
+.tag { display:inline-block padding:3px 10px borderRadius:20 fontSize:10 fontWeight:800 color:var(--text-light); background:var(--navi-light); }
 .tag.success { background:var(--sukses) color:var(--putih); }
 .tag.warning { background:var(--emas) color:var(--navi-dark); }
 
@@ -99,4 +99,4 @@
 .status-approved { color:var(--sukses); fontWeight:700; }
 
 /* Responsive */
-@media (max-width: 768px) { .sidebar .nav button { padding:10px 10px fontSize:11; } .main { padding:16px; } }
+@media (max-width: 768px) { .sidebar .nav button { padding:10px 10px fontSize:10; } .main { padding:12px; } }
