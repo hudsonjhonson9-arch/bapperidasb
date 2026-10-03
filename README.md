@@ -42,6 +42,19 @@ Semua `CREATE TABLE` memakai `IF NOT EXISTS` dan tidak pernah `DROP`, jadi
 aman untuk database yang juga dipakai `arsip-digital`: kolom tambahan dari sana
 tetap utuh.
 
+**Penting untuk database yang sudah berisi data.** `CREATE TABLE IF NOT EXISTS`
+melewati tabel yang sudah ada, termasuk kolom-kolom yang belum ada di dalamnya.
+Tabel produksi `n8n_storage` misalnya belum punya `updated_at`, padahal setiap
+`INSERT` dan `UPDATE` di server memakainya. Karena itu bagian akhir `schema.sql`
+berisi blok `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` untuk menutup kekurangan
+itu. Blok itu wajib dijalankan; tanpa itu semua operasi tulis berakhir dengan
+`column "updated_at" does not exist`.
+
+Blok yang sama juga menangani `bapperida_metrics`, yang di produksi punya kolom
+`id` bertipe VARCHAR berisi kode seperti `ipd_2025`, bukan `SERIAL`. Tipe kolom
+tidak diubah dan tidak ada yang di-`DROP`, jadi tiga baris metrik lama tetap
+utuh.
+
 Tabel yang dipakai:
 
 ```

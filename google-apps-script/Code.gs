@@ -25,7 +25,7 @@
  */
 
 // ── KONFIGURASI (ubah sesuai lingkungan) ────────────────────────────────────
-var DRIVE_FOLDER_ID = 'GANTI_DENGAN_ID_FOLDER_DRIVE';
+var DRIVE_FOLDER_ID = '1yJXskcIfVjH-X7HWQh0b-BgnmTimkNQs';
 var API_KEY         = '';        // samakan dengan GAS_API_KEY di .env server
 
 // Batas ukuran file. Di sisi klien (src/api.js) juga ada batas 5 MB; angka ini

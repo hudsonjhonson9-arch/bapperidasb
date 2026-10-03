@@ -13,6 +13,13 @@
 -- kolom (file_type, status, files, tags, uploader_id, ...). Skema ini tidak
 -- menyentuhnya di luar ADD COLUMN IF NOT EXISTS, jadi kedua situs bisa berbagi
 -- satu tabel tanpa saling menimpa kolom.
+--
+-- PENTING untuk database yang sudah berisi data (mis. n8n_storage):
+-- CREATE TABLE IF NOT EXISTS akan MELOMPATI tabel yang sudah ada, termasuk
+-- kolom-kolom yang belum ada di dalamnya. Blok ALTER TABLE di paling bawah
+-- karena itu wajib: tanpa blok itu, server tetap menulis updated_at dan
+-- setiap INSERT/UPDATE berakhir "column updated_at does not exist".
+-- Urutan aman: jalankan file ini dua kali, hasil kedua tidak mengubah apa pun.
 -- =============================================================================
 
 -- ── Berita ──────────────────────────────────────────────────────────────────
@@ -150,3 +157,62 @@ CREATE TABLE IF NOT EXISTS public.bapperida_admin (
   last_login TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- =============================================================================
+-- Lengkapi tabel yang sudah ada sebelum migrasi ini
+--
+-- Dipakai database yang sudah berisi data (n8n_storage produksi, dan arsip-digital
+-- yang berbagi bapperida_dokumen). Kolom berikut tidak ada di tabel-tabel itu,
+-- padahal server membutuhkannya di setiap INSERT, UPDATE, dan ringkasan.
+--
+-- Semua pernyataan di sini idempotent dan hanya menambah kolom yang belum ada,
+-- jadi aman dijalankan berulang dan tidak menyentuh data atau kolom milik situs
+-- lain. DEFAULT NOW() hanya berlaku untuk baris yang sudah ada, jadi 57 dokumen
+-- lama tidak berubah jadi NULL.
+--
+-- Diverifikasi terhadap n8n_storage (PostgreSQL 16.13): sebelum blok ini,
+-- 6 dari 13 query server gagal dengan "column updated_at does not exist".
+-- =============================================================================
+
+ALTER TABLE public.bapperida_berita   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE public.bapperida_dokumen  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE public.bapperida_slider   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE public.bapperida_program  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE public.bapperida_inovasi  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+-- bapperida_metrics di n8n_storage BERBEDA dari definisi di atas:
+-- kolom id-nya VARCHAR berisi kode seperti 'ipd_2025' / 'sakip_2025', bukan
+-- SERIAL. Karena itu kolom id tidak boleh diubah tipenya dan tidak boleh
+-- diberi DEFAULT sequence: default-nya harus berupa teks, bukan angka.
+--
+-- Kolom id itu dipakai sebagai kunci saat mengedit metrik, jadi harus selalu
+-- terisi. Form admin tidak punya kolom id, jadi INSERT dari panel akan
+-- datang tanpa id; DEFAULT di bawah yang menutupinya. Format 'm_' + hash
+-- dipakai supaya tidak mungkin bentrok dengan kode lama seperti 'ipd_2025'.
+ALTER TABLE public.bapperida_metrics ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE public.bapperida_metrics ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE public.bapperida_metrics ALTER COLUMN label SET DEFAULT '';
+ALTER TABLE public.bapperida_metrics ALTER COLUMN value SET DEFAULT '';
+ALTER TABLE public.bapperida_metrics ALTER COLUMN icon SET DEFAULT '';
+ALTER TABLE public.bapperida_metrics ALTER COLUMN priority SET DEFAULT 0;
+
+-- DEFAULT id hanya dipasang kalau kolomnya bertipe teks. Di database baru
+-- (tabel dibuat dari definisi SERIAL di atas) id sudah punya DEFAULT sequence,
+-- jadi jangan ditimpa: DEFAULT text di kolom integer akan ditolak PostgreSQL.
+DO $$
+BEGIN
+  IF (SELECT data_type FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'bapperida_metrics' AND column_name = 'id')
+     IN ('character varying', 'character', 'text') THEN
+    EXECUTE $ddl$
+      ALTER TABLE public.bapperida_metrics
+        ALTER COLUMN id SET DEFAULT ('m_' || substr(md5(random()::text || clock_timestamp()::text), 1, 12))
+    $ddl$;
+  END IF;
+END $$;
+
+-- created_at/updated_at tidak ada di tabel lama, jadi belum ada baris lama yang
+-- punya keduanya. Kalau ternyata kolomnya sudah ada dengan baris NULL (mis.
+-- ditambahkan manual tanpa DEFAULT), isi sekarang supaya urutannya masuk akal.
+UPDATE public.bapperida_metrics SET created_at = NOW() WHERE created_at IS NULL;
+UPDATE public.bapperida_metrics SET updated_at = NOW() WHERE updated_at IS NULL;
