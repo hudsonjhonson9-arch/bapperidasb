@@ -3,3 +3,8 @@ dist
 .git
 .gitignore
 .dockerignore
+*.md
+google-apps-script
+.env
+.env.*
+!.env.example

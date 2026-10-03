@@ -1,0 +1,21 @@
+# Cadangan kalau Coolify masih jalan lewat buildpack nixpacks.
+#
+# Build tanggal 2 Oktober 2026 gagal di tahap `nix-env -if
+# .nixpacks/nixpkgs-...nix` dengan "No space left on device": paket nix itu
+# mengunduh ~555 MiB ke /nix/store cuma untuk memasang satu paket npm.
+#
+# Di panel Coolify, pilih buildpack "Dockerfile" supaya berkas Dockerfile di
+# repo yang dipakai, dan nixpacks.toml ini diabaikan. Kalau buildpack-nya
+# nixpacks, isian di bawah yang berlaku - tapi biayanya tetap butuh paket nix.
+#
+# Start lewat CMD di Dockerfile, bukan script "start" di package.json.
+
+[phases.setup]
+nixPkgs = ["nodejs_22"]
+
+[phases.build]
+cmds = ["npm ci --include=dev", "npm run build"]
+cacheDirectories = ["/root/.npm"]
+
+[start]
+cmd = "node server/index.js"
