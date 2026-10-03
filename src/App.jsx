@@ -1,10 +1,16 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import {
+  ambilInit, ambilTautanDokumen, kirimKontak, kirimInovasi,
+  unggahFile, formatBytes,
+  thumbDrive as getDriveThumb,
+} from "./api";
+
 const LOGO_URL = "/logo.png"; 
 
 import {
   MapPin, Phone, Mail, ChevronDown, Menu, X,
   ArrowRight, Users, User, Calendar, FileText, Download, Eye, Search,
-  Target, Lightbulb, BarChart2, BookOpen, Globe, Shield, Maximize2, Play
+  Target, Lightbulb, BarChart2, BookOpen, Globe, Shield, Play
 } from "lucide-react";
 
 const NAV = [
@@ -17,60 +23,6 @@ const NAV = [
   { id: "berita", label: "Berita" },
   { id: "inovasi", label: "Inovasi Daerah" },
   { id: "kontak", label: "Kontak" },
-];
-
-const DOKUMEN = [
-  {
-    kategori: "Perencanaan Jangka Panjang",
-    warna: "#0B2447",
-    items: [
-      { judul: "RPJPD Kabupaten Sumba Barat 2025–2045", tipe: "PDF", ukuran: "4.2 MB", tanggal: "15 Jan 2025", icon: "📘" },
-      { judul: "Naskah Akademik RPJPD 2025–2045", tipe: "PDF", ukuran: "2.8 MB", tanggal: "10 Jan 2025", icon: "📄" },
-    ]
-  },
-  {
-    kategori: "Perencanaan Jangka Menengah",
-    warna: "#1a6b45",
-    items: [
-      { judul: "RPJMD Kabupaten Sumba Barat 2021–2026", tipe: "PDF", ukuran: "8.7 MB", tanggal: "20 Mar 2021", icon: "📗" },
-      { judul: "Perubahan RPJMD 2021–2026 (Revisi)", tipe: "PDF", ukuran: "5.1 MB", tanggal: "12 Jun 2023", icon: "📄" },
-      { judul: "Renstra BAPPERIDA 2021–2026", tipe: "PDF", ukuran: "3.4 MB", tanggal: "5 Apr 2021", icon: "📄" },
-    ]
-  },
-  {
-    kategori: "Perencanaan Tahunan (RKPD)",
-    warna: "#7c3aed",
-    items: [
-      { judul: "RKPD Kabupaten Sumba Barat Tahun 2026", tipe: "PDF", ukuran: "6.3 MB", tanggal: "30 Apr 2025", icon: "📙" },
-      { judul: "RKPD Kabupaten Sumba Barat Tahun 2025", tipe: "PDF", ukuran: "5.9 MB", tanggal: "28 Apr 2024", icon: "📄" },
-      { judul: "RKPD Kabupaten Sumba Barat Tahun 2024", tipe: "PDF", ukuran: "5.4 MB", tanggal: "2 Mei 2023", icon: "📄" },
-    ]
-  },
-  {
-    kategori: "Evaluasi & Pelaporan",
-    warna: "#b45309",
-    items: [
-      { judul: "Laporan Kinerja (LKjIP) BAPPERIDA 2025", tipe: "PDF", ukuran: "3.1 MB", tanggal: "31 Mar 2026", icon: "📊" },
-      { judul: "Laporan Evaluasi RKPD Triwulan IV 2025", tipe: "PDF", ukuran: "2.6 MB", tanggal: "15 Jan 2026", icon: "📄" },
-      { judul: "Laporan Evaluasi RPJMD 2021–2026 Akhir", tipe: "PDF", ukuran: "4.8 MB", tanggal: "20 Feb 2026", icon: "📄" },
-    ]
-  },
-  {
-    kategori: "Riset & Inovasi",
-    warna: "#0369A1",
-    items: [
-      { judul: "Kajian Potensi Pertanian GIS Sumba Barat 2025", tipe: "PDF", ukuran: "7.2 MB", tanggal: "8 Apr 2026", icon: "🔬" },
-      { judul: "Profil Inovasi Daerah Kabupaten Sumba Barat 2025", tipe: "PDF", ukuran: "2.9 MB", tanggal: "22 Des 2025", icon: "💡" },
-    ]
-  },
-  {
-    kategori: "Regulasi & Kebijakan",
-    warna: "#6B21A8",
-    items: [
-      { judul: "Perda No. 2/2024 tentang RPJPD 2025–2045", tipe: "PDF", ukuran: "1.8 MB", tanggal: "14 Feb 2024", icon: "⚖️" },
-      { judul: "Perbup tentang Kedudukan & Tupoksi BAPPERIDA", tipe: "PDF", ukuran: "1.2 MB", tanggal: "5 Mei 2022", icon: "📜" },
-    ]
-  },
 ];
 
 const C = {
@@ -121,131 +73,36 @@ const FadeInImage = ({ src, alt, style, className }) => {
   );
 };
 
-const UPLOAD_API = "https://mindcloud.my.id/webhook/bapperida-upload-file";
-
-const getDriveThumb = (url) => {
-  if (!url) return url;
-  const m = url.match(/\/d\/([^/]+)/);
-  return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=s400` : url;
-};
-
-const ImageUploadField = ({ name, defaultValue, label, required, onMetadata }) => {
-  const [url, setUrl] = useState(defaultValue || '');
-  const [uploading, setUploading] = useState(false);
-  const [mode, setMode] = useState(defaultValue && !defaultValue.startsWith('data:') ? 'link' : 'file');
-
-  useEffect(() => {
-    setUrl(defaultValue || '');
-    if (defaultValue && !defaultValue.startsWith('data:')) setMode('link');
-  }, [defaultValue]);
-
-  const uploadToDrive = async (file) => {
-    const reader = new FileReader();
-    return new Promise((resolve, reject) => {
-      reader.onload = async (event) => {
-        try {
-          const res = await fetch(UPLOAD_API, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: file.name, base64: event.target.result, mimeType: file.type })
-          });
-          const data = await res.json();
-          resolve(data.url);
-        } catch (e) { reject(e); }
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { alert('Ukuran file terlalu besar! Maksimal 5MB.'); return; }
-    if (onMetadata) {
-      const sizeStr = file.size > 1024 * 1024 ? (file.size / (1024 * 1024)).toFixed(1) + ' MB' : (file.size / 1024).toFixed(0) + ' KB';
-      onMetadata({ size: sizeStr, type: file.name.split('.').pop().toUpperCase() });
-    }
-    setUploading(true);
-    try {
-      setUrl(await uploadToDrive(file));
-    } catch (err) {
-      alert('Gagal upload ke Google Drive. Coba lagi.');
-    }
-    setUploading(false);
-  };
-
-  const isImageField = name !== 'url';
-
-  return (
-    <div className="form-group">
-      <label className="form-label">{label}</label>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-        <button type="button" onClick={() => setMode('file')} style={{ flex: 1, padding: '6px 12px', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600, background: mode === 'file' ? C.gold : C.warmGray, color: mode === 'file' ? C.navyDark : C.textMid }}>Upload File</button>
-        <button type="button" onClick={() => setMode('link')} style={{ flex: 1, padding: '6px 12px', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600, background: mode === 'link' ? C.gold : C.warmGray, color: mode === 'link' ? C.navyDark : C.textMid }}>Link URL</button>
-      </div>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-        {url ? (
-          isImageField ? (
-            <img src={getDriveThumb(url)} alt="Preview" style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 4, background: '#eee', flexShrink: 0, border: '1px solid #ddd' }} />
-          ) : (
-            <div style={{ width: 80, height: 60, borderRadius: 4, background: '#f5f5f5', border: '1px dashed #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: '#aaa', flexShrink: 0 }}>📄</div>
-          )
-        ) : (
-          <div style={{ width: 80, height: 60, borderRadius: 4, background: '#f5f5f5', border: '1px dashed #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#aaa', flexShrink: 0 }}>No File</div>
-        )}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <input type="hidden" name={name} value={url} />
-          {required && !url && <input type="hidden" name={`${name}_required`} required />}
-          {mode === 'file' ? (
-            <input type="file" accept={name === 'url' ? ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" : "image/*"} onChange={handleFileChange} className="form-input" disabled={uploading} style={{ padding: '6px 12px', background: '#fff', cursor: 'pointer' }} />
-          ) : (
-            <input type="url" placeholder="https://drive.google.com/..." value={url} onChange={e => setUrl(e.target.value)} className="form-input" style={{ padding: '6px 12px' }} />
-          )}
-          {uploading ? (
-            <span style={{ fontSize: 12, color: C.gold, fontWeight: 600 }}>⏳ Upload ke Google Drive...</span>
-          ) : (
-            <span style={{ fontSize: 11, color: '#666' }}>{mode === 'file' ? 'File diupload ke Google Drive. Maks 5MB.' : 'Tempel link Google Drive atau URL lainnya.'}</span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
+// Catatan: field upload ini hanya dipakai di portal Klinik Inovasi yang terbuka
+// untuk OPD, jadi tetap tinggal di halaman publik. Form admin punya versinya sendiri
+// di panel admin karena butuh kontrol tambahan (ganti file, hapus file lama).
 
 const MultiFileUploadField = ({ name, label, helpText }) => {
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [linkInput, setLinkInput] = useState('');
-
-  const uploadToDrive = async (file) => {
-    const reader = new FileReader();
-    return new Promise((resolve, reject) => {
-      reader.onload = async (event) => {
-        try {
-          const res = await fetch(UPLOAD_API, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: file.name, base64: event.target.result, mimeType: file.type })
-          });
-          const data = await res.json();
-          resolve({ name: file.name, url: data.url, type: file.name.split('.').pop().toUpperCase(), size: file.size > 1024 * 1024 ? (file.size / (1024 * 1024)).toFixed(1) + ' MB' : (file.size / 1024).toFixed(0) + ' KB' });
-        } catch (e) { reject(e); }
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
+  const [galat, setGalat] = useState('');
 
   const handleFileChange = async (e) => {
     const selectedFiles = Array.from(e.target.files);
     if (selectedFiles.length === 0) return;
     setUploading(true);
+    setGalat('');
     const newFiles = [...files];
     for (const file of selectedFiles) {
-      if (file.size > 5 * 1024 * 1024) { alert(`File ${file.name} terlalu besar! Maksimal 5MB.`); continue; }
-      try { newFiles.push(await uploadToDrive(file)); } catch (err) { alert(`Gagal upload ${file.name}.`); }
+      try {
+        const hasil = await unggahFile(file);
+        newFiles.push({
+          name: hasil.name || file.name,
+          url: hasil.url,
+          type: file.name.split('.').pop().toUpperCase(),
+          size: formatBytes(hasil.size),
+        });
+      } catch (err) {
+        // Pesan dari unggahFile() sudah siap ditampilkan: batas ukuran, GAS belum
+        // dikonfigurasi, atau error Drive. Jangan ditimpa teks generik.
+        setGalat(err.message);
+      }
     }
     setFiles(newFiles);
     setUploading(false);
@@ -272,6 +129,7 @@ const MultiFileUploadField = ({ name, label, helpText }) => {
         </div>
         <input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*" onChange={handleFileChange} className="form-input" disabled={uploading} style={{ padding: '10px 16px', background: '#fff', cursor: 'pointer', border: '1px dashed #ccc' }} />
         {uploading && <div style={{ fontSize: 12, color: C.gold, fontWeight: 600 }}>⏳ Upload ke Google Drive...</div>}
+        {galat && <div style={{ fontSize: 12, color: '#ef4444', fontWeight: 600 }}>⚠️ {galat}</div>}
         {files.length > 0 && (
           <div style={{ display: 'grid', gap: 8 }}>
             {files.map((f, i) => (
@@ -585,8 +443,6 @@ function PaginationControls({ page, totalPages, onChange }) {
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const longPressTimer = useRef(null);
-  const [isLongPress, setIsLongPress] = useState(false);
   const [dokSearch, setDokSearch] = useState("");
   const [dokFilter, setDokFilter] = useState("Semua");
   const [dokPage, setDokPage] = useState(1);
@@ -599,11 +455,11 @@ export default function App() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Security & Session
-  const APP_SECRET = "BAPPERIDA_SECURE_TOKEN_2026";
-  const [isAdmin, setIsAdmin] = useState(localStorage.getItem("bapperida_admin_session") === APP_SECRET);
-  const [showLogin, setShowLogin] = useState(false);
-
+  // Halaman ini sepenuhnya read-only. Panel admin tidak lagi muncul di sini:
+// login, form pengelolaan, dan editor tata letak pindah ke /admin
+  // (src/Admin.jsx). Yang tersisa di sini hanya portal Klinik Inovasi — form
+  // publik yang memang harus bisa dipakai siapa pun tanpa login.
+  //
   // Database States
   const [beritaList, setBeritaList] = useState([]);
   const [dokumenList, setDokumenList] = useState([]);
@@ -618,17 +474,13 @@ export default function App() {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // CMS States
-  const [showModal, setShowModal] = useState(null); // 'berita' | 'dokumen' | 'layout'
-  const [editItem, setEditItem] = useState(null);
+  // Modal publik yang tersisa: 'preview-dokumen' handled separately, dan
+  // 'inovasi-submit' untuk portal OPD.
+  const [showModal, setShowModal] = useState(null);
 
-  const [isLayoutMode, setIsLayoutMode] = useState(false);
-  const [isSavingLayout, setIsSavingLayout] = useState(false);
-  const [showOrgZoom, setShowOrgZoom] = useState(false);
   const [selectedBerita, setSelectedBerita] = useState(null);
   const [previewDokumen, setPreviewDokumen] = useState(null);
   const [showAllBeritaModal, setShowAllBeritaModal] = useState(false);
-  const [strukturImg, setStrukturImg] = useState(localStorage.getItem("bapperida_struktur_img") || "/struktur.png");
 
   // Slider State
   const [sliderList, setSliderList] = useState([]);
@@ -656,58 +508,6 @@ export default function App() {
       { title: "RISET DAN INOVASI DAERAH", name: "YAHYA ANTOSARI STORY, S.IP", nip: "19790707 200312 1 006" }
     ],
     uptd: "UPTD"
-  };
-
-  // API Config
-  const API_BASE = "https://mindcloud.my.id/webhook";
-  const api = {
-    berita: {
-      list: `${API_BASE}/bapperida-berita-list`,
-      add: `${API_BASE}/bapperida-berita-add`,
-      edit: `${API_BASE}/bapperida-berita-edit`,
-      del: `${API_BASE}/bapperida-berita-delete`,
-    },
-    dokumen: {
-      list: `${API_BASE}/bapperida-dokumen-list`,
-      add: `${API_BASE}/bapperida-dokumen-add`,
-      edit: `${API_BASE}/bapperida-dokumen-edit`,
-      del: `${API_BASE}/bapperida-dokumen-delete`,
-    },
-    slider: {
-      list: `${API_BASE}/bapperida-slider-list`,
-      add: `${API_BASE}/bapperida-slider-add`,
-      edit: `${API_BASE}/bapperida-slider-edit`,
-      del: `${API_BASE}/bapperida-slider-delete`,
-    },
-    program: {
-      list: `${API_BASE}/bapperida-program-list`,
-      add: `${API_BASE}/bapperida-program-add`,
-      edit: `${API_BASE}/bapperida-program-edit`,
-      del: `${API_BASE}/bapperida-program-delete`,
-    },
-    metrics: {
-      edit: `${API_BASE}/bapperida-metric-save`,
-    },
-    inovasi: {
-      add: `${API_BASE}/bapperida-inovasi-submit`,
-      edit: `${API_BASE}/bapperida-inovasi-approve`,
-      del: `${API_BASE}/bapperida-inovasi-delete`,
-    },
-    kontak: {
-      submit: `${API_BASE}/bapperida-kontak-submit`
-    },
-    init: `${API_BASE}/bapperida-init`
-  };
-
-  const authFetch = (url, options = {}) => {
-    return fetch(url, {
-      ...options,
-      headers: {
-        ...options.headers,
-        "Content-Type": "application/json",
-        "X-App-Token": APP_SECRET
-      }
-    });
   };
 
   const handleViewDocument = (d) => {
@@ -738,40 +538,26 @@ export default function App() {
     }
   };
 
+  // Satu request ke server native. Server sudah melakukan pengurutan dan
+  // penyaringan (dokumen publik saja, inovasi yang sudah disetujui), jadi di sini
+  // tidak ada lagi logika "bungkus respons n8n" yang dulu dibutuhkan karena
+  // webhook mengembalikan array berisi objek { json: ... }.
   const fetchData = async () => {
     setLoading(true);
-
-    const getList = (res) => {
-      if (Array.isArray(res)) {
-        if (res.length > 0 && res[0] !== null && typeof res[0] === 'object' && 'json' in res[0]) {
-          return res.map(item => item.json);
-        }
-        return res;
-      }
-      if (res && (res.berita || res.dokumen || res.slider || res.program)) return [res];
-      if (res && res.data && Array.isArray(res.data)) return res.data;
-      if (res && res.json && Array.isArray(res.json)) return res.json;
-      if (res && typeof res === 'object' && (res.id || res.judul_inovasi || res.judul)) return [res];
-      return [];
-    };
-
     try {
-      const r = await fetch(api.init);
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const raw = await r.json();
-      const data = getList(raw)[0] || {};
+      const data = await ambilInit();
 
-      if (data.berita)   setBeritaList(data.berita.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-      if (data.dokumen)  setDokumenList(data.dokumen.filter(d => d.publik === true || d.publik === 'true' || d.publik === 1));
-      if (data.slider)   setSliderList(data.slider);
-      if (data.program)  setProgramList(data.program.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-      if (data.metrics)  setMetricsList(data.metrics.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0)));
-      if (data.inovasi)  setInovasiList(data.inovasi);
+      if (data.berita)  setBeritaList(data.berita);
+      if (data.dokumen) setDokumenList(data.dokumen);
+      if (data.slider)  setSliderList(data.slider);
+      if (data.program) setProgramList(data.program);
+      if (data.metrics) setMetricsList(data.metrics);
+      if (data.inovasi) setInovasiList(data.inovasi);
 
       setFetchError(null);
     } catch (err) {
       console.error("Fetch all fail:", err);
-      setFetchError(`Gagal memuat data: ${err.message}. Pastikan n8n aktif.`);
+      setFetchError(`Gagal memuat data: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -789,149 +575,25 @@ export default function App() {
     return () => clearInterval(interval);
   }, [sliderList.length]);
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    const pin = e.target.pin.value;
-    if (pin === "2026") { // PIN sederhana untuk demo, bisa diganti
-      localStorage.setItem("bapperida_admin_session", APP_SECRET);
-      setIsAdmin(true);
-      setShowLogin(false);
-    } else {
-      alert("PIN Salah!");
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("bapperida_admin_session");
-    setIsAdmin(false);
-    window.location.reload();
-  };
-
-  const handleMoveBerita = (fromIdx, toIdx) => {
-    if (fromIdx === toIdx) return;
-    const newList = [...beritaList];
-    const [movedItem] = newList.splice(fromIdx, 1);
-    newList.splice(toIdx, 0, movedItem);
-    setBeritaList(newList);
-    // Auto-save order if it was a drag or move
-    if (isAdmin) saveBeritaOrder(newList);
-  };
-
-
-  const saveBeritaOrder = async (list) => {
-    setIsSavingLayout(true);
-    try {
-      const updates = list.map((item, idx) => {
-        const isFeatured = idx === 0; 
-        return authFetch(api.berita.edit, {
-          method: "POST",
-          body: JSON.stringify({ 
-            ...item, 
-            priority: idx, 
-            is_featured: isFeatured,
-            col_span: item.col_span || 1,
-            row_span: item.row_span || 1
-          })
-        });
-      });
-      await Promise.all(updates);
-      console.log("Order and Layout saved");
-    } catch (e) {
-      console.error("Failed to save order", e);
-    } finally {
-      setIsSavingLayout(false);
-    }
-  };
-
-  const handlePinBerita = (item) => {
-    const fromIdx = beritaList.findIndex(b => b.id === item.id);
-    if (fromIdx === -1) return;
-    const newList = [...beritaList];
-    const [movedItem] = newList.splice(fromIdx, 1);
-    newList.unshift(movedItem);
-    setBeritaList(newList);
-    if (isAdmin) saveBeritaOrder(newList);
-  };
-
-  const handleSave = async (type, data) => {
-    setIsSaving(true);
-    const endpoint = data.id ? api[type].edit : api[type].add;
-    try {
-      const res = await authFetch(endpoint, {
-        method: "POST",
-        body: JSON.stringify(data)
-      });
-      if (!res.ok) throw new Error("Server error: " + res.status);
-      
-      if (showModal !== 'inovasi-admin') {
-        setShowModal(null);
-      }
-      setEditItem(null);
-      showNotification(data.id ? "Data berhasil diperbarui!" : "Data berhasil dikirim!", "success");
-      
-      if (type === 'inovasi' && data.action === 'approve') {
-        setInovasiList(prev => prev.map(item => item.id === data.id ? { ...item, status_approval: 'Approved' } : item));
-      }
-      
-      fetchData();
-    } catch (e) { 
-      console.error("Save error:", e);
-      showNotification("Gagal mengirim data: " + e.message, "error"); 
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleDelete = async (type, id) => {
-    if (!confirm("Hapus data ini?")) return;
-    setIsSaving(true);
-    try {
-      await authFetch(api[type].del, {
-        method: "POST",
-        body: JSON.stringify({ id })
-      });
-      showNotification("Data berhasil dihapus!", "success");
-      
-      if (type === 'inovasi') setInovasiList(prev => prev.filter(item => item.id !== id));
-      else if (type === 'berita') setBeritaList(prev => prev.filter(item => item.id !== id));
-      else if (type === 'dokumen') setDokumenList(prev => prev.filter(item => item.id !== id));
-      else if (type === 'program') setProgramList(prev => prev.filter(item => item.id !== id));
-      else if (type === 'slider') setSliderList(prev => prev.filter(item => item.id !== id));
-      
-      fetchData();
-    } catch (e) { 
-      showNotification("Gagal menghapus data.", "error"); 
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const handleKontakSubmit = async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button');
     const originalText = btn.innerHTML;
-    
+
     try {
       btn.disabled = true;
       btn.innerHTML = 'Mengirim...';
-      
+
       const fd = new FormData(e.target);
-      const data = Object.fromEntries(fd.entries());
-      
-      const res = await fetch(api.kontak.submit, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-      
-      if (res.ok) {
-        alert("Pesan Anda telah terkirim. Terima kasih!");
-        e.target.reset();
-      } else {
-        throw new Error();
-      }
+      await kirimKontak(Object.fromEntries(fd.entries()));
+
+      alert("Pesan Anda telah terkirim. Terima kasih!");
+      e.target.reset();
     } catch (err) {
-      alert("Gagal mengirim pesan. Silakan coba lagi nanti.");
+      // err.message dari server: "Nama, email, dan pesan wajib diisi" dan
+      // sejenisnya. Menampilkan teks generik saja membuat pengunjung mencoba
+      // ulang tanpa tahu apa yang salah.
+      alert(err.message || "Gagal mengirim pesan. Silakan coba lagi nanti.");
     } finally {
       btn.disabled = false;
       btn.innerHTML = originalText;
@@ -1258,9 +920,6 @@ export default function App() {
             {NAV.map(n => (
               <span key={n.id} className={`nav-item ${active === n.id ? "active" : ""}`} onClick={() => { scrollTo(n.id); setMenuOpen(false); }}>{n.label}</span>
             ))}
-            {!isAdmin && (
-              <span className="nav-item" onClick={() => setShowLogin(true)} style={{ opacity: 0.5 }}>Login</span>
-            )}
           </nav>
 
           {/* Mobile toggle */}
@@ -1278,17 +937,6 @@ export default function App() {
                 {n.label}
               </div>
             ))}
-            {!isAdmin ? (
-              <div onClick={() => { setShowLogin(true); setMenuOpen(false); }}
-                style={{ padding: "13px 0", color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 500, cursor: "pointer", letterSpacing: "0.07em", textTransform: "uppercase" }}>
-                Login Admin
-              </div>
-            ) : (
-              <div onClick={() => { handleLogout(); setMenuOpen(false); }}
-                style={{ padding: "13px 0", color: "#ef4444", fontSize: 12, fontWeight: 700, cursor: "pointer", letterSpacing: "0.07em", textTransform: "uppercase" }}>
-                Keluar Admin
-              </div>
-            )}
           </div>
         )}
       </header>
@@ -1401,13 +1049,6 @@ export default function App() {
             </div>
           </div>
         </div>
-
-        {/* Admin Slider Control */}
-        {isAdmin && (
-          <div style={{ position: "absolute", top: 100, right: 30, zIndex: 10 }}>
-            <button className="btn-gold" onClick={() => setShowModal('slider-list')} style={{ padding: "8px 16px", fontSize: 13 }}>⚙️ Kelola Slider Hero</button>
-          </div>
-        )}
 
         {/* Slider Dots */}
         {sliderList.length > 1 && (
@@ -1545,16 +1186,6 @@ export default function App() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
             {metricsList.map(m => (
               <div key={m.id} className="card" style={{ padding: "40px 30px", textAlign: "center", position: "relative", display: "flex", flexDirection: "column", justifyContent: "space-between", background: `linear-gradient(to bottom, #ffffff, ${C.offWhite})`, border: `1px solid ${C.warmGray}`, boxShadow: "0 10px 30px rgba(0,0,0,0.03)" }}>
-                {isAdmin && (
-                  <button 
-                    onClick={() => { setEditItem(m); setShowModal('metrics'); }} 
-                    className="btn-admin btn-admin-edit" 
-                    style={{ position: "absolute", top: 15, right: 15, borderRadius: 8, padding: "4px 10px", fontSize: 11 }}
-                    title="Edit Metrik"
-                  >
-                    ✎ Edit
-                  </button>
-                )}
                 <div>
                   <div style={{ fontSize: 54, marginBottom: 16, filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.1))" }}>{m.icon}</div>
                   <h3 style={{ fontSize: 15, fontWeight: 600, color: C.textMid, marginBottom: 20, lineHeight: 1.5 }}>{m.label}</h3>
@@ -1705,20 +1336,11 @@ export default function App() {
               <p className="eyebrow" style={{ marginBottom: 14 }}>Agenda Strategis 2026</p>
               <h2 className="section-title" style={{ maxWidth: 520 }}>Program &amp; Kegiatan Unggulan</h2>
             </div>
-            {isAdmin && (
-              <button className="btn-gold" onClick={() => { setEditItem(null); setShowModal('program'); }} style={{ background: C.navy, color: "white" }}>+ Tambah Program</button>
-            )}
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: 32 }}>
             {programList.map(p => (
               <div key={p.id} className="program-card" style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative" }}>
-                {isAdmin && (
-                  <div style={{ position: "absolute", top: 20, right: 20, display: "flex", gap: 10, zIndex: 20 }}>
-                    <button onClick={() => { setEditItem(p); setShowModal('program'); }} className="btn-admin btn-admin-edit" title="Edit Program">✎</button>
-                    <button onClick={() => handleDelete('program', p.id)} className="btn-admin btn-admin-del" title="Hapus Program">✕</button>
-                  </div>
-                )}
                 
                 <div style={{ padding: "32px", flexGrow: 1, display: "flex", flexDirection: "column" }}>
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
@@ -1920,9 +1542,6 @@ export default function App() {
                   </button>
                 ))}
               </div>
-              {isAdmin && (
-                <button className="btn-gold" onClick={() => { setEditItem(null); setShowModal('dokumen'); }} style={{ background: C.navy, color: "white", padding: "10px 20px" }}>+ Tambah Dokumen</button>
-              )}
             </div>
           </div>
 
@@ -1959,54 +1578,17 @@ export default function App() {
                         </div>
                         <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                           <button onClick={async () => {
-                            if (!dok.url) {
-                              try {
-                                const res = await fetch(`${api.dokumen.list}?id=${dok.id}`);
-                                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                                const result = await res.json();
-                                const docList = Array.isArray(result) ? result : (result.data || []);
-                                if (docList[0] && docList[0].url) {
-                                  setPreviewDokumen({ ...dok, url: docList[0].url });
-                                } else {
-                                  throw new Error("File tidak ditemukan");
-                                }
-                              } catch (e) {
-                                console.error("Failed to load document preview:", e);
-                                alert("Gagal memuat dokumen: " + e.message);
-                              }
-                            } else {
-                              setPreviewDokumen(dok);
+                            // /api/init sengaja tidak mengirim kolom url, jadi tautan
+                            // diambil saat pengunjung benar-benar menekan tombol Lihat.
+                            try {
+                              const hasil = await ambilTautanDokumen(dok.id);
+                              setPreviewDokumen({ ...dok, url: hasil.url });
+                            } catch (e) {
+                              alert(e.message || "Gagal memuat dokumen.");
                             }
                           }} className="btn-admin btn-admin-edit" style={{ width: "auto", padding: "0 14px", borderRadius: 10, fontSize: 12, fontWeight: 700 }} title="Lihat Dokumen">
                             <Eye size={14} style={{ marginRight: 6 }} /> Lihat
                           </button>
-                          {isAdmin && (
-                            <>
-                              <button onClick={async () => {
-                                if (!dok.url) {
-                                  try {
-                                    const res = await fetch(`${api.dokumen.list}?id=${dok.id}`);
-                                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                                    const result = await res.json();
-                                    const docList = Array.isArray(result) ? result : (result.data || []);
-                                    if (docList[0] && docList[0].url) {
-                                      setEditItem({ ...dok, url: docList[0].url });
-                                      setShowModal('dokumen');
-                                    } else {
-                                      throw new Error("File tidak ditemukan");
-                                    }
-                                  } catch (e) {
-                                    console.error("Failed to load document for edit:", e);
-                                    alert("Gagal memuat dokumen: " + e.message);
-                                  }
-                                } else {
-                                  setEditItem(dok);
-                                  setShowModal('dokumen');
-                                }
-                              }} className="btn-admin btn-admin-edit" title="Edit Dokumen">✎</button>
-                              <button onClick={() => handleDelete('dokumen', dok.id)} className="btn-admin btn-admin-del" title="Hapus Dokumen">✕</button>
-                            </>
-                          )}
                         </div>
                       </div>
                     ))}
@@ -2053,43 +1635,16 @@ export default function App() {
               {fetchError && <div style={{ color: "red", fontSize: 13, marginTop: 10 }}>⚠️ {fetchError}</div>}
             </div>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-              {isAdmin && (
-                <button 
-                  className="btn-gold" 
-                  onClick={() => setIsLayoutMode(!isLayoutMode)} 
-                  style={{ 
-                    background: isLayoutMode ? C.gold : C.navy, 
-                    color: "white", 
-                    border: `1px solid ${isLayoutMode ? C.gold : C.navy}`,
-                    boxShadow: isLayoutMode ? "0 0 15px rgba(201,162,39,0.4)" : "none"
-                  }}
-                >
-                  <Menu size={16} /> {isLayoutMode ? "Simpan Layout" : "Grid Builder"}
-                </button>
-              )}
               <button className="btn-gold" onClick={() => { setBeritaPage(1); setShowAllBeritaModal(true); }}>Lihat Semua Berita <ArrowRight size={14} /></button>
-              {isAdmin && (
-                <button className="btn-gold" onClick={() => { setEditItem(null); setShowModal('berita'); }} style={{ background: C.navy, color: "white" }}>+ Tambah Berita</button>
-              )}
             </div>
           </div>
-
-          {isLayoutMode && (
-            <div style={{ background: `${C.gold}10`, border: `1px dashed ${C.gold}`, borderRadius: 12, padding: "16px 24px", marginBottom: 32, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ fontSize: 13, color: C.navy, fontWeight: 600 }}>
-                <span style={{ marginRight: 12 }}>🛠️ <b>Mode Grid Builder:</b></span> 
-                Gunakan tombol + / - pada setiap item untuk merubah ukuran, atau seret item untuk mengatur urutan.
-              </div>
-              <button className="btn-gold" onClick={() => setIsLayoutMode(false)} style={{ fontSize: 12, padding: "8px 16px" }}>Selesai</button>
-            </div>
-          )}
 
           {/* Unified Magazine Grid Layout */}
           <div style={{ 
             display: "grid", 
             gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", 
             gridAutoRows: "minmax(120px, auto)",
-            gap: isLayoutMode ? 16 : 32, 
+            gap: 32, 
             marginBottom: 60 
           }}>
             {beritaList.slice(0, 6).map((item, idx) => {
@@ -2112,37 +1667,24 @@ export default function App() {
 
               return (
                 <div key={item.id} 
-                  onClick={() => !isLayoutMode && setSelectedBerita(item)} 
-                  className={`magazine-item ${isLayoutMode ? 'editing' : ''}`}
+                  onClick={() => setSelectedBerita(item)} 
+                  className="magazine-item"
                   style={{ 
                     ...gridStyle,
                     position: "relative",
-                    cursor: isLayoutMode ? "move" : "pointer", 
+                    cursor: "pointer", 
                     display: "flex", 
                     flexDirection: "column",
                     transition: "all 0.3s ease",
-                    padding: isLayoutMode ? 12 : 0,
-                    background: isLayoutMode ? "white" : "white",
-                    borderRadius: isLayoutMode ? 16 : 16,
-                    boxShadow: isLayoutMode ? "0 10px 30px rgba(0,0,0,0.1)" : "0 4px 20px rgba(0,0,0,0.04)",
+                    padding: 0,
+                    background: "white",
+                    borderRadius: 16,
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
                     border: "1px solid rgba(0,0,0,0.05)",
                     overflow: "hidden",
-                    zIndex: isLayoutMode ? 5 : 1
-                  }}
-                  draggable={isAdmin}
-                  onDragStart={(e) => isAdmin && e.dataTransfer.setData("index", beritaList.indexOf(item))}
-                  onDragOver={(e) => isAdmin && e.preventDefault()}
-                  onDrop={(e) => {
-                    if (!isAdmin) return;
-                    const fromIdx = parseInt(e.dataTransfer.getData("index"));
-                    handleMoveBerita(fromIdx, beritaList.indexOf(item));
+                    zIndex: 1
                   }}
                 >
-                  {isLayoutMode && (
-                    <div style={{ position: "absolute", top: -15, left: "50%", transform: "translateX(-50%)", background: C.navy, color: "white", padding: "4px 12px", borderRadius: 20, fontSize: 10, fontWeight: 700, zIndex: 20, whiteSpace: "nowrap", boxShadow: "0 4px 10px rgba(0,0,0,0.2)" }}>
-                      Size: {col} x {row}
-                    </div>
-                  )}
 
                   <div style={{ 
                     height: row === 1 ? 180 : 380, 
@@ -2161,13 +1703,6 @@ export default function App() {
                     </div>
                     <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.4), transparent)" }} />
                     <span style={{ position: "absolute", top: 12, left: 12, background: C.gold, color: "white", fontSize: 9, fontWeight: 800, padding: "4px 12px", borderRadius: 4, letterSpacing: "0.05em" }}>{item.kategori.toUpperCase()}</span>
-                    
-                    {isAdmin && !isLayoutMode && (
-                      <div className="admin-actions" style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 5, zIndex: 10 }}>
-                        <button onClick={(e) => { e.stopPropagation(); handlePinBerita(item); }} className="btn-admin-small" style={{ background: item.is_featured ? C.gold : "rgba(255,255,255,0.9)", color: item.is_featured ? "white" : C.gold, border: "none", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>📌</button>
-                        <button onClick={(e) => { e.stopPropagation(); setEditItem(item); setShowModal('berita'); }} className="btn-admin-small" style={{ background: "rgba(255,255,255,0.9)", color: C.navy, border: "none", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>✎</button>
-                      </div>
-                    )}
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", flexGrow: 1, padding: "20px 24px" }}>
@@ -2184,59 +1719,12 @@ export default function App() {
                       overflow: "hidden"
                     }}>{item.judul}</h3>
                     
-                    {isLayoutMode ? (
-                      <div style={{ marginTop: 15, borderTop: "1px solid #eee", paddingTop: 15, display: "flex", flexWrap: "wrap", gap: 10 }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 9, color: C.textLight, textTransform: "uppercase", marginBottom: 5 }}>Lebar (Cols)</div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <button onClick={() => {
-                              const newList = [...beritaList];
-                              const i = newList.findIndex(b => b.id === item.id);
-                              newList[i] = { ...item, col_span: Math.max(1, col - 1) };
-                              setBeritaList(newList);
-                              saveBeritaOrder(newList);
-                            }} style={{ width: 24, height: 24, borderRadius: 4, border: "1px solid #ddd", background: "#f8fafc", cursor: "pointer" }}>-</button>
-                            <span style={{ fontSize: 12, fontWeight: 700 }}>{col}</span>
-                            <button onClick={() => {
-                              const newList = [...beritaList];
-                              const i = newList.findIndex(b => b.id === item.id);
-                              newList[i] = { ...item, col_span: Math.min(4, col + 1) };
-                              setBeritaList(newList);
-                              saveBeritaOrder(newList);
-                            }} style={{ width: 24, height: 24, borderRadius: 4, border: "1px solid #ddd", background: "#f8fafc", cursor: "pointer" }}>+</button>
-                          </div>
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 9, color: C.textLight, textTransform: "uppercase", marginBottom: 5 }}>Tinggi (Rows)</div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <button onClick={() => {
-                              const newList = [...beritaList];
-                              const i = newList.findIndex(b => b.id === item.id);
-                              newList[i] = { ...item, row_span: Math.max(1, row - 1) };
-                              setBeritaList(newList);
-                              saveBeritaOrder(newList);
-                            }} style={{ width: 24, height: 24, borderRadius: 4, border: "1px solid #ddd", background: "#f8fafc", cursor: "pointer" }}>-</button>
-                            <span style={{ fontSize: 12, fontWeight: 700 }}>{row}</span>
-                            <button onClick={() => {
-                              const newList = [...beritaList];
-                              const i = newList.findIndex(b => b.id === item.id);
-                              newList[i] = { ...item, row_span: Math.min(3, row + 1) };
-                              setBeritaList(newList);
-                              saveBeritaOrder(newList);
-                            }} style={{ width: 24, height: 24, borderRadius: 4, border: "1px solid #ddd", background: "#f8fafc", cursor: "pointer" }}>+</button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        {(col > 1 || row > 1) && (
-                          <p style={{ fontSize: 13.5, color: C.textMid, lineHeight: 1.6, marginBottom: 12, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{item.konten}</p>
-                        )}
-                        <div className="read-more-link" style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 6, color: C.gold, fontSize: 12, fontWeight: 700 }}>
-                          Selengkapnya <ArrowRight size={14} />
-                        </div>
-                      </>
+                    {(col > 1 || row > 1) && (
+                      <p style={{ fontSize: 13.5, color: C.textMid, lineHeight: 1.6, marginBottom: 12, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{item.konten}</p>
                     )}
+                    <div className="read-more-link" style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 6, color: C.gold, fontSize: 12, fontWeight: 700 }}>
+                      Selengkapnya <ArrowRight size={14} />
+                    </div>
                   </div>
                 </div>
               );
@@ -2273,7 +1761,7 @@ export default function App() {
               <p className="eyebrow" style={{ marginBottom: 14 }}>Klinik Inovasi BAPPERIDA Kabupaten Sumba Barat</p>
               <h2 className="section-title" style={{ maxWidth: 520 }}>Galeri Inovasi Daerah</h2>
             </div>
-            <button className="btn-gold" onClick={() => { setEditItem(null); setShowModal('inovasi-submit'); }} style={{ background: C.gold, color: C.navyDark }}>
+            <button className="btn-gold" onClick={() => setShowModal('inovasi-submit')} style={{ background: C.gold, color: C.navyDark }}>
               + Kirim Inovasi (Portal OPD)
             </button>
           </div>
@@ -2287,14 +1775,6 @@ export default function App() {
               {inovasiList.filter(inv => inv.status_approval === 'Approved').map(inv => (
                 <PublicInovasiCard key={inv.id} inv={inv} />
               ))}
-            </div>
-          )}
-
-          {isAdmin && (
-            <div style={{ marginTop: 40, textAlign: "center" }}>
-              <button onClick={() => setShowModal('inovasi-admin')} style={{ padding: "12px 24px", background: C.navy, color: "white", borderRadius: 8, border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(11,36,71,0.2)", display: "inline-flex", alignItems: "center", gap: 8 }}>
-                🔒 Buka Dashboard Admin Inovasi (Review Pending)
-              </button>
             </div>
           )}
         </div>
@@ -2441,248 +1921,7 @@ export default function App() {
           </div>
         </div>
       </footer>
-      {/* ──── SLIDER MODALS ──── */}
-      {showModal === 'slider-list' && (
-        <div className="modal-overlay" onClick={() => setShowModal(null)}>
-          <div className="modal-content" style={{ maxWidth: 800 }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="display" style={{ fontSize: 18, fontWeight: 700, color: C.navy }}>Kelola Slider Hero</h3>
-              <button onClick={() => setShowModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textLight }}><X size={20} /></button>
-            </div>
-            <div style={{ marginBottom: 16, display: "flex", justifyContent: "flex-end" }}>
-              <button className="btn-gold" onClick={() => { setEditItem(null); setShowModal('slider'); }}>+ Tambah Slider</button>
-            </div>
-            <div style={{ display: "grid", gap: 16 }}>
-              {sliderList.map(item => (
-                <div key={item.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
-                  <img src={getDriveThumb(item.gambar_url)} alt="Slider" style={{ width: 120, height: 70, objectFit: "cover", borderRadius: 8, background: "#eee" }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, color: C.navy }}>{item.judul || "(Tanpa Judul)"}</div>
-                    <div style={{ fontSize: 12, color: C.textLight }}>{item.subjudul || "(Tanpa Subjudul)"}</div>
-                  </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={() => { setEditItem(item); setShowModal('slider'); }} style={{ background: C.gold, border: "none", padding: "6px 12px", borderRadius: 4, cursor: "pointer", fontWeight: 600 }}>Edit</button>
-                    <button onClick={() => handleDelete('slider', item.id)} style={{ background: "#ef4444", color: "white", border: "none", padding: "6px 12px", borderRadius: 4, cursor: "pointer", fontWeight: 600 }}>Hapus</button>
-                  </div>
-                </div>
-              ))}
-              {sliderList.length === 0 && (
-                <div style={{ textAlign: "center", padding: 32, color: C.textLight }}>Belum ada slider.</div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* ──── MODALS ──── */}
-      {(showModal === 'berita' || showModal === 'dokumen' || showModal === 'slider' || showModal === 'program' || showModal === 'metrics') && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3 className="display" style={{ fontSize: 18, fontWeight: 700, color: C.navy }}>
-                {editItem ? "Edit" : "Tambah"} {showModal === 'berita' ? "Berita" : showModal === 'dokumen' ? "Dokumen" : showModal === 'program' ? "Program" : showModal === 'metrics' ? "Metrik" : "Slider"}
-              </h3>
-              <button onClick={() => setShowModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textLight }}><X size={20} /></button>
-            </div>
-            <form 
-              onSubmit={(e) => {
-                e.preventDefault();
-                const fd = new FormData(e.target);
-                const data = Object.fromEntries(fd.entries());
-                
-                // Merge new form data into existing item to preserve layout fields
-                const finalData = editItem ? { ...editItem, ...data } : data;
-                
-                if (showModal === 'berita') {
-                  finalData.is_featured = fd.get("is_featured") === "on";
-                }
-                handleSave(showModal, finalData);
-              }}
-            >
-              <div className="modal-body">
-                {showModal === 'metrics' ? (
-                  <>
-                    <div className="form-group">
-                      <label className="form-label">Nama Metrik / Label</label>
-                      <input name="label" defaultValue={editItem?.label} className="form-input" disabled style={{ background: '#f5f5f5', color: '#888' }} />
-                      <input type="hidden" name="id" value={editItem?.id} />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Nilai Saat Ini (Skor / Angka)</label>
-                      <input name="value" defaultValue={editItem?.value} className="form-input" placeholder="Masukkan nilai terbaru..." required />
-                    </div>
-                  </>
-                ) : showModal === 'program' ? (
-                  <>
-                    <div className="form-group">
-                      <label className="form-label">Nama Program / Kegiatan</label>
-                      <input name="title" defaultValue={editItem?.title} className="form-input" required />
-                    </div>
-
-                    <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                      <div>
-                        <label className="form-label">Kategori</label>
-                        <input name="cat" defaultValue={editItem?.cat} className="form-input" placeholder="Misal: Perencanaan" required />
-                      </div>
-                      <div>
-                        <label className="form-label">Icon (Emoji)</label>
-                        <input name="icon" defaultValue={editItem?.icon || "📐"} className="form-input" />
-                      </div>
-                    </div>
-                    <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                      <div>
-                        <label className="form-label">Status</label>
-                        <input name="status" defaultValue={editItem?.status || "Berjalan"} className="form-input" required />
-                      </div>
-                      <div>
-                        <label className="form-label">Urutan (Priority)</label>
-                        <input type="number" name="priority" defaultValue={editItem?.priority || 0} className="form-input" />
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Deskripsi Singkat</label>
-                      <textarea name="desc" defaultValue={editItem?.desc} className="form-input" style={{ minHeight: 100 }} required />
-                    </div>
-                  </>
-                ) : showModal === 'slider' ? (
-                  <>
-                    <ImageUploadField name="gambar_url" defaultValue={editItem?.gambar_url} label="Gambar Slider (Wajib)" required={true} />
-                    <div className="form-group">
-                      <label className="form-label">Judul Teks (Opsional)</label>
-                      <input name="judul" defaultValue={editItem?.judul} className="form-input" placeholder="Misal: Inovasi Daerah" />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Subjudul Teks (Opsional)</label>
-                      <input name="subjudul" defaultValue={editItem?.subjudul} className="form-input" placeholder="Misal: Menuju Masyarakat Sejahtera" />
-                    </div>
-                  </>
-                ) : showModal === 'berita' ? (
-                  <>
-                    <div className="form-group">
-                      <label className="form-label">Judul Berita</label>
-                      <input name="judul" defaultValue={editItem?.judul} className="form-input" required />
-                    </div>
-                    <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                      <div>
-                        <label className="form-label">Kategori</label>
-                        <select name="kategori" defaultValue={editItem?.kategori} className="form-input">
-                          <option>Perencanaan</option>
-                          <option>Inovasi</option>
-                          <option>Riset</option>
-                          <option>Koordinasi</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="form-label">Emoji / Icon</label>
-                        <input name="emoji" defaultValue={editItem?.emoji || "📋"} className="form-input" />
-                      </div>
-                    </div>
-                    <ImageUploadField name="gambar_url" defaultValue={editItem?.gambar_url} label="Gambar Berita (Opsional)" required={false} />
-                    <div className="form-group">
-                      <label className="form-label">Tanggal</label>
-                      <input type="date" name="tanggal" defaultValue={editItem?.tanggal || new Date().toISOString().split('T')[0]} className="form-input" required />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Isi Artikel Berita (Lengkap)</label>
-                      <textarea name="konten" defaultValue={editItem?.konten} className="form-input" style={{ minHeight: 200, resize: "vertical" }} required />
-                    </div>
-                    <div className="form-group" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <input type="checkbox" name="is_featured" defaultChecked={editItem?.is_featured} id="is_featured" style={{ width: 18, height: 18 }} />
-                      <label htmlFor="is_featured" style={{ fontSize: 13, fontWeight: 600, color: C.navy, marginBottom: 0 }}>Jadikan Berita Unggulan</label>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="form-group">
-                      <label className="form-label">Judul Dokumen</label>
-                      <input name="judul" defaultValue={editItem?.judul} className="form-input" required />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Kategori</label>
-                      <select name="kategori" defaultValue={editItem?.kategori} className="form-input">
-                        <option>Perencanaan Jangka Panjang</option>
-                        <option>Perencanaan Jangka Menengah</option>
-                        <option>Perencanaan Tahunan (RKPD)</option>
-                        <option>Evaluasi & Pelaporan</option>
-                        <option>Riset & Inovasi</option>
-                        <option>Regulasi & Kebijakan</option>
-                      </select>
-                    </div>
-                    <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                      <div>
-                        <label className="form-label">Ukuran File</label>
-                        <input name="ukuran" defaultValue={editItem?.ukuran} id="doc-size-input" className="form-input" placeholder="Otomatis..." />
-                      </div>
-                      <div>
-                        <label className="form-label">Tipe File</label>
-                        <input name="tipe" defaultValue={editItem?.tipe || "PDF"} id="doc-type-input" className="form-input" placeholder="Otomatis..." />
-                      </div>
-                    </div>
-                    <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                      <div>
-                        <label className="form-label">Icon (Emoji)</label>
-                        <input name="icon" defaultValue={editItem?.icon || "📄"} className="form-input" />
-                      </div>
-                      <div>
-                        <label className="form-label">Tanggal Terbit</label>
-                        <input type="date" name="tanggal" defaultValue={editItem?.tanggal || new Date().toISOString().split('T')[0]} className="form-input" required />
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Pilih File (Otomatis Deteksi)</label>
-                      <ImageUploadField 
-                        name="url" 
-                        defaultValue={editItem?.url} 
-                        label="Klik untuk Upload" 
-                        required={!editItem} 
-                        onMetadata={(meta) => {
-                          const s = document.getElementById('doc-size-input');
-                          const t = document.getElementById('doc-type-input');
-                          if (s) s.value = meta.size;
-                          if (t) t.value = meta.type;
-                        }}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button type="button" onClick={() => setShowModal(null)} style={{ background: C.warmGray, border: "none", padding: "10px 20px", borderRadius: 8, cursor: "pointer", fontWeight: 600 }}>Batal</button>
-                <button type="submit" style={{ background: C.gold, border: "none", padding: "10px 20px", borderRadius: 8, cursor: "pointer", fontWeight: 600, color: C.navyDark }}>Simpan Perubahan</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      {/* ──── LOGIN MODAL ──── */}
-      {showLogin && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: 400 }}>
-            <div className="modal-header">
-              <h3 className="display" style={{ fontSize: 18, fontWeight: 700, color: C.navy }}>Login Admin</h3>
-              <button onClick={() => setShowLogin(false)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textLight }}><X size={20} /></button>
-            </div>
-            <form onSubmit={handleLogin}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label className="form-label">Masukkan PIN Keamanan</label>
-                  <input type="password" name="pin" className="form-input" placeholder="****" autoFocus required />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="submit" className="btn-gold" style={{ width: "100%", justifyContent: "center" }}>Masuk Panel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ──── LOGOUT BUTTON (If Admin) ──── */}
-      {isAdmin && (
-        <button onClick={handleLogout} style={{ position: "fixed", bottom: 20, right: 20, zIndex: 9999, background: "#ef4444", color: "white", border: "none", padding: "10px 20px", borderRadius: 8, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
-          Keluar Admin
-        </button>
-      )}
       {/* ──── DOKUMEN PREVIEW MODAL ──── */}
       {previewDokumen && (
         <div className="modal-overlay" onClick={() => setPreviewDokumen(null)}>
@@ -2831,7 +2070,21 @@ export default function App() {
                 data.dokumen_dukung = [];
               }
               
-              handleSave('inovasi', data);
+              // Skor IGA dihitung ulang di server; nilai yang dikirim OPD hanya
+              // dipakai sebagai pratinjau di form dan tidak pernah dipercaya.
+              delete data.skor_iga;
+              delete data.kategori_skor;
+              delete data.status_approval;
+
+              kirimInovasi(data)
+                .then(() => {
+                  setShowModal(null);
+                  showNotification("Inovasi terkirim dan menunggu review admin.");
+                })
+                .catch((err) => {
+                  showNotification(err.message || "Gagal mengirim inovasi.", "error");
+                })
+                .finally(() => setIsSaving(false));
             }} onChange={() => {
               let score = 0;
               const form = document.getElementById('inovasi-form');
@@ -2969,218 +2222,11 @@ export default function App() {
 
               </div>
               <div className="modal-footer">
-                <button type="submit" className="btn-gold" disabled={isSaving}>
+                <button type="submit" className="btn-gold" disabled={isSaving} onClick={() => setIsSaving(true)}>
                   {isSaving ? "⏳ Sedang Mengirim..." : "Kirim Inovasi ke BAPPERIDA"}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* ──── MODAL: INOVASI ADMIN (REVIEW) ──── */}
-      {showModal === 'inovasi-admin' && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: 800 }}>
-            <div className="modal-header">
-              <h3 className="display" style={{ fontSize: 18, fontWeight: 700, color: C.navy }}>Dashboard Admin Inovasi</h3>
-              <button onClick={() => setShowModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textLight }}><X size={20} /></button>
-            </div>
-            <div className="modal-body" style={{ maxHeight: "60vh", overflowY: "auto" }}>
-              {inovasiList.length === 0 && <div style={{ padding: 20, textAlign: "center", color: C.textLight }}>Tidak ada inovasi.</div>}
-              {inovasiList.map(inv => (
-                <div key={inv.id} style={{ border: `1px solid ${C.warmGray}`, borderRadius: 12, padding: 16, marginBottom: 16 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-                    <div>
-                      <h4 style={{ fontSize: 16, fontWeight: 700, color: C.navy }}>{inv.judul_inovasi}</h4>
-                      <div style={{ fontSize: 13, color: C.textMid }}>{inv.opd_nama} • {inv.jenis_inovasi}</div>
-                      <div style={{ fontSize: 12, color: C.gold, fontWeight: 700 }}>Inovator: {inv.nama_inovator || "-"}</div>
-                      <div style={{ fontSize: 11, color: C.textLight, marginTop: 4 }}>
-                        Regulasi: <strong>{inv.regulasi_inovasi || "SOP"}</strong> | 
-                        Anggaran: <strong>{inv.anggaran_inovasi === "Ada" ? "DPA (Ada)" : "Tidak Ada"}</strong>
-                      </div>
-                      <div style={{ fontSize: 11, color: C.textLight }}>
-                        Uji Coba: <strong>{inv.waktu_uji_coba || "-"}</strong> | 
-                        Penerapan: <strong>{inv.waktu_penerapan || "-"}</strong>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: C.gold }}>Skor: {inv.skor_iga} ({inv.kategori_skor})</div>
-                      <div style={{ fontSize: 11, color: inv.status_approval === 'Approved' ? 'green' : 'orange' }}>Status: {inv.status_approval}</div>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 12, color: C.textMid, background: C.offWhite, padding: 10, borderRadius: 6, marginBottom: 10 }}>
-                    {inv.rancang_bangun}
-                  </div>
-
-                  {inv.link_video && (
-                    <div style={{ marginBottom: 16 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, marginBottom: 5, textTransform: "uppercase" }}>Video Inovasi:</div>
-                      <a href={inv.link_video} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "#f43f5e", display: "flex", alignItems: "center", gap: 6, textDecoration: "none", fontWeight: 700 }}>
-                        <Globe size={14} /> Video YouTube Inovasi
-                      </a>
-                    </div>
-                  )}
-
-                  {inv.dokumen_dukung && inv.dokumen_dukung.length > 0 && (
-                    <div style={{ marginBottom: 16 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, marginBottom: 8, textTransform: "uppercase" }}>Dokumen Pendukung:</div>
-                      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                        {inv.dokumen_dukung.map((d, i) => (
-                          <button 
-                            key={i} 
-                            onClick={() => handleViewDocument(d)}
-                            style={{ 
-                              fontSize: 11, 
-                              color: C.navy, 
-                              background: `${C.gold}22`, 
-                              padding: "4px 10px", 
-                              borderRadius: 4, 
-                              border: "none",
-                              cursor: "pointer",
-                              textDecoration: "none", 
-                              fontWeight: 600,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 4
-                            }}
-                          >
-                            📄 {d.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <div style={{ display: "flex", gap: 10 }}>
-                    {inv.status_approval !== 'Approved' && (
-                      <button 
-                        disabled={isSaving}
-                        onClick={() => handleSave('inovasi', { id: inv.id, action: 'approve' }).then(() => fetchData())} 
-                        style={{ background: isSaving ? "#9ca3af" : "green", color: "white", padding: "6px 12px", borderRadius: 4, border: "none", fontSize: 12, cursor: isSaving ? "not-allowed" : "pointer", fontWeight: 700 }}
-                      >
-                        {isSaving ? "⏳ Proses..." : "✓ Approve (Tampilkan di Publik)"}
-                      </button>
-                    )}
-                    <button 
-                      disabled={isSaving}
-                      onClick={() => handleDelete('inovasi', inv.id)} 
-                      style={{ background: isSaving ? "#9ca3af" : "#ef4444", color: "white", padding: "6px 12px", borderRadius: 4, border: "none", fontSize: 12, cursor: isSaving ? "not-allowed" : "pointer", fontWeight: 700 }}
-                    >
-                      {isSaving ? "⏳ Proses..." : "✕ Hapus"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ──── MODAL: LAYOUT EDITOR ──── */}
-      {showModal === 'layout' && (
-        <div className="modal-overlay" onClick={() => setShowModal(null)}>
-          <div className="modal-content" style={{ maxWidth: 900 }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="display" style={{ fontSize: 22, color: C.navy }}>Editor Tata Letak Berita</h3>
-              <button onClick={() => setShowModal(null)} style={{ background: "none", border: "none", cursor: "pointer" }}><X size={20} /></button>
-            </div>
-            <div className="modal-body" style={{ background: C.offWhite }}>
-              <p style={{ fontSize: 14, color: C.textMid, marginBottom: 24 }}>
-                Atur tata letak dengan menarik berita atau mengubah ukurannya. 
-                {isSavingLayout && <span style={{ marginLeft: 12, color: C.gold, fontSize: 12, fontWeight: 700 }}>● Menyimpan...</span>}
-              </p>
-              
-              <div style={{ 
-                display: "grid", 
-                gridTemplateColumns: "repeat(3, 1fr)", 
-                gap: 12,
-                maxHeight: "60vh",
-                overflowY: "auto",
-                padding: 4
-              }}>
-                {beritaList.map((item, idx) => {
-                  const size = item.layout_size || (idx === 0 ? 'large' : 'normal');
-                  return (
-                    <div 
-                      key={item.id}
-                      draggable
-                      onDragStart={(e) => e.dataTransfer.setData("index", idx)}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        const fromIdx = parseInt(e.dataTransfer.getData("index"));
-                        handleMoveBerita(fromIdx, idx);
-                      }}
-                      style={{ 
-                        background: "white", 
-                        border: `2px solid ${idx === 0 ? C.gold : C.warmGray}`,
-                        borderRadius: 12,
-                        padding: 10,
-                        cursor: "grab",
-                        gridColumn: size === 'wide' || size === 'large' ? "span 2" : "span 1",
-                        gridRow: size === 'tall' || size === 'large' ? "span 2" : "span 1",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 8,
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-                        transition: "all 0.2s"
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 6, background: `${C.navy}14`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>{item.emoji || "📰"}</div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: C.navy, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.judul}</div>
-                      </div>
-
-                      {/* Size Controls */}
-                      <div style={{ marginTop: "auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const newList = [...beritaList];
-                            newList[idx] = { ...item, layout_size: 'normal' };
-                            setBeritaList(newList);
-                            saveBeritaOrder(newList);
-                          }}
-                          style={{ fontSize: 8, padding: "3px", borderRadius: 4, background: size === 'normal' ? C.gold : "#f1f5f9", color: size === 'normal' ? "white" : C.textMid, border: "none", cursor: "pointer" }}
-                        >Kecil</button>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const newList = [...beritaList];
-                            newList[idx] = { ...item, layout_size: 'wide' };
-                            setBeritaList(newList);
-                            saveBeritaOrder(newList);
-                          }}
-                          style={{ fontSize: 8, padding: "3px", borderRadius: 4, background: size === 'wide' ? C.gold : "#f1f5f9", color: size === 'wide' ? "white" : C.textMid, border: "none", cursor: "pointer" }}
-                        >Lebar</button>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const newList = [...beritaList];
-                            newList[idx] = { ...item, layout_size: 'tall' };
-                            setBeritaList(newList);
-                            saveBeritaOrder(newList);
-                          }}
-                          style={{ fontSize: 8, padding: "3px", borderRadius: 4, background: size === 'tall' ? C.gold : "#f1f5f9", color: size === 'tall' ? "white" : C.textMid, border: "none", cursor: "pointer" }}
-                        >Tinggi</button>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const newList = [...beritaList];
-                            newList[idx] = { ...item, layout_size: 'large' };
-                            setBeritaList(newList);
-                            saveBeritaOrder(newList);
-                          }}
-                          style={{ fontSize: 8, padding: "3px", borderRadius: 4, background: size === 'large' ? C.gold : "#f1f5f9", color: size === 'large' ? "white" : C.textMid, border: "none", cursor: "pointer" }}
-                        >Besar</button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-gold" onClick={() => setShowModal(null)}>Selesai</button>
-            </div>
           </div>
         </div>
       )}
