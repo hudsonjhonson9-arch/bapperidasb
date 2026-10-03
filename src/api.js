@@ -150,10 +150,10 @@ export function formatBytes(byte) {
 
 // URL thumbnail Google Drive. Drive tidak melayani thumbnail untuk file non gambar,
 // jadi pemanggil harus tetap menyiapkan fallback.
-export function thumbDrive(url) {
+export function thumbDrive(url, ukuran = 400) {
   if (!url) return url;
   const m = String(url).match(/\/d\/([^/]+)/);
-  return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=s400` : url;
+  return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=s${ukuran}` : url;
 }
 
 // Ubah tautan Drive menjadi URL yang bisa dibuka langsung di browser.

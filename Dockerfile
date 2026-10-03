@@ -12,6 +12,9 @@ RUN npm ci --include=dev
 
 COPY index.html vite.config.js ./
 COPY src ./src
+# public/ berisi logo.png dan struktur organisasi. Tanpa baris ini Vite tidak
+# menyalinnya ke dist/, dan /logo.png berakhir sebagai index.html.
+COPY public ./public
 
 # Vite menyisipkan VITE_* ke bundle saat build, jadi nilainya harus ada di
 # tahap ini, bukan hanya saat container berjalan. Dikosongkan supaya build

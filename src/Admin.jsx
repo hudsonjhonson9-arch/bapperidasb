@@ -1,510 +1,310 @@
-// Panel admin BAPPERIDA.
-//
-// Halaman ini terpisah dari situs publik (App.jsx) dan hanya dimuat ketika
-// pathname diawali /admin, jadi bundel publik tidak ikut membawa kode admin.
-//
-// Tidak ada React Router di proyek ini: perpindahan tab cukup state lokal,
-// sedangkan perubahan status login memakai storia browser supaya tombol "kembali"
-// di panel tidak memuat ulang situs publik.
-
-import { useState, useEffect, useCallback } from "react";
+// Panel admin BAPPERIDA. Dimuat sebagai chunk terpisah dari situs publik.
+// Navigasi memakai hash (#berita, #pesan, ...) supaya bisa di-bookmark.
+import { useState, useEffect, useCallback, Fragment } from "react";
+import {
+  LayoutDashboard, Newspaper, FileText, Images, ListChecks, Gauge, Lightbulb, Mail,
+  ShieldCheck, LogOut, Search, Plus, X, Pencil, Trash2, ExternalLink, ChevronLeft, ChevronRight, Check,
+} from "lucide-react";
 import {
   api, sesi, login, logout, gantiPin, ringkasan,
   unggahFile, MAKS_UPLOAD, formatBytes, thumbDrive, tautanLangsung,
 } from "./api";
+import { useDaftar, kosongkanCache, jalankan } from "./admin/data";
+import "./admin/tema.css";
 
-const C = {
-  navy: "#0B2447",
-  navyDark: "#061529",
-  navyLight: "#19376D",
-  gold: "#C9A227",
-  goldLight: "#E3B83A",
-  offWhite: "#F7F4EE",
-  warmGray: "#E8E3D9",
-  white: "#FFFFFF",
-  textDark: "#0D1B2A",
-  textMid: "#4A5568",
-  textLight: "#8898AA",
-  bahaya: "#dc2626",
-  sukses: "#059669",
-};
+const UKURAN = 15;
+const tgl = (v) => (v ? new Date(v).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—");
 
-const inputStyle = {
-  width: "100%",
-  padding: "10px 12px",
-  border: `1px solid ${C.warmGray}`,
-  borderRadius: 8,
-  fontSize: 14,
-  fontFamily: "inherit",
-  background: C.white,
-  color: C.textDark,
-  boxSizing: "border-box",
-};
+// ── Elemen kecil ────────────────────────────────────────────────────────────
 
-const labelStyle = {
-  display: "block",
-  fontSize: 12,
-  fontWeight: 700,
-  color: C.textMid,
-  marginBottom: 6,
-  letterSpacing: "0.02em",
-};
+// Kalau logo gagal dimuat, tampilkan monogram supaya tata letak tidak berlubang.
+function Logo({ ukuran = 36 }) {
+  const [rusak, setRusak] = useState(false);
+  return rusak
+    ? <span className="logo-cadangan" style={{ width: ukuran, height: ukuran }} aria-hidden="true">B</span>
+    : <img src="/logo.png" alt="" width={ukuran} style={{ height: "auto", maxHeight: ukuran * 1.15 }} onError={() => setRusak(true)} />;
+}
 
-function Kolom({ label, children, hint, wajib }) {
+const Tombol = ({ variasi = "", kecil, ...p }) => (
+  <button type="button" {...p} className={`tbl ${variasi} ${kecil ? "kecil" : ""}`} />
+);
+
+function Kolom({ label, wajib, petunjuk, children }) {
   return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={labelStyle}>
-        {label}
-        {wajib && <span style={{ color: C.bahaya }}> *</span>}
-      </label>
-      {children}
-      {hint && <div style={{ fontSize: 11.5, color: C.textLight, marginTop: 5 }}>{hint}</div>}
+    <div className="kol">
+      <label>{label}{wajib && <span className="bintang"> *</span>}{children}</label>
+      {petunjuk && <div className="petunjuk">{petunjuk}</div>}
     </div>
   );
 }
 
-function Tombol({ children, onClick, tone = "navy", type = "button", disabled, kecil }) {
-  const warna = tone === "bahaya" ? C.bahaya : tone === "gold" ? C.gold : tone === "sunyi" ? C.white : C.navy;
+// Label membungkus input, jadi klik label memfokuskan input. Untuk blok yang
+// berisi beberapa kontrol (unggah gambar) dipakai div + .lbl.
+function Blok({ label, wajib, petunjuk, children }) {
   return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        background: warna,
-        color: tone === "gold" ? C.navyDark : tone === "sunyi" ? C.navy : C.white,
-        border: tone === "sunyi" ? `1px solid ${C.navy}` : "none",
-        padding: kecil ? "6px 12px" : "11px 20px",
-        borderRadius: 8,
-        fontSize: kecil ? 12.5 : 14,
-        fontWeight: 700,
-        fontFamily: "inherit",
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.55 : 1,
-      }}
-    >
+    <div className="kol">
+      <div className="lbl">{label}{wajib && <span className="bintang"> *</span>}</div>
       {children}
-    </button>
-  );
-}
-
-function Kartu({ children, style }) {
-  return (
-    <div
-      style={{
-        background: C.white,
-        border: `1px solid ${C.warmGray}`,
-        borderRadius: 12,
-        padding: 20,
-        ...style,
-      }}
-    >
-      {children}
+      {petunjuk && <div className="petunjuk">{petunjuk}</div>}
     </div>
   );
 }
 
-// ── Unggah gambar ────────────────────────────────────────────────────────────
+function Rangka({ baris = 5 }) {
+  return (
+    <div style={{ padding: 16, display: "grid", gap: 14 }} aria-busy="true" aria-label="Memuat data">
+      {Array.from({ length: baris }, (_, i) => <div key={i} className="rangka" style={{ width: `${92 - (i % 3) * 14}%` }} />)}
+    </div>
+  );
+}
 
-/**
- * Menyimpan URL hasil unggah Apps Script ke field tersembunyi milik form.
- * Nilai di input ini yang dikirim ke server; nama kolom database (gambar_data)
- * dan alias form (gambar_url) keduanya diterima normalisasi di server.
- */
-function FieldGambar({ name, label, wajib, awal = "" }) {
-  const [nilai, setNilai] = useState(awal);
+function Laci({ judul, onTutup, children, kaki }) {
+  useEffect(() => {
+    const esc = (e) => e.key === "Escape" && onTutup();
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [onTutup]);
+  return (
+    <div className="tirai" onMouseDown={(e) => e.target === e.currentTarget && onTutup()}>
+      <aside className="laci" role="dialog" aria-modal="true" aria-label={judul}>
+        <header>
+          <h2>{judul}</h2>
+          <Tombol variasi="sunyi ikon" aria-label="Tutup" onClick={onTutup}><X size={16} /></Tombol>
+        </header>
+        {children}
+        {kaki}
+      </aside>
+    </div>
+  );
+}
+
+function Konfirmasi({ judul, isi, label = "Hapus", onBatal, onYa }) {
+  const [sibuk, setSibuk] = useState(false);
+  useEffect(() => {
+    const esc = (e) => e.key === "Escape" && onBatal();
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [onBatal]);
+  return (
+    <div className="tirai tengah" onMouseDown={(e) => e.target === e.currentTarget && onBatal()}>
+      <div className="dialog" role="alertdialog" aria-modal="true" aria-label={judul}>
+        <h2>{judul}</h2>
+        <p className="redup">{isi}</p>
+        <div className="aksi-d">
+          <Tombol variasi="sunyi" onClick={onBatal}>Batal</Tombol>
+          <Tombol variasi="bahaya" disabled={sibuk} onClick={async () => { setSibuk(true); try { await onYa(); } finally { setSibuk(false); } }}>
+            {sibuk ? "Menghapus…" : label}
+          </Tombol>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Unggah gambar ───────────────────────────────────────────────────────────
+
+function FieldGambar({ label, wajib, value, onChange }) {
   const [sibuk, setSibuk] = useState(false);
   const [galat, setGalat] = useState(null);
-  const [pratinjau, setPratinjau] = useState(awal ? thumbDrive(awal) : "");
-
-  useEffect(() => {
-    setNilai(awal);
-    setPratinjau(awal ? thumbDrive(awal) : "");
-    setGalat(null);
-  }, [awal]);
 
   const pilih = async (e) => {
-    const file = e.target.files && e.target.files[0];
+    const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-
-    setGalat(null);
-    setSibuk(true);
-    try {
-      const hasil = await unggahFile(file);
-      setNilai(hasil.url);
-      setPratinjau(thumbDrive(hasil.url));
-    } catch (err) {
-      setGalat(err.message);
-    } finally {
-      setSibuk(false);
-    }
+    setGalat(null); setSibuk(true);
+    try { onChange((await unggahFile(file)).url); }
+    catch (err) { setGalat(err.message); }
+    finally { setSibuk(false); }
   };
 
   return (
-    <Kolom label={label} wajib={wajib} hint={`Maksimal ${formatBytes(MAKS_UPLOAD)}. File dikirim langsung ke Google Drive.`}>
-      <input type="hidden" name={name} value={nilai} readOnly />
-      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-        <label
-          style={{
-            display: "inline-block",
-            padding: "9px 16px",
-            background: C.offWhite,
-            border: `1px dashed ${C.warmGray}`,
-            borderRadius: 8,
-            fontSize: 13,
-            fontWeight: 700,
-            color: C.navy,
-            cursor: sibuk ? "wait" : "pointer",
-          }}
-        >
-          {sibuk ? "Mengunggah..." : nilai ? "Ganti gambar" : "Pilih gambar"}
-          <input type="file" accept="image/*" onChange={pilih} disabled={sibuk} style={{ display: "none" }} />
+    <Blok label={label} wajib={wajib} petunjuk={`Maksimal ${formatBytes(MAKS_UPLOAD)}. Dikirim langsung ke Google Drive.`}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <label className="tbl sunyi" style={{ cursor: sibuk ? "wait" : "pointer" }}>
+          {sibuk ? "Mengunggah…" : value ? "Ganti gambar" : "Pilih gambar"}
+          <input type="file" accept="image/*" onChange={pilih} disabled={sibuk} hidden />
         </label>
-        {nilai && (
-          <button
-            type="button"
-            onClick={() => { setNilai(""); setPratinjau(""); }}
-            style={{ background: "none", border: "none", color: C.bahaya, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}
-          >
-            Hapus pilihan
-          </button>
-        )}
+        {value && !sibuk && <Tombol variasi="sunyi" onClick={() => onChange("")}>Lepas gambar</Tombol>}
       </div>
-      {pratinjau && (
-        <img src={pratinjau} alt="Pratinjau" style={{ marginTop: 10, maxWidth: 200, borderRadius: 8, border: `1px solid ${C.warmGray}` }} />
-      )}
-      {galat && <div style={{ color: C.bahaya, fontSize: 12.5, marginTop: 8 }}>⚠️ {galat}</div>}
-    </Kolom>
+      {value && <img className="pratinjau" src={thumbDrive(value, 440)} alt="Pratinjau gambar" loading="lazy" />}
+      {galat && <div className="galat" style={{ marginTop: 8 }}>{galat}</div>}
+    </Blok>
   );
 }
 
-// ── Login ───────────────────────────────────────────────────────────────────
-
-function HalamanLogin({ onMasuk }) {
-  const [username, setUsername] = useState("");
-  const [pin, setPin] = useState("");
-  const [galat, setGalat] = useState(null);
-  const [sibuk, setSibuk] = useState(false);
-
-  const kirim = async (e) => {
-    e.preventDefault();
-    setSibuk(true);
-    setGalat(null);
-    try {
-      const hasil = await login(username, pin);
-      setPin("");
-      onMasuk(hasil.user);
-    } catch (err) {
-      setGalat(err.message);
-    } finally {
-      setSibuk(false);
-    }
-  };
-
-  return (
-    <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: `linear-gradient(145deg, ${C.navyDark}, ${C.navyLight})`, padding: 20 }}>
-      <form onSubmit={kirim} style={{ width: "100%", maxWidth: 380, background: C.white, borderRadius: 16, padding: 32, boxShadow: "0 20px 50px rgba(0,0,0,0.3)" }}>
-        <div style={{ textAlign: "center", marginBottom: 26 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.2em", color: C.gold }}>BAPPERIDA</div>
-          <h1 style={{ fontSize: 21, fontWeight: 700, color: C.navy, margin: "8px 0 4px" }}>Panel Admin</h1>
-          <p style={{ fontSize: 12.5, color: C.textLight, margin: 0 }}>Kabupaten Sumba Barat</p>
-        </div>
-
-        <Kolom label="Username" wajib>
-          <input style={inputStyle} value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required />
-        </Kolom>
-        <Kolom label="PIN" wajib>
-          <input style={inputStyle} type="password" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value)} autoComplete="current-password" required />
-        </Kolom>
-
-        {galat && (
-          <div style={{ background: "#fef2f2", border: "1px solid #fecaca", color: C.bahaya, padding: "10px 12px", borderRadius: 8, fontSize: 12.5, marginBottom: 14 }}>
-            ⚠️ {galat}
-          </div>
-        )}
-
-        <Tombol type="submit" tone="gold" disabled={sibuk}>
-          {sibuk ? "Memeriksa..." : "Masuk"}
-        </Tombol>
-
-        <a href="/" style={{ display: "block", textAlign: "center", marginTop: 18, fontSize: 12.5, color: C.textLight, textDecoration: "none" }}>
-          ← Kembali ke situs
-        </a>
-      </form>
-    </div>
-  );
-}
-
-// ── Definisi formulir per modul ─────────────────────────────────────────────
-//
-// Kolom di sini hanya untuk tampilan. Server tetap memvalidasi dan melempar
-// kolom yang tidak dikenal, jadi menambah field di sini tidak otomatis berarti
-// kolom itu tersimpan di database.
+// ── Definisi modul ──────────────────────────────────────────────────────────
+// `kolom` = isi formulir (server tetap memvalidasi). `detail` = isi lengkap
+// diambil per baris saat formulir dibuka, karena daftar tidak membawanya.
 
 const FORMULIR = {
   berita: {
-    judul: "Berita",
+    judul: "Berita", detail: true, baru: { is_featured: false },
     kolom: [
-      { name: "judul", label: "Judul Berita", wajib: true },
+      { name: "judul", label: "Judul berita", wajib: true },
       { name: "kategori", label: "Kategori" },
       { name: "tanggal", label: "Tanggal", tipe: "date" },
-      { name: "emoji", label: "Emoji (tanpa gambar)" },
-      { name: "priority", label: "Urutan", tipe: "number", hint: "Angka kecil tampil lebih dulu." },
-      { name: "is_featured", label: "Berita unggulan", tipe: "checkbox" },
-      { name: "konten", label: "Isi Berita", tipe: "textarea", baris: 8 },
-      { name: "gambar_url", label: "Gambar Berita", component: "gambar" },
+      { name: "gambar_url", label: "Gambar berita", gambar: true },
+      { name: "emoji", label: "Emoji (jika tanpa gambar)" },
+      { name: "priority", label: "Urutan", tipe: "number", petunjuk: "Angka kecil tampil lebih dulu." },
+      { name: "is_featured", label: "Jadikan berita unggulan", tipe: "checkbox" },
+      { name: "konten", label: "Isi berita", tipe: "textarea" },
     ],
   },
-
   dokumen: {
-    judul: "Dokumen",
+    judul: "Dokumen", baru: { publik: true, tipe: "PDF", icon: "📄" },
     kolom: [
-      { name: "judul", label: "Judul Dokumen", wajib: true },
+      { name: "judul", label: "Judul dokumen", wajib: true },
       { name: "kategori", label: "Kategori" },
-      { name: "tipe", label: "Tipe (PDF/XLSX/DOCX)" },
+      { name: "tipe", label: "Tipe (PDF, XLSX, DOCX)" },
       { name: "ukuran", label: "Ukuran" },
-      { name: "tanggal", label: "Tanggal Terbit", tipe: "date" },
-      { name: "icon", label: "Emoji Ikon" },
+      { name: "tanggal", label: "Tanggal terbit", tipe: "date" },
+      { name: "icon", label: "Emoji ikon" },
       { name: "publik", label: "Tampilkan di situs publik", tipe: "checkbox" },
     ],
   },
-
-  program: {
-    judul: "Program",
+  slider: {
+    judul: "Slider",
     kolom: [
-      { name: "title", label: "Nama Program", wajib: true },
+      { name: "gambar_url", label: "Gambar slider", wajib: true, gambar: true },
+      { name: "judul", label: "Judul teks" },
+      { name: "subjudul", label: "Subjudul" },
+    ],
+  },
+  program: {
+    judul: "Program", detail: true,
+    kolom: [
+      { name: "title", label: "Nama program", wajib: true },
       { name: "cat", label: "Kategori" },
       { name: "status", label: "Status" },
       { name: "sc", label: "Sasaran" },
       { name: "priority", label: "Urutan", tipe: "number" },
-      { name: "desc", label: "Deskripsi", tipe: "textarea", baris: 5 },
       { name: "icon", label: "Emoji" },
+      { name: "desc", label: "Deskripsi", tipe: "textarea" },
     ],
   },
-
   metrics: {
     judul: "Metrik",
     kolom: [
-      { name: "label", label: "Label", wajib: true, hint: "Label tidak bisa diubah setelah dibuat; ubah nilai angka saja." },
+      { name: "label", label: "Label", wajib: true, petunjuk: "Label tidak bisa diubah setelah dibuat; ubah angkanya saja." },
       { name: "value", label: "Nilai", wajib: true },
       { name: "icon", label: "Emoji" },
       { name: "priority", label: "Urutan", tipe: "number" },
     ],
   },
-
-  slider: {
-    judul: "Slider",
-    kolom: [
-      { name: "judul", label: "Judul Teks" },
-      { name: "subjudul", label: "Subjudul" },
-      { name: "gambar_url", label: "Gambar Slider", wajib: true, component: "gambar" },
-    ],
-  },
 };
 
-function ModalFormulir({ modul, item, onTutup, onSimpan }) {
+// Kolom tabel per modul. `c` menerima satu baris.
+const Ikon = ({ b }) => (
+  b.gambar_url
+    ? <img className="mini" src={thumbDrive(b.gambar_url, 96)} alt="" width="48" height="48" loading="lazy" decoding="async" />
+    : <span className="mini" aria-hidden="true">{b.emoji || b.icon || "·"}</span>
+);
+const Judul = ({ b, t, sub }) => (
+  <div className="sel-judul"><Ikon b={b} /><div><b>{t}</b>{sub && <small>{sub}</small>}</div></div>
+);
+
+const TABEL = {
+  berita: [
+    ["Berita", (b) => <Judul b={b} t={b.judul} sub={b.kategori} />],
+    ["Tanggal", (b) => <span className="num">{tgl(b.tanggal)}</span>],
+    ["Status", (b) => b.is_featured ? <span className="lencana-s ok">Unggulan</span> : <span className="redup">—</span>],
+    ["Urutan", (b) => <span className="num">{b.priority ?? "—"}</span>],
+  ],
+  dokumen: [
+    ["Dokumen", (b) => <Judul b={{ icon: b.icon }} t={b.judul} sub={[b.kategori, b.tipe, b.ukuran].filter(Boolean).join(" · ")} />],
+    ["Tanggal", (b) => <span className="num">{tgl(b.tanggal)}</span>],
+    ["Tampil", (b) => <span className={`lencana-s ${b.publik ? "ok" : ""}`}>{b.publik ? "Publik" : "Disembunyikan"}</span>],
+    ["Berkas", (b) => b.url ? <a href={tautanLangsung(b.url)} target="_blank" rel="noreferrer">Buka <ExternalLink size={12} /></a> : "—"],
+  ],
+  slider: [
+    ["Slide", (b) => <Judul b={b} t={b.judul || "(tanpa judul)"} sub={b.subjudul} />],
+  ],
+  program: [
+    ["Program", (b) => <Judul b={b} t={b.title} sub={b.cat} />],
+    ["Status", (b) => b.status ? <span className="lencana-s">{b.status}</span> : "—"],
+    ["Sasaran", (b) => b.sc || "—"],
+    ["Urutan", (b) => <span className="num">{b.priority ?? "—"}</span>],
+  ],
+  metrics: [
+    ["Metrik", (b) => <Judul b={b} t={b.label} />],
+    ["Nilai", (b) => <b className="num">{b.value}</b>],
+    ["Urutan", (b) => <span className="num">{b.priority ?? "—"}</span>],
+  ],
+  inovasi: [
+    ["Usulan", (b) => <Judul b={{ icon: "💡" }} t={b.judul_inovasi} sub={[b.opd_nama, b.nama_inovator].filter(Boolean).join(" · ")} />],
+    ["Skor IGA", (b) => <span className="num"><b>{b.skor_iga}</b> <span className="lencana-s">{b.kategori_skor}</span></span>],
+    ["Status", (b) => <span className={`lencana-s ${b.status_approval === "Approved" ? "ok" : "tunggu"}`}>{b.status_approval === "Approved" ? "Disetujui" : "Menunggu"}</span>],
+    ["Masuk", (b) => <span className="num">{tgl(b.created_at)}</span>],
+  ],
+};
+
+const JUDUL_MODUL = {
+  berita: ["Berita", "Berita dan kegiatan di beranda situs."],
+  dokumen: ["Dokumen", "Berkas yang bisa diunduh pengunjung."],
+  slider: ["Slider", "Gambar besar di bagian atas beranda."],
+  program: ["Program", "Program dan kegiatan unggulan."],
+  metrics: ["Metrik", "Angka ringkas di beranda."],
+  inovasi: ["Usulan inovasi", "Usulan dari OPD. Yang belum disetujui tidak tampil di situs publik."],
+};
+
+// ── Formulir (laci) ─────────────────────────────────────────────────────────
+
+function FormItem({ modul, item, onTutup, onSelesai }) {
   const def = FORMULIR[modul];
-  const [sibuk, setSibuk] = useState(false);
+  const edit = Boolean(item.id);
+  const [nilai, setNilai] = useState(null);
+  const [berkas, setBerkas] = useState(null);
   const [galat, setGalat] = useState(null);
-  const [nilaiAwal, setNilaiAwal] = useState(() => {
-    const awal = {};
-    for (const k of def.kolom) awal[k.name] = item[k.name] ?? "";
-    return awal;
-  });
+  const [sibuk, setSibuk] = useState(false);
+  const urlLama = item.url || "";
 
   useEffect(() => {
-    // Daftar kolom dibaca dari FORMULIR, bukan dari `def`, jadi tidak perlu
-    // dimasukkan ke daftar dependensi: form ini hanya hidup untuk satu modul
-    // pada satu waktu.
-    const awal = {};
-    for (const k of FORMULIR[modul].kolom) awal[k.name] = item[k.name] ?? "";
-    setNilaiAwal(awal);
-    setGalat(null);
-  }, [item, modul]);
+    let batal = false;
+    (async () => {
+      let dasar = item;
+      if (edit && def.detail) {
+        try { dasar = await jalankan(() => api.get(`/${modul}/${item.id}`)); }
+        catch (e) { if (!batal) setGalat(e.message); return; }
+      }
+      if (batal) return;
+      const awal = {};
+      for (const k of def.kolom) awal[k.name] = dasar[k.name] ?? def.baru?.[k.name] ?? (k.tipe === "checkbox" ? false : "");
+      setNilai(awal);
+    })();
+    return () => { batal = true; };
+  }, [item, modul, edit, def]);
 
-  const ubah = (name, nilai) => setNilaiAwal((v) => ({ ...v, [name]: nilai }));
+  const ubah = (n, v) => setNilai((s) => ({ ...s, [n]: v }));
+
+  const pilihBerkas = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setBerkas(f);
+    const ext = (f.name.split(".").pop() || "").toUpperCase();
+    setNilai((s) => ({ ...s, tipe: ext || s.tipe, ukuran: formatBytes(f.size), judul: s.judul || f.name.replace(/\.[^.]+$/, "") }));
+  };
 
   const kirim = async (e) => {
     e.preventDefault();
-    setSibuk(true);
     setGalat(null);
-
-    const data = { ...nilaiAwal };
+    const data = {};
     for (const k of def.kolom) {
-      if (k.tipe === "checkbox") data[k.name] = Boolean(data[k.name]);
-      else if (k.tipe === "number") data[k.name] = data[k.name] === "" ? null : Number(data[k.name]);
-      else data[k.name] = String(data[k.name] ?? "").trim();
+      const v = nilai[k.name];
+      if (k.tipe === "checkbox") data[k.name] = Boolean(v);
+      else if (k.tipe === "number") data[k.name] = v === "" || v == null ? null : Number(v);
+      else data[k.name] = String(v ?? "").trim();
+      if (k.gambar && k.wajib && !data[k.name]) return setGalat(`${k.label} wajib diisi.`);
     }
-    if (data.url === "") delete data.url;
-
-    try {
-      await onSimpan(data);
-    } catch (err) {
-      setGalat(err.message);
-    } finally {
-      setSibuk(false);
-    }
-  };
-
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(6,21,41,0.6)", zIndex: 100, display: "grid", placeItems: "center", padding: 20, overflowY: "auto" }} onClick={onTutup}>
-      <form onClick={(e) => e.stopPropagation()} onSubmit={kirim} style={{ width: "100%", maxWidth: 560, background: C.white, borderRadius: 14, padding: 26, margin: "auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: C.navy, margin: 0 }}>
-            {item.id ? "Edit" : "Tambah"} {def.judul}
-          </h2>
-          <button type="button" onClick={onTutup} style={{ background: "none", border: "none", fontSize: 22, color: C.textLight, cursor: "pointer", lineHeight: 1 }}>×</button>
-        </div>
-
-        {def.kolom.map((k) => {
-          if (k.component === "gambar") {
-            return <FieldGambar key={k.name} name={k.name} label={k.label} wajib={k.wajib} awal={nilaiAwal[k.name] || ""} />;
-          }
-          return (
-            <Kolom key={k.name} label={k.label} wajib={k.wajib} hint={k.hint}>
-              {k.tipe === "textarea" ? (
-                <textarea style={{ ...inputStyle, minHeight: (k.baris || 5) * 22 }} value={nilaiAwal[k.name] ?? ""} onChange={(e) => ubah(k.name, e.target.value)} />
-              ) : k.tipe === "checkbox" ? (
-                <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13.5, color: C.textMid, cursor: "pointer" }}>
-                  <input type="checkbox" checked={Boolean(nilaiAwal[k.name])} onChange={(e) => ubah(k.name, e.target.checked)} />
-                  Ya
-                </label>
-              ) : (
-                <input
-                  style={inputStyle}
-                  type={k.tipe || "text"}
-                  value={nilaiAwal[k.name] ?? ""}
-                  onChange={(e) => ubah(k.name, e.target.value)}
-                  required={k.wajib}
-                />
-              )}
-            </Kolom>
-          );
-        })}
-
-        {galat && (
-          <div style={{ background: "#fef2f2", border: "1px solid #fecaca", color: C.bahaya, padding: "10px 12px", borderRadius: 8, fontSize: 12.5, marginBottom: 14 }}>
-            ⚠️ {galat}
-          </div>
-        )}
-
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <Tombol onClick={onTutup} tone="sunyi">Batal</Tombol>
-          <Tombol type="submit" tone="gold" disabled={sibuk}>{sibuk ? "Menyimpan..." : "Simpan"}</Tombol>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-// ── Tabel data umum ─────────────────────────────────────────────────────────
-
-function TabelData({ modul, baris, onUbah, kolomTampil }) {
-  const def = FORMULIR[modul];
-  const [edit, setEdit] = useState(null);
-  const [konfirmasi, setKonfirmasi] = useState(null);
-
-  const simpan = async (data) => {
-    if (edit && edit.id) await api.put(`/${modul}/${edit.id}`, data);
-    else await api.post(`/${modul}`, data);
-    setEdit(null);
-    await onUbah();
-  };
-
-  return (
-    <>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 12, flexWrap: "wrap" }}>
-        <h2 style={{ fontSize: 19, fontWeight: 700, color: C.navy, margin: 0 }}>{def.judul}</h2>
-        <Tombol tone="gold" onClick={() => setEdit({})}>+ Tambah {def.judul}</Tombol>
-      </div>
-
-      <Kartu style={{ padding: 0, overflowX: "auto" }}>
-        {baris.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", color: C.textLight, fontSize: 13.5 }}>
-            Belum ada data {def.judul.toLowerCase()}.
-          </div>
-        ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
-            <thead>
-              <tr style={{ background: C.offWhite, textAlign: "left" }}>
-                {kolomTampil.map((c) => (
-                  <th key={c} style={{ padding: "12px 16px", fontSize: 11.5, fontWeight: 800, color: C.textMid, textTransform: "uppercase", letterSpacing: "0.04em", whiteSpace: "nowrap" }}>{c}</th>
-                ))}
-                <th style={{ padding: "12px 16px" }} />
-              </tr>
-            </thead>
-            <tbody>
-              {baris.map((b) => (
-                <tr key={b.id} style={{ borderTop: `1px solid ${C.warmGray}` }}>
-                  {kolomTampil.map((c) => (
-                    <td key={c} style={{ padding: "12px 16px", color: C.textMid, maxWidth: 320, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {b[c] === null || b[c] === undefined || b[c] === "" ? "—" : String(b[c])}
-                    </td>
-                  ))}
-                  <td style={{ padding: "12px 16px", textAlign: "right", whiteSpace: "nowrap" }}>
-                    <Tombol kecil onClick={() => setEdit(b)}>Edit</Tombol>{" "}
-                    <Tombol kecil tone="bahaya" onClick={() => setKonfirmasi(b)}>Hapus</Tombol>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </Kartu>
-
-      {edit && <ModalFormulir modul={modul} item={edit} onTutup={() => setEdit(null)} onSimpan={simpan} />}
-
-      {konfirmasi && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(6,21,41,0.6)", zIndex: 100, display: "grid", placeItems: "center", padding: 20 }}>
-          <div style={{ background: C.white, borderRadius: 14, padding: 26, maxWidth: 400 }}>
-            <h3 style={{ fontSize: 16.5, fontWeight: 700, color: C.navy, marginTop: 0 }}>Hapus {def.judul}?</h3>
-            <p style={{ fontSize: 13.5, color: C.textMid, lineHeight: 1.6 }}>
-              Data <strong>{konfirmasi.judul || konfirmasi.title || konfirmasi.label || `#${konfirmasi.id}`}</strong> akan dihapus permanen.
-              {modul === "dokumen" || modul === "berita" || modul === "slider"
-                ? " File di Google Drive juga ikut dihapus."
-                : " Tindakan ini tidak bisa dibatalkan."}
-            </p>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <Tombol tone="sunyi" onClick={() => setKonfirmasi(null)}>Batal</Tombol>
-              <Tombol tone="bahaya" onClick={async () => {
-                try {
-                  await api.del(`/${modul}/${konfirmasi.id}`);
-                  setKonfirmasi(null);
-                  await onUbah();
-                } catch (err) {
-                  alert(err.message);
-                }
-              }}>Hapus</Tombol>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
-// ── Dokumen: unggah file ────────────────────────────────────────────────────
-
-function DokumenDanFile({ baris, onUbah }) {
-  const [sibuk, setSibuk] = useState(false);
-  const [galat, setGalat] = useState(null);
-  const [form, setForm] = useState({ judul: "", kategori: "", tipe: "PDF", tanggal: "", icon: "📄", publik: true });
-
-  const unggah = async (e) => {
-    e.preventDefault();
     setSibuk(true);
-    setGalat(null);
     try {
-      const hasil = await unggahFile(e.target.file);
-      await api.post("/dokumen", {
-        ...form,
-        ukuran: formatBytes(hasil.size),
-        url: hasil.url,
-      });
-      e.target.reset();
-      setForm({ judul: "", kategori: "", tipe: "PDF", tanggal: "", icon: "📄", publik: true });
-      await onUbah();
+      if (modul === "dokumen" && (berkas || !edit)) {
+        if (!berkas) throw new Error("Pilih berkas yang akan diunggah.");
+        const h = await unggahFile(berkas);
+        data.url = h.url;
+        data.ukuran = formatBytes(h.size ?? berkas.size);
+      }
+      await jalankan(() => (edit ? api.put(`/${modul}/${item.id}`, data) : api.post(`/${modul}`, data)));
+      onSelesai(edit ? "Perubahan disimpan." : `${def.judul} ditambahkan.`);
     } catch (err) {
       setGalat(err.message);
     } finally {
@@ -513,454 +313,437 @@ function DokumenDanFile({ baris, onUbah }) {
   };
 
   return (
-    <>
-      <Kartu style={{ marginBottom: 24 }}>
-        <h3 style={{ fontSize: 15.5, fontWeight: 700, color: C.navy, marginTop: 0 }}>Unggah Dokumen Baru</h3>
-        <p style={{ fontSize: 12.5, color: C.textLight, marginTop: -6 }}>
-          File dikirim langsung ke Google Drive lewat Apps Script; Express hanya menyimpan metadata-nya.
-        </p>
-
-        <form onSubmit={unggah} style={{ display: "grid", gap: 14 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-            <Kolom label="Judul" wajib><input style={inputStyle} value={form.judul} onChange={(e) => setForm({ ...form, judul: e.target.value })} required /></Kolom>
-            <Kolom label="Kategori"><input style={inputStyle} value={form.kategori} onChange={(e) => setForm({ ...form, kategori: e.target.value })} /></Kolom>
-            <Kolom label="Tipe"><input style={inputStyle} value={form.tipe} onChange={(e) => setForm({ ...form, tipe: e.target.value })} /></Kolom>
-            <Kolom label="Tanggal"><input style={inputStyle} type="date" value={form.tanggal} onChange={(e) => setForm({ ...form, tanggal: e.target.value })} /></Kolom>
-            <Kolom label="Emoji"><input style={inputStyle} value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} /></Kolom>
-            <Kolom label="Tampilkan di situs publik">
-              <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13.5, color: C.textMid, cursor: "pointer", paddingTop: 8 }}>
-                <input type="checkbox" checked={form.publik} onChange={(e) => setForm({ ...form, publik: e.target.checked })} /> Ya
-              </label>
-            </Kolom>
-          </div>
-
-          <div>
-            <label style={labelStyle}>Berkas <span style={{ color: C.bahaya }}>*</span></label>
-            <input type="file" required style={{ ...inputStyle, padding: 9 }} />
-            <div style={{ fontSize: 11.5, color: C.textLight, marginTop: 5 }}>Maksimal {formatBytes(MAKS_UPLOAD)}.</div>
-          </div>
-
-          {galat && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", color: C.bahaya, padding: "10px 12px", borderRadius: 8, fontSize: 12.5 }}>⚠️ {galat}</div>}
-
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <Tombol type="submit" tone="gold" disabled={sibuk}>{sibuk ? "Mengunggah..." : "Unggah"}</Tombol>
-          </div>
-        </form>
-      </Kartu>
-
-      <Kartu style={{ padding: 0, overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
-          <thead>
-            <tr style={{ background: C.offWhite, textAlign: "left" }}>
-              {["Judul", "Kategori", "Tipe", "Ukuran", "Publik", "Berkas"].map((c) => (
-                <th key={c} style={{ padding: "12px 16px", fontSize: 11.5, fontWeight: 800, color: C.textMid, textTransform: "uppercase" }}>{c}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {baris.map((d) => (
-              <tr key={d.id} style={{ borderTop: `1px solid ${C.warmGray}` }}>
-                <td style={{ padding: "12px 16px", color: C.textMid }}>{d.icon} {d.judul}</td>
-                <td style={{ padding: "12px 16px", color: C.textMid }}>{d.kategori || "—"}</td>
-                <td style={{ padding: "12px 16px", color: C.textMid }}>{d.tipe || "—"}</td>
-                <td style={{ padding: "12px 16px", color: C.textMid }}>{d.ukuran || "—"}</td>
-                <td style={{ padding: "12px 16px", color: d.publik ? C.sukses : C.textLight }}>{d.publik ? "Ya" : "Tidak"}</td>
-                <td style={{ padding: "12px 16px" }}>
-                  {d.url ? (
-                    <a href={tautanLangsung(d.url)} target="_blank" rel="noreferrer" style={{ color: C.navy, fontWeight: 700, fontSize: 12.5 }}>Buka</a>
-                  ) : <span style={{ color: C.textLight }}>—</span>}
-                </td>
-              </tr>
+    <Laci judul={`${edit ? "Edit" : "Tambah"} ${def.judul.toLowerCase()}`} onTutup={onTutup}
+      kaki={<footer>
+        <Tombol variasi="sunyi" onClick={onTutup}>Batal</Tombol>
+        <button type="submit" form="form-item" className="tbl emas" disabled={sibuk || !nilai}>{sibuk ? "Menyimpan…" : "Simpan"}</button>
+      </footer>}>
+      <form id="form-item" className="badan" onSubmit={kirim}>
+        {galat && <div className="galat" role="alert">{galat}</div>}
+        {!nilai ? (galat ? null : <Rangka baris={6} />) : (
+          <>
+            {modul === "dokumen" && (
+              <Blok label={edit ? "Ganti berkas" : "Berkas"} wajib={!edit}
+                petunjuk={edit
+                  ? `Kosongkan jika berkas tidak diganti. Berkas lama di Google Drive dihapus setelah disimpan.${urlLama ? "" : " Dokumen ini belum punya berkas."}`
+                  : `Maksimal ${formatBytes(MAKS_UPLOAD)}. Tipe dan ukuran terisi otomatis.`}>
+                <input type="file" required={!edit} onChange={pilihBerkas} />
+                {edit && urlLama && !berkas && <p style={{ marginTop: 6 }}><a href={tautanLangsung(urlLama)} target="_blank" rel="noreferrer">Buka berkas saat ini <ExternalLink size={12} /></a></p>}
+              </Blok>
+            )}
+            {def.kolom.map((k) => k.gambar ? (
+              <FieldGambar key={k.name} label={k.label} wajib={k.wajib} value={nilai[k.name]} onChange={(v) => ubah(k.name, v)} />
+            ) : (
+              <Kolom key={k.name} label={k.tipe === "checkbox" ? "" : k.label} wajib={k.wajib} petunjuk={k.petunjuk}>
+                {k.tipe === "textarea" ? (
+                  <textarea value={nilai[k.name]} onChange={(e) => ubah(k.name, e.target.value)} rows={8} />
+                ) : k.tipe === "checkbox" ? (
+                  <span className="centang"><input type="checkbox" checked={Boolean(nilai[k.name])} onChange={(e) => ubah(k.name, e.target.checked)} /> {k.label}</span>
+                ) : (
+                  <input type={k.tipe || "text"} value={nilai[k.name]} onChange={(e) => ubah(k.name, e.target.value)} required={k.wajib} />
+                )}
+              </Kolom>
             ))}
-          </tbody>
-        </table>
-        {baris.length === 0 && <div style={{ padding: 30, textAlign: "center", color: C.textLight, fontSize: 13.5 }}>Belum ada dokumen.</div>}
-      </Kartu>
-    </>
+          </>
+        )}
+      </form>
+    </Laci>
   );
 }
 
-// ── Inovasi: review ─────────────────────────────────────────────────────────
+function DetailInovasi({ id, onTutup }) {
+  const [d, setD] = useState(null);
+  const [galat, setGalat] = useState(null);
+  useEffect(() => {
+    jalankan(() => api.get(`/inovasi/${id}`)).then(setD).catch((e) => setGalat(e.message));
+  }, [id]);
+  const baris = d && [
+    ["OPD", d.opd_nama], ["Inovator", d.nama_inovator], ["Jenis", d.jenis_inovasi], ["Tahapan", d.tahapan_inovasi],
+    ["Regulasi", d.regulasi_inovasi], ["Anggaran", d.anggaran_inovasi], ["Uji coba", tgl(d.waktu_uji_coba)],
+    ["Penerapan", tgl(d.waktu_penerapan)], ["Skor IGA", `${d.skor_iga} (${d.kategori_skor})`],
+  ];
+  return (
+    <Laci judul={d?.judul_inovasi || "Detail usulan"} onTutup={onTutup}>
+      <div className="badan">
+        {galat && <div className="galat">{galat}</div>}
+        {!d && !galat && <Rangka baris={7} />}
+        {d && (
+          <>
+            <dl className="rinci">{baris.map(([k, v]) => <Fragment key={k}><dt>{k}</dt><dd>{v || "—"}</dd></Fragment>)}</dl>
+            <Blok label="Rancang bangun"><p style={{ whiteSpace: "pre-wrap", maxWidth: "65ch" }}>{d.rancang_bangun || "—"}</p></Blok>
+            {d.link_video && <p><a href={d.link_video} target="_blank" rel="noreferrer">Buka video <ExternalLink size={12} /></a></p>}
+            {Array.isArray(d.dokumen_dukung) && d.dokumen_dukung.length > 0 && (
+              <Blok label="Dokumen pendukung">
+                {d.dokumen_dukung.map((x, i) => <div key={i}><a href={tautanLangsung(x.url)} target="_blank" rel="noreferrer">{x.name || `Dokumen ${i + 1}`}</a></div>)}
+              </Blok>
+            )}
+          </>
+        )}
+      </div>
+    </Laci>
+  );
+}
 
-function InovasiReview({ baris, onUbah }) {
+// ── Modul daftar (berita, dokumen, slider, program, metrik, inovasi) ────────
+
+function Modul({ modul, notif, segarkan, tambahAwal }) {
+  const [judul, ket] = JUDUL_MODUL[modul];
+  const def = FORMULIR[modul];
+  const [cari, setCari] = useState("");
+  const [halaman, setHalaman] = useState(0);
+  const [form, setForm] = useState(tambahAwal && def ? {} : null);
   const [lihat, setLihat] = useState(null);
+  const [hapus, setHapus] = useState(null);
+  const { rows, total, memuat, galat, muatUlang } = useDaftar(modul, { q: cari.trim(), halaman, ukuran: UKURAN });
+  const kolom = TABEL[modul];
+  const nama = (b) => b.judul || b.title || b.label || b.judul_inovasi || `#${b.id}`;
+  const akhir = Math.min((halaman + 1) * UKURAN, total);
 
-  const setujui = async (id) => {
-    try {
-      await api.put(`/inovasi/${id}/setujui`);
-      await onUbah();
-    } catch (err) {
-      alert(err.message);
-    }
+  const sesudahUbah = (teks) => { setForm(null); notif(teks); muatUlang(); segarkan(); };
+
+  const setujui = async (b) => {
+    try { await jalankan(() => api.put(`/inovasi/${b.id}/setujui`)); notif("Usulan disetujui dan tampil di situs."); muatUlang(); segarkan(); }
+    catch (e) { notif(e.message, false); }
   };
 
   return (
     <>
-      <h2 style={{ fontSize: 19, fontWeight: 700, color: C.navy, marginTop: 0 }}>Review Usulan Inovasi</h2>
-      <p style={{ fontSize: 12.5, color: C.textLight, marginTop: -8 }}>
-        Skor IGA dihitung server. Yang belum disetujui tidak muncul di situs publik.
-      </p>
-
-      <div style={{ display: "grid", gap: 14 }}>
-        {baris.map((inv) => (
-          <Kartu key={inv.id}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
-              <div style={{ flex: 1, minWidth: 260 }}>
-                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 6 }}>
-                  <span style={{
-                    fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 20,
-                    background: inv.status_approval === "Approved" ? "#d1fae5" : "#fef3c7",
-                    color: inv.status_approval === "Approved" ? C.sukses : "#b45309",
-                  }}>
-                    {inv.status_approval === "Approved" ? "Disetujui" : "Menunggu"}
-                  </span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: C.gold }}>{inv.kategori_skor} · Skor {inv.skor_iga}</span>
-                </div>
-                <h3 style={{ fontSize: 15.5, fontWeight: 700, color: C.navy, margin: "0 0 4px" }}>{inv.judul_inovasi}</h3>
-                <div style={{ fontSize: 12.5, color: C.textLight }}>
-                  {inv.opd_nama || "OPD tidak diisi"} · {inv.nama_inovator || "inovator tidak diisi"} · {inv.jenis_inovasi || "-"}
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <Tombol kecil tone="sunyi" onClick={() => setLihat(inv)}>Detail</Tombol>
-                {inv.status_approval !== "Approved" && (
-                  <Tombol kecil tone="gold" onClick={() => setujui(inv.id)}>Setujui</Tombol>
-                )}
-                <Tombol kecil tone="bahaya" onClick={async () => {
-                  if (!confirm(`Hapus usulan "${inv.judul_inovasi}"?`)) return;
-                  try {
-                    await api.del(`/inovasi/${inv.id}`);
-                    await onUbah();
-                  } catch (err) {
-                    alert(err.message);
-                  }
-                }}>Hapus</Tombol>
-              </div>
-            </div>
-          </Kartu>
-        ))}
-        {baris.length === 0 && <div style={{ padding: 30, textAlign: "center", color: C.textLight }}>Belum ada usulan inovasi.</div>}
+      <div className="kepala">
+        <div><h1>{judul}</h1><p>{ket}</p></div>
+        {def && <Tombol variasi="emas" onClick={() => setForm({})}><Plus size={16} /> Tambah {judul.toLowerCase()}</Tombol>}
       </div>
 
-      {lihat && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(6,21,41,0.6)", zIndex: 100, display: "grid", placeItems: "center", padding: 20, overflowY: "auto" }} onClick={() => setLihat(null)}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: C.white, borderRadius: 14, padding: 26, maxWidth: 620, maxHeight: "88vh", overflowY: "auto", margin: "auto" }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: C.navy, marginTop: 0 }}>{lihat.judul_inovasi}</h3>
-            {[
-              ["OPD", lihat.opd_nama], ["Innovator", lihat.nama_inovator], ["Jenis", lihat.jenis_inovasi],
-              ["Tahapan", lihat.tahapan_inovasi], ["Regulasi", lihat.regulasi_inovasi], ["Anggaran", lihat.anggaran_inovasi],
-              ["Waktu uji coba", lihat.waktu_uji_coba], ["Waktu penerapan", lihat.waktu_penerapan],
-              ["Skor IGA", `${lihat.kategori_skor} (${lihat.skor_iga})`],
-            ].map(([k, v]) => (
-              <div key={k} style={{ display: "flex", gap: 12, padding: "7px 0", borderBottom: `1px solid ${C.warmGray}`, fontSize: 13 }}>
-                <span style={{ width: 140, color: C.textLight, flexShrink: 0 }}>{k}</span>
-                <span style={{ color: C.textMid }}>{v || "—"}</span>
-              </div>
-            ))}
-            <div style={{ marginTop: 16 }}>
-              <div style={{ ...labelStyle }}>Rancang Bangun</div>
-              <p style={{ fontSize: 13.5, color: C.textMid, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{lihat.rancang_bangun || "—"}</p>
-            </div>
-            {lihat.link_video && (
-              <a href={lihat.link_video} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, color: C.navy, fontWeight: 700 }}>Buka video</a>
-            )}
-            {Array.isArray(lihat.dokumen_dukung) && lihat.dokumen_dukung.length > 0 && (
-              <div style={{ marginTop: 14 }}>
-                <div style={{ ...labelStyle }}>Dokumen pendukung</div>
-                {lihat.dokumen_dukung.map((d, i) => (
-                  <a key={i} href={tautanLangsung(d.url)} target="_blank" rel="noreferrer" style={{ display: "block", fontSize: 12.5, color: C.navy }}>
-                    {d.name || `Dokumen ${i + 1}`}
-                  </a>
+      <div className="panel">
+        <div className="alat">
+          <div className="cari">
+            <Search size={15} aria-hidden="true" />
+            <input type="search" placeholder={`Cari ${judul.toLowerCase()}`} aria-label={`Cari ${judul.toLowerCase()}`}
+              value={cari} onChange={(e) => { setCari(e.target.value); setHalaman(0); }} />
+          </div>
+          {memuat && rows && <span className="redup" aria-live="polite">Memperbarui…</span>}
+        </div>
+
+        {galat && <div className="galat" style={{ margin: 14 }}>{galat} <Tombol kecil variasi="sunyi" onClick={muatUlang}>Coba lagi</Tombol></div>}
+        {!rows && !galat ? <Rangka /> : rows && (rows.length === 0 ? (
+          <div className="kosong"><b>{cari ? "Tidak ada hasil" : `Belum ada ${judul.toLowerCase()}`}</b>{cari ? "Coba kata kunci lain." : def ? "Pilih Tambah untuk membuat yang pertama." : "Usulan dari OPD akan muncul di sini."}</div>
+        ) : (
+          <div className="bungkus">
+            <table>
+              <thead><tr>{kolom.map(([h]) => <th key={h}>{h}</th>)}<th><span className="sr" style={{ position: "absolute", left: -9999 }}>Aksi</span></th></tr></thead>
+              <tbody>
+                {rows.map((b) => (
+                  <tr key={b.id}>
+                    {kolom.map(([h, c]) => <td key={h}>{c(b)}</td>)}
+                    <td className="aksi">
+                      {modul === "inovasi" ? (
+                        <>
+                          <Tombol kecil variasi="sunyi" onClick={() => setLihat(b.id)}>Detail</Tombol>
+                          {b.status_approval !== "Approved" && <Tombol kecil variasi="emas" onClick={() => setujui(b)}><Check size={14} /> Setujui</Tombol>}
+                        </>
+                      ) : (
+                        <Tombol kecil variasi="sunyi ikon" aria-label={`Edit ${nama(b)}`} onClick={() => setForm(b)}><Pencil size={14} /></Tombol>
+                      )}
+                      <Tombol kecil variasi="sunyi ikon" aria-label={`Hapus ${nama(b)}`} onClick={() => setHapus(b)}><Trash2 size={14} /></Tombol>
+                    </td>
+                  </tr>
                 ))}
-              </div>
-            )}
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20 }}>
-              <Tombol tone="sunyi" onClick={() => setLihat(null)}>Tutup</Tombol>
+              </tbody>
+            </table>
+          </div>
+        ))}
+
+        {total > UKURAN && (
+          <div className="halaman">
+            <span className="num">{halaman * UKURAN + 1}–{akhir} dari {total}</span>
+            <div>
+              <Tombol kecil variasi="sunyi" disabled={halaman === 0} onClick={() => setHalaman((h) => h - 1)}><ChevronLeft size={14} /> Sebelumnya</Tombol>
+              <Tombol kecil variasi="sunyi" disabled={akhir >= total} onClick={() => setHalaman((h) => h + 1)}>Berikutnya <ChevronRight size={14} /></Tombol>
             </div>
           </div>
-        </div>
+        )}
+      </div>
+
+      {form && <FormItem modul={modul} item={form} onTutup={() => setForm(null)} onSelesai={sesudahUbah} />}
+      {lihat && <DetailInovasi id={lihat} onTutup={() => setLihat(null)} />}
+      {hapus && (
+        <Konfirmasi judul={`Hapus ${judul.toLowerCase()}?`} onBatal={() => setHapus(null)}
+          isi={<><strong>{nama(hapus)}</strong> akan dihapus permanen.{["dokumen", "berita", "slider"].includes(modul) && " Berkas di Google Drive ikut dihapus."}</>}
+          onYa={async () => {
+            try { await jalankan(() => api.del(`/${modul}/${hapus.id}`)); notif("Dihapus."); setHapus(null); muatUlang(); segarkan(); }
+            catch (e) { notif(e.message, false); setHapus(null); }
+          }} />
       )}
     </>
   );
 }
 
-// ── Pesan kontak ────────────────────────────────────────────────────────────
+// ── Pesan masuk ─────────────────────────────────────────────────────────────
 
-function PesanMasuk({ baris, onUbah }) {
-  const tandaiDibaca = async (id, dibaca) => {
+function Pesan({ notif, segarkan }) {
+  const [rows, setRows] = useState(null);
+  const [total, setTotal] = useState(0);
+  const [belum, setBelum] = useState(false);
+  const [galat, setGalat] = useState(null);
+  const [lagi, setLagi] = useState(false);
+  const [hapus, setHapus] = useState(null);
+  const UKURAN_PESAN = 20;
+
+  const ambil = useCallback(async (offset) => {
+    const p = new URLSearchParams({ limit: UKURAN_PESAN, offset });
+    if (belum) p.set("belum", "1");
+    return jalankan(() => api.get(`/pesan?${p}`));
+  }, [belum]);
+
+  useEffect(() => {
+    let batal = false;
+    setRows(null); setGalat(null);
+    ambil(0).then((h) => { if (!batal) { setRows(h.rows); setTotal(h.total); } })
+      .catch((e) => { if (!batal) setGalat(e.message); });
+    return () => { batal = true; };
+  }, [ambil]);
+
+  const muatLagi = async () => {
+    setLagi(true);
     try {
-      await api.put(`/pesan/${id}`, { dibaca });
-      await onUbah();
-    } catch (err) {
-      alert(err.message);
-    }
+      const h = await ambil(rows.length);
+      // Gabung tanpa duplikat: pesan baru yang masuk menggeser offset.
+      setRows((r) => [...r, ...h.rows.filter((x) => !r.some((y) => y.id === x.id))]);
+      setTotal(h.total);
+    } catch (e) { notif(e.message, false); }
+    finally { setLagi(false); }
+  };
+
+  // Perubahan status dibaca langsung di layar; tidak perlu memuat ulang daftar.
+  const tandai = async (p) => {
+    const dibaca = !p.dibaca;
+    setRows((r) => r.map((x) => (x.id === p.id ? { ...x, dibaca } : x)));
+    try { await jalankan(() => api.put(`/pesan/${p.id}`, { dibaca })); segarkan(); }
+    catch (e) { setRows((r) => r.map((x) => (x.id === p.id ? { ...x, dibaca: p.dibaca } : x))); notif(e.message, false); }
   };
 
   return (
     <>
-      <h2 style={{ fontSize: 19, fontWeight: 700, color: C.navy, marginTop: 0 }}>Pesan Masuk</h2>
-      <div style={{ display: "grid", gap: 12 }}>
-        {baris.map((p) => (
-          <Kartu key={p.id} style={{ background: p.dibaca ? C.white : "#fffbeb" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <div style={{ flex: 1, minWidth: 240 }}>
-                <div style={{ fontWeight: 700, color: C.navy, fontSize: 14 }}>
-                  {p.subjek || "(tanpa subjek)"}{!p.dibaca && <span style={{ ...{ fontSize: 11, color: C.bahaya, marginLeft: 8, fontWeight: 800 } }}>BARU</span>}
-                </div>
-                <div style={{ fontSize: 12.5, color: C.textLight, margin: "4px 0 10px" }}>
-                  {p.nama} · {p.email} · {new Date(p.created_at).toLocaleString("id-ID")}
-                </div>
-                <p style={{ fontSize: 13.5, color: C.textMid, lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>{p.pesan}</p>
-              </div>
-              <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                <Tombol kecil tone="sunyi" onClick={() => tandaiDibaca(p.id, !p.dibaca)}>{p.dibaca ? "Tandai belum" : "Tandai dibaca"}</Tombol>
-                <Tombol kecil tone="bahaya" onClick={async () => {
-                  if (!confirm("Hapus pesan ini?")) return;
-                  try {
-                    await api.del(`/pesan/${p.id}`);
-                    await onUbah();
-                  } catch (err) {
-                    alert(err.message);
-                  }
-                }}>Hapus</Tombol>
-              </div>
+      <div className="kepala"><div><h1>Pesan masuk</h1><p>Pesan dari formulir kontak di situs.</p></div></div>
+      <div className="panel">
+        <div className="alat">
+          <span className="centang">
+            <input id="f-belum" type="checkbox" checked={belum} onChange={(e) => setBelum(e.target.checked)} />
+            <label htmlFor="f-belum">Hanya yang belum dibaca</label>
+          </span>
+          {rows && <span className="redup num">{total} pesan</span>}
+        </div>
+        {galat && <div className="galat" style={{ margin: 14 }}>{galat}</div>}
+        {!rows && !galat && <Rangka />}
+        {rows?.length === 0 && <div className="kosong"><b>{belum ? "Semua pesan sudah dibaca" : "Belum ada pesan"}</b>{belum ? "Matikan filter untuk melihat semua pesan." : "Pesan dari pengunjung akan muncul di sini."}</div>}
+        {rows?.map((p) => (
+          <div key={p.id} className={`pesan ${p.dibaca ? "" : "baru"}`}>
+            <div>
+              <h3>{p.subjek || "(tanpa subjek)"} {!p.dibaca && <span className="lencana-s tunggu">Baru</span>}</h3>
+              <div className="meta">{p.nama} · <a href={`mailto:${p.email}`}>{p.email}</a> · {new Date(p.created_at).toLocaleString("id-ID")}</div>
+              <p>{p.pesan}</p>
             </div>
-          </Kartu>
+            <div style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
+              <Tombol kecil variasi="sunyi" onClick={() => tandai(p)}>{p.dibaca ? "Tandai belum dibaca" : "Tandai dibaca"}</Tombol>
+              <Tombol kecil variasi="sunyi ikon" aria-label="Hapus pesan" onClick={() => setHapus(p)}><Trash2 size={14} /></Tombol>
+            </div>
+          </div>
         ))}
-        {baris.length === 0 && <div style={{ padding: 30, textAlign: "center", color: C.textLight }}>Belum ada pesan.</div>}
+        {rows && rows.length < total && (
+          <div className="halaman">
+            <span className="num">Menampilkan {rows.length} dari {total}</span>
+            <Tombol kecil variasi="sunyi" disabled={lagi} onClick={muatLagi}>{lagi ? "Memuat…" : "Muat lebih banyak"}</Tombol>
+          </div>
+        )}
       </div>
+      {hapus && (
+        <Konfirmasi judul="Hapus pesan?" isi={`Pesan dari ${hapus.nama || "pengirim"} akan dihapus permanen.`} onBatal={() => setHapus(null)}
+          onYa={async () => {
+            try { await jalankan(() => api.del(`/pesan/${hapus.id}`)); setRows((r) => r.filter((x) => x.id !== hapus.id)); setTotal((t) => t - 1); notif("Pesan dihapus."); segarkan(); }
+            catch (e) { notif(e.message, false); }
+            setHapus(null);
+          }} />
+      )}
+    </>
+  );
+}
+
+// ── Ringkasan ───────────────────────────────────────────────────────────────
+
+function Ringkasan({ data, buka, nama }) {
+  const perlu = [
+    ["inovasi", data?.inovasi_pending, "usulan inovasi menunggu persetujuan", "Tinjau"],
+    ["pesan", data?.pesan_baru, "pesan belum dibaca", "Baca"],
+  ];
+  const isi = [["berita", "Berita", data?.berita], ["dokumen", "Dokumen", data?.dokumen, `${data?.dokumen_publik ?? 0} tampil di situs`], ["slider", "Slider", data?.slider], ["program", "Program", data?.program]];
+  return (
+    <>
+      <div className="kepala"><div><h1>Ringkasan</h1><p>Yang perlu Anda tindak lanjuti ada di bagian atas.</p></div></div>
+      {!data ? <div className="panel"><Rangka baris={3} /></div> : (
+        <>
+          <div className="perlu">
+            {perlu.map(([id, n, teks, aksi]) => (
+              <div key={id} className={`panel ${n > 0 ? "" : "nol"}`}>
+                <strong>{n ?? 0}</strong><span>{teks}</span>
+                {n > 0 && <Tombol variasi="emas" kecil onClick={() => buka(id)}>{aksi}</Tombol>}
+              </div>
+            ))}
+          </div>
+          <div className="panel daftar-ringkas">
+            {isi.map(([id, label, n, ket]) => (
+              <button key={id} onClick={() => buka(id)}><b>{n ?? 0}</b>{label}{ket && <small>{ket}</small>}</button>
+            ))}
+          </div>
+          <div className="panel pintasan">
+            <h2>Pintasan</h2>
+            <Tombol variasi="emas" onClick={() => buka("berita", true)}><Plus size={16} /> Tulis berita</Tombol>
+            <Tombol variasi="sunyi" onClick={() => buka("dokumen", true)}><Plus size={16} /> Unggah dokumen</Tombol>
+            <Tombol variasi="sunyi" onClick={() => buka("slider", true)}><Plus size={16} /> Tambah slide</Tombol>
+          </div>
+        </>
+      )}
     </>
   );
 }
 
 // ── Keamanan ────────────────────────────────────────────────────────────────
 
-function Keamanan({ username }) {
-  const [pinLama, setPinLama] = useState("");
-  const [pinBaru, setPinBaru] = useState("");
-  const [ulangi, setUlangi] = useState("");
+function Keamanan({ username, notif }) {
+  const [f, setF] = useState({ lama: "", baru: "", ulang: "" });
   const [sibuk, setSibuk] = useState(false);
-  const [pesan, setPesan] = useState(null);
+  const [galat, setGalat] = useState(null);
+  const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
 
   const kirim = async (e) => {
     e.preventDefault();
-    if (pinBaru !== ulangi) {
-      setPesan({ ok: false, teks: "PIN baru tidak sama dengan konfirmasi." });
-      return;
-    }
-    setSibuk(true);
-    setPesan(null);
-    try {
-      await gantiPin(pinLama, pinBaru);
-      setPesan({ ok: true, teks: "PIN berhasil diganti." });
-      setPinLama(""); setPinBaru(""); setUlangi("");
-    } catch (err) {
-      setPesan({ ok: false, teks: err.message });
-    } finally {
-      setSibuk(false);
-    }
+    if (f.baru !== f.ulang) return setGalat("PIN baru tidak sama dengan konfirmasi.");
+    setSibuk(true); setGalat(null);
+    try { await jalankan(() => gantiPin(f.lama, f.baru)); notif("PIN berhasil diganti."); setF({ lama: "", baru: "", ulang: "" }); }
+    catch (err) { setGalat(err.message); }
+    finally { setSibuk(false); }
   };
 
   return (
-    <div style={{ maxWidth: 460 }}>
-      <h2 style={{ fontSize: 19, fontWeight: 700, color: C.navy, marginTop: 0 }}>Keamanan Akun</h2>
-      <Kartu>
-        <p style={{ fontSize: 13, color: C.textLight, marginTop: 0 }}>
-          Akun <strong>{username}</strong>. Ganti PIN bila orang lain pernah mengetahui PIN Anda.
-        </p>
-        <form onSubmit={kirim}>
-          <Kolom label="PIN Lama" wajib><input style={inputStyle} type="password" inputMode="numeric" value={pinLama} onChange={(e) => setPinLama(e.target.value)} required /></Kolom>
-          <Kolom label="PIN Baru" wajib hint="Minimal 6 karakter."><input style={inputStyle} type="password" inputMode="numeric" minLength={6} value={pinBaru} onChange={(e) => setPinBaru(e.target.value)} required /></Kolom>
-          <Kolom label="Ulangi PIN Baru" wajib><input style={inputStyle} type="password" inputMode="numeric" minLength={6} value={ulangi} onChange={(e) => setUlangi(e.target.value)} required /></Kolom>
-          {pesan && (
-            <div style={{
-              background: pesan.ok ? "#ecfdf5" : "#fef2f2",
-              border: `1px solid ${pesan.ok ? "#a7f3d0" : "#fecaca"}`,
-              color: pesan.ok ? C.sukses : C.bahaya,
-              padding: "10px 12px", borderRadius: 8, fontSize: 12.5, marginBottom: 14,
-            }}>{pesan.teks}</div>
-          )}
-          <Tombol type="submit" tone="gold" disabled={sibuk}>{sibuk ? "Menyimpan..." : "Ganti PIN"}</Tombol>
-        </form>
-      </Kartu>
+    <>
+      <div className="kepala"><div><h1>Keamanan akun</h1><p>Masuk sebagai {username}. Ganti PIN bila orang lain pernah mengetahuinya.</p></div></div>
+      <form className="panel" style={{ padding: 22, maxWidth: 440 }} onSubmit={kirim}>
+        {galat && <div className="galat" role="alert">{galat}</div>}
+        <Kolom label="PIN lama" wajib><input type="password" inputMode="numeric" autoComplete="current-password" value={f.lama} onChange={set("lama")} required /></Kolom>
+        <Kolom label="PIN baru" wajib petunjuk="Minimal 6 karakter."><input type="password" inputMode="numeric" autoComplete="new-password" minLength={6} value={f.baru} onChange={set("baru")} required /></Kolom>
+        <Kolom label="Ulangi PIN baru" wajib><input type="password" inputMode="numeric" autoComplete="new-password" minLength={6} value={f.ulang} onChange={set("ulang")} required /></Kolom>
+        <button type="submit" className="tbl emas" disabled={sibuk}>{sibuk ? "Menyimpan…" : "Ganti PIN"}</button>
+      </form>
+    </>
+  );
+}
+
+// ── Login ───────────────────────────────────────────────────────────────────
+
+function HalamanLogin({ onMasuk }) {
+  const [u, setU] = useState("");
+  const [pin, setPin] = useState("");
+  const [galat, setGalat] = useState(null);
+  const [sibuk, setSibuk] = useState(false);
+
+  const kirim = async (e) => {
+    e.preventDefault();
+    setSibuk(true); setGalat(null);
+    try { const h = await login(u, pin); setPin(""); onMasuk(h.user); }
+    catch (err) { setGalat(err.message); }
+    finally { setSibuk(false); }
+  };
+
+  return (
+    <div className="masuk">
+      <form onSubmit={kirim}>
+        <div className="logo-login"><Logo ukuran={54} /></div>
+        <h1>Panel admin BAPPERIDA</h1>
+        <p className="sub">Kabupaten Sumba Barat</p>
+        {galat && <div className="galat" role="alert">{galat}</div>}
+        <Kolom label="Username" wajib><input value={u} onChange={(e) => setU(e.target.value)} autoComplete="username" autoFocus required /></Kolom>
+        <Kolom label="PIN" wajib><input type="password" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value)} autoComplete="current-password" required /></Kolom>
+        <button type="submit" className="tbl emas" style={{ width: "100%" }} disabled={sibuk}>{sibuk ? "Memeriksa…" : "Masuk"}</button>
+        <p style={{ textAlign: "center", marginTop: 16 }}><a href="/" className="redup">Kembali ke situs</a></p>
+      </form>
     </div>
   );
 }
 
-// ── Panel ───────────────────────────────────────────────────────────────────
+// ── Shell ───────────────────────────────────────────────────────────────────
 
-const TAB = [
-  { id: "ringkasan", label: "Ringkasan" },
-  { id: "berita", label: "Berita" },
-  { id: "dokumen", label: "Dokumen" },
-  { id: "slider", label: "Slider" },
-  { id: "program", label: "Program" },
-  { id: "metrics", label: "Metrik" },
-  { id: "inovasi", label: "Inovasi" },
-  { id: "pesan", label: "Pesan" },
-  { id: "keamanan", label: "Keamanan" },
+const MENU = [
+  ["Ringkasan", [["ringkasan", "Ringkasan", LayoutDashboard]]],
+  ["Konten situs", [["berita", "Berita", Newspaper], ["dokumen", "Dokumen", FileText], ["slider", "Slider", Images], ["program", "Program", ListChecks], ["metrics", "Metrik", Gauge]]],
+  ["Masuk dari pengunjung", [["inovasi", "Inovasi", Lightbulb, "inovasi_pending"], ["pesan", "Pesan", Mail, "pesan_baru"]]],
+  ["Akun", [["keamanan", "Keamanan", ShieldCheck]]],
 ];
+const ID_TAB = MENU.flatMap(([, m]) => m.map((x) => x[0]));
+const tabDariHash = () => { const h = window.location.hash.slice(1); return ID_TAB.includes(h) ? h : "ringkasan"; };
 
 export default function Admin() {
   const [status, setStatus] = useState("memuat");
   const [pengguna, setPengguna] = useState(null);
-  const [tab, setTab] = useState(() => {
-    const dariHash = window.location.hash.replace("#", "");
-    return TAB.some((t) => t.id === dariHash) ? dariHash : "ringkasan";
-  });
-  const [data, setData] = useState({});
-  const [jumlah, setJumlah] = useState(null);
-  const [galat, setGalat] = useState(null);
+  const [tab, setTab] = useState(tabDariHash);
+  const [ringkas, setRingkas] = useState(null);
+  const [toast, setToast] = useState(null);
 
-  // Tab disimpan di hash supaya bisa di-bookmark dan tombol "kembali" tidak
-  // memuat ulang seluruh panel.
+  const [langsungTambah, setLangsungTambah] = useState(false);
+  const buka = useCallback((id, tambah = false) => { setLangsungTambah(tambah); window.location.hash = id; setTab(id); }, []);
+  const notif = useCallback((teks, ok = true) => {
+    setToast({ teks, ok });
+    clearTimeout(notif.t);
+    notif.t = setTimeout(() => setToast(null), 3500);
+  }, []);
+  const muatRingkasan = useCallback(() => { jalankan(ringkasan).then(setRingkas).catch(() => {}); }, []);
+
   useEffect(() => {
-    const onHash = () => {
-      const id = window.location.hash.replace("#", "");
-      if (TAB.some((t) => t.id === id)) setTab(id);
-    };
+    document.title = "Panel admin · BAPPERIDA Sumba Barat";
+    const onHash = () => { setTab(tabDariHash()); };
+    const habis = () => { kosongkanCache(); setStatus("belum"); setPengguna(null); };
     window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    window.addEventListener("sesi-habis", habis);
+    sesi().then((h) => { if (h.user) { setPengguna(h.user); setStatus("masuk"); } else setStatus("belum"); }).catch(() => setStatus("belum"));
+    return () => { window.removeEventListener("hashchange", onHash); window.removeEventListener("sesi-habis", habis); };
   }, []);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const hasil = await sesi();
-        if (!hasil.user) { setStatus("belum"); return; }
-        setPengguna(hasil.user);
-        setStatus("masuk");
-      } catch {
-        setStatus("belum");
-      }
-    })();
-  }, []);
+  useEffect(() => { if (status === "masuk") muatRingkasan(); }, [status, muatRingkasan]);
 
-  const muat = useCallback(async (modul) => {
-    try {
-      const baris = await api.get(`/${modul}`);
-      setData((d) => ({ ...d, [modul]: baris }));
-      setGalat(null);
-    } catch (err) {
-      // Sesi bisa habis di tengah memakai panel. Kembalikan ke layar login
-      // seketika; tabel yang diam-diam kosong akan disalahartikan sebagai
-      // "data memang tidak ada".
-      if (err.status === 401) { setStatus("belum"); setPengguna(null); return; }
-      setGalat(err.message);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (status !== "masuk") return;
-    if (tab === "ringkasan") { ringkasan().then(setJumlah).catch((e) => setGalat(e.message)); return; }
-    if (tab === "keamanan") return;
-    muat(tab);
-  }, [tab, status, muat]);
-
-  if (status === "memuat") {
-    return <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", color: C.textLight, fontSize: 14 }}>Memeriksa sesi…</div>;
-  }
-
-  if (status === "belum") {
-    return <HalamanLogin onMasuk={(u) => { setPengguna(u); setStatus("masuk"); }} />;
-  }
-
-  const baris = (m) => data[m] || [];
-  const muatUlang = () => muat(tab === "keamanan" || tab === "ringkasan" ? "ringkasan" : tab);
+  if (status === "memuat") return <div className="adm"><div className="masuk" style={{ color: "#fff" }}>Memeriksa sesi…</div></div>;
+  if (status === "belum") return <div className="adm"><HalamanLogin onMasuk={(u) => { setPengguna(u); setStatus("masuk"); }} /></div>;
 
   return (
-    <div style={{ minHeight: "100vh", background: C.offWhite, fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif" }}>
-      <header style={{ background: C.navyDark, color: C.white, padding: "14px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-        <div>
-          <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.2em", color: C.gold }}>BAPPERIDA</span>
-          <span style={{ fontSize: 15, fontWeight: 700, marginLeft: 12 }}>Panel Admin</span>
-        </div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.65)" }}>{pengguna.nama}</span>
-          <a href="/" style={{ fontSize: 12.5, color: C.gold, fontWeight: 700, textDecoration: "none" }}>Lihat situs</a>
-          <Tombol kecil tone="bahaya" onClick={async () => {
-            try { await logout(); } finally { setStatus("belum"); setPengguna(null); }
-          }}>Keluar</Tombol>
-        </div>
-      </header>
-
-      <nav style={{ background: C.white, borderBottom: `1px solid ${C.warmGray}`, padding: "0 16px", overflowX: "auto" }}>
-        <div style={{ display: "flex", gap: 2, maxWidth: 1300, margin: "0 auto" }}>
-          {TAB.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => { window.location.hash = t.id; setTab(t.id); }}
-              style={{
-                background: "none", border: "none", borderBottom: `3px solid ${tab === t.id ? C.gold : "transparent"}`,
-                padding: "14px 16px", fontSize: 13, fontWeight: 700, fontFamily: "inherit", cursor: "pointer",
-                color: tab === t.id ? C.navy : C.textMid, whiteSpace: "nowrap",
-              }}
-            >
-              {t.label}
-              {t.id === "pesan" && jumlah?.pesan_baru > 0 && (
-                <span style={{ marginLeft: 6, background: C.bahaya, color: C.white, fontSize: 10.5, padding: "1px 7px", borderRadius: 10 }}>{jumlah.pesan_baru}</span>
-              )}
-            </button>
+    <div className="adm">
+      <aside className="sisi">
+        <div className="merek"><Logo /><div><b>BAPPERIDA</b><small>Sumba Barat</small></div></div>
+        <nav aria-label="Menu admin">
+          {MENU.map(([grup, item]) => (
+            <div key={grup}>
+              <div className="grup">{grup}</div>
+              {item.map(([id, label, Ikon, kunci]) => {
+                const n = kunci && ringkas?.[kunci];
+                return (
+                  <button key={id} className="nav" aria-current={tab === id ? "page" : undefined} onClick={() => buka(id)}>
+                    <Ikon size={17} aria-hidden="true" />{label}{n > 0 && <span className="lencana">{n}</span>}
+                  </button>
+                );
+              })}
+            </div>
           ))}
+        </nav>
+        <div className="pengguna">
+          <span>{pengguna.nama || pengguna.username}</span>
+          <a href="/" target="_blank" rel="noreferrer"><ExternalLink size={14} /> Lihat situs</a>
+          <button onClick={async () => { try { await logout(); } finally { kosongkanCache(); setStatus("belum"); setPengguna(null); } }}><LogOut size={14} /> Keluar</button>
         </div>
-      </nav>
+      </aside>
 
-      <main style={{ maxWidth: 1300, margin: "0 auto", padding: 28, paddingBottom: 70 }}>
-        {galat && (
-          <div style={{ background: "#fef2f2", border: "1px solid #fecaca", color: C.bahaya, padding: "12px 16px", borderRadius: 8, fontSize: 13, marginBottom: 20 }}>
-            ⚠️ {galat}
-          </div>
-        )}
-
-        {tab === "ringkasan" && (
-          <div>
-            <h2 style={{ fontSize: 19, fontWeight: 700, color: C.navy, marginTop: 0 }}>Ringkasan</h2>
-            {jumlah ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
-                {[
-                  ["Berita", jumlah.berita], ["Dokumen", jumlah.dokumen], ["Dokumen publik", jumlah.dokumen_publik],
-                  ["Slider", jumlah.slider], ["Program", jumlah.program],
-                  ["Inovasi menunggu", jumlah.inovasi_pending], ["Pesan baru", jumlah.pesan_baru],
-                ].map(([label, n]) => (
-                  <Kartu key={label}>
-                    <div style={{ fontSize: 11.5, fontWeight: 800, color: C.textLight, textTransform: "uppercase" }}>{label}</div>
-                    <div style={{ fontSize: 30, fontWeight: 700, color: C.navy, marginTop: 6 }}>{n ?? 0}</div>
-                  </Kartu>
-                ))}
-              </div>
-            ) : <div style={{ color: C.textLight, fontSize: 13.5 }}>Memuat ringkasan…</div>}
-          </div>
-        )}
-
-        {tab === "keamanan" && <Keamanan username={pengguna.username} />}
-
-        {tab === "pesan" && <PesanMasuk baris={baris("pesan")} onUbah={muatUlang} />}
-
-        {tab === "inovasi" && <InovasiReview baris={baris("inovasi")} onUbah={muatUlang} />}
-
-        {tab === "dokumen" && <DokumenDanFile baris={baris("dokumen")} onUbah={muatUlang} />}
-
-        {tab === "berita" && (
-          <TabelData modul="berita" baris={baris("berita")} onUbah={muatUlang}
-            kolomTampil={["judul", "kategori", "tanggal", "priority", "is_featured"]} />
-        )}
-
-        {tab === "slider" && (
-          <TabelData modul="slider" baris={baris("slider")} onUbah={muatUlang}
-            kolomTampil={["judul", "subjudul", "gambar_url"]} />
-        )}
-
-        {tab === "program" && (
-          <TabelData modul="program" baris={baris("program")} onUbah={muatUlang}
-            kolomTampil={["title", "cat", "status", "sc", "priority"]} />
-        )}
-
-        {tab === "metrics" && (
-          <TabelData modul="metrics" baris={baris("metrics")} onUbah={muatUlang}
-            kolomTampil={["label", "value", "icon", "priority"]} />
-        )}
+      <main className="isi">
+        {tab === "ringkasan" && <Ringkasan data={ringkas} buka={buka} nama={pengguna.nama} />}
+        {tab === "keamanan" && <Keamanan username={pengguna.username} notif={notif} />}
+        {tab === "pesan" && <Pesan notif={notif} segarkan={muatRingkasan} />}
+        {JUDUL_MODUL[tab] && <Modul key={tab} modul={tab} notif={notif} segarkan={muatRingkasan} tambahAwal={langsungTambah} />}
       </main>
+
+      {toast && <div className={`toast ${toast.ok ? "" : "gagal"}`} role="status">{toast.teks}</div>}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import express from 'express';
 import cors    from 'cors';
+import compression from 'compression';
 import dotenv  from 'dotenv';
 import pg      from 'pg';
 import bcrypt  from 'bcryptjs';
@@ -27,6 +28,9 @@ const isProd    = process.env.NODE_ENV === 'production';
 // API atas nama admin yang sedang login.
 const ORIGIN_TERDAFTAR = (process.env.CORS_ORIGIN || '')
   .split(',').map(s => s.trim()).filter(Boolean);
+
+// Gzip semua respons: daftar JSON dan bundel JS jauh lebih kecil di jaringan lambat.
+app.use(compression());
 
 app.use(cors({
   origin: (origin, cb) => cb(null, !origin || ORIGIN_TERDAFTAR.includes(origin)),
@@ -57,6 +61,24 @@ const queryDB = async (sql, params = []) => {
 // header X-App-Token yang hardcoded di frontend. Token itu bocor ke siapa pun yang
 // membuka view-source, jadi siapa pun bisa menulis ke database tanpa login. Sekarang
 // PIN hanya dicocokkan di server dan hasilnya cookie HttpOnly bertanda tangan.
+// Cache singkat hasil pembacaan akun, supaya satu sesi admin tidak memicu satu
+// query ke bapperida_admin untuk setiap request. Admin yang dinonaktifkan tetap
+// kehilangan akses paling lambat setelah TTL ini.
+const TTL_AKUN_MS = 15_000;
+const cacheAkun = new Map();
+const ambilAkun = async (username) => {
+  const ada = cacheAkun.get(username);
+  if (ada && Date.now() - ada.t < TTL_AKUN_MS) return ada.u;
+  const { rows } = await pool.query(
+    `SELECT id, username, nama, role, aktif FROM bapperida_admin WHERE username = $1`,
+    [username]
+  );
+  const u = rows[0] || null;
+  if (cacheAkun.size > 200) cacheAkun.clear();
+  cacheAkun.set(username, { u, t: Date.now() });
+  return u;
+};
+
 app.use(async (req, res, next) => {
   const reqPath = req.originalUrl.split('?')[0];
   if (!reqPath.startsWith('/api')) return next();
@@ -76,14 +98,10 @@ app.use(async (req, res, next) => {
     return res.status(401).json({ error: 'Sesi berakhir, silakan login kembali' });
 
   try {
-    // Role dan status aktif dibaca ulang tiap request, bukan disimpan di token:
-    // admin yang dinonaktifkan atau dicabut haknya langsung kehilangan akses tanpa
-    // perlu menunggu token lamanya kedaluwarsa.
-    const { rows } = await pool.query(
-      `SELECT id, username, nama, role, aktif FROM bapperida_admin WHERE username = $1`,
-      [muatan.sub]
-    );
-    const u = rows[0];
+    // Role dan status aktif dibaca dari DB (lewat cache TTL pendek), bukan disimpan
+    // di token: admin yang dinonaktifkan kehilangan akses tanpa menunggu token
+    // lamanya kedaluwarsa.
+    const u = await ambilAkun(muatan.sub);
     if (!u) return res.status(401).json({ error: 'Akun tidak ditemukan' });
     if (!u.aktif)
       return res.status(403).json({ error: 'Akun Anda dinonaktifkan. Hubungi administrator.' });
@@ -100,7 +118,13 @@ app.use(async (req, res, next) => {
 // Di production, Express serve hasil build React dari /dist
 if (isProd) {
   const distPath = path.join(__dirname, '..', 'dist');
-  app.use(express.static(distPath));
+  // Berkas di /assets bernama hash dari Vite, jadi aman di-cache setahun.
+  app.use(express.static(distPath, {
+    setHeaders: (res, berkas) => {
+      if (berkas.includes(`${path.sep}assets${path.sep}`))
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    },
+  }));
 }
 
 // ── Auto-migrasi: jalankan db/schema.sql saat boot ──────────────────────────
@@ -294,6 +318,9 @@ const ENTITAS = {
                   gambar_data AS gambar_url, emoji, is_featured, priority,
                   layout_size, col_span, row_span`,
     urut: 'priority ASC, id DESC',
+    // Daftar admin: tanpa kolom panjang (isi berita, deskripsi, dokumen_dukung).
+    daftar: `id, judul, kategori, tanggal, gambar_data AS gambar_url, is_featured, priority`,
+    cari: ['judul', 'kategori'],
   },
 
   dokumen: {
@@ -311,6 +338,9 @@ const ENTITAS = {
     ],
     baca: `id, judul, kategori, tipe, ukuran, tanggal, icon_data AS icon, publik`,
     urut: 'id DESC',
+    // Daftar admin: tanpa kolom panjang (isi berita, deskripsi, dokumen_dukung).
+    daftar: `id, judul, kategori, tipe, ukuran, tanggal, icon_data AS icon, publik, url`,
+    cari: ['judul', 'kategori'],
   },
 
   slider: {
@@ -323,6 +353,7 @@ const ENTITAS = {
     ],
     baca: `id, gambar_data AS gambar_url, judul, subjudul`,
     urut: 'id ASC',
+    cari: ['judul'],
   },
 
   program: {
@@ -340,6 +371,9 @@ const ENTITAS = {
     // desc perlu tanda kutip: itu keyword SQL di PostgreSQL.
     baca: `id, icon_data AS icon, title, cat, "desc", status, sc, priority`,
     urut: 'priority ASC, id ASC',
+    // Daftar admin: tanpa kolom panjang (isi berita, deskripsi, dokumen_dukung).
+    daftar: `id, icon_data AS icon, title, cat, status, sc, priority`,
+    cari: ['title', 'cat'],
   },
 
   metrics: {
@@ -353,6 +387,7 @@ const ENTITAS = {
     ],
     baca: `id, label, value, icon, priority`,
     urut: 'priority ASC, id ASC',
+    cari: ['label'],
   },
 
   inovasi: {
@@ -380,6 +415,10 @@ const ENTITAS = {
                   regulasi_inovasi, anggaran_inovasi, waktu_uji_coba, waktu_penerapan,
                   status_approval, created_at`,
     urut: 'created_at DESC',
+    // Daftar admin: tanpa kolom panjang (isi berita, deskripsi, dokumen_dukung).
+    daftar: `id, opd_nama, judul_inovasi, nama_inovator, jenis_inovasi, skor_iga, kategori_skor, status_approval, created_at`,
+    cari: ['judul_inovasi', 'opd_nama'],
+    urutDaftar: `(status_approval = 'Approved') ASC, created_at DESC`,
   },
 };
 
@@ -639,13 +678,20 @@ app.put('/api/inovasi/:id/setujui', async (req, res) => {
 });
 
 // ── Pesan kontak ────────────────────────────────────────────────────────────
-app.get('/api/pesan', async (_, res) => {
+app.get('/api/pesan', async (req, res) => {
   try {
-    const baris = await queryDB(
-      `SELECT id, nama, email, subjek, pesan, dibaca, created_at
-         FROM bapperida_pesan ORDER BY created_at DESC LIMIT 200`
-    );
-    res.json(baris);
+    const batas = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
+    const mulai = Math.max(parseInt(req.query.offset, 10) || 0, 0);
+    const where = req.query.belum === '1' ? 'WHERE dibaca = FALSE' : '';
+    const [rows, [hitung]] = await Promise.all([
+      queryDB(
+        `SELECT id, nama, email, subjek, pesan, dibaca, created_at
+           FROM bapperida_pesan ${where} ORDER BY created_at DESC, id DESC
+          LIMIT ${batas} OFFSET ${mulai}`
+      ),
+      queryDB(`SELECT COUNT(*)::int AS n FROM bapperida_pesan ${where}`),
+    ]);
+    res.json({ rows, total: hitung.n });
   } catch (err) {
     console.error('Pesan error:', err);
     res.status(500).json({ error: 'Gagal mengambil pesan' });
@@ -717,20 +763,49 @@ app.get('/api/ringkasan', async (_, res) => {
 // ADMIN: CRUD generik untuk enam entitas di atas
 // ═══════════════════════════════════════════════════════════════════════════
 
+// Daftar admin: berhalaman, bisa dicari, dan hanya membawa kolom yang tampil di
+// tabel. Isi lengkap satu baris diambil lewat GET /api/:entitas/:id saat dibuka.
 app.get('/api/:entitas', async (req, res) => {
   const e = ENTITAS[req.params.entitas];
   if (!e) return res.status(404).json({ error: 'Modul tidak dikenal' });
   try {
-    const baris = await queryDB(`SELECT ${e.baca} FROM ${e.tabel} ORDER BY ${e.urut}`);
-    // Admin butuh kolom url dokumen; /api/init sengaja tidak mengirimnya.
-    if (req.params.entitas === 'dokumen') {
-      const lengkap = await queryDB(`SELECT id, url FROM ${e.tabel}`);
-      const petaUrl = new Map(lengkap.map(d => [d.id, d.url]));
-      for (const b of baris) b.url = petaUrl.get(b.id) || '';
+    const batas = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
+    const mulai = Math.max(parseInt(req.query.offset, 10) || 0, 0);
+    const q = String(req.query.q || '').trim().slice(0, 80);
+
+    const params = [];
+    let where = '';
+    if (q && e.cari?.length) {
+      params.push(`%${q.replace(/[\\%_]/g, '\\$&')}%`);
+      where = 'WHERE ' + e.cari.map(k => `${sqlIdent(k)} ILIKE $1`).join(' OR ');
     }
-    res.json(baris);
+
+    const [rows, [hitung]] = await Promise.all([
+      queryDB(
+        `SELECT ${e.daftar || e.baca} FROM ${e.tabel} ${where}
+          ORDER BY ${e.urutDaftar || e.urut} LIMIT ${batas} OFFSET ${mulai}`,
+        params
+      ),
+      queryDB(`SELECT COUNT(*)::int AS n FROM ${e.tabel} ${where}`, params),
+    ]);
+    res.json({ rows, total: hitung.n });
   } catch (err) {
     console.error(`List ${req.params.entitas} error:`, err);
+    res.status(500).json({ error: 'Gagal mengambil data' });
+  }
+});
+
+app.get('/api/:entitas/:id', async (req, res) => {
+  const e = ENTITAS[req.params.entitas];
+  if (!e) return res.status(404).json({ error: 'Modul tidak dikenal' });
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'ID tidak valid' });
+  try {
+    const [baris] = await queryDB(`SELECT ${e.baca} FROM ${e.tabel} WHERE id = $1`, [id]);
+    if (!baris) return res.status(404).json({ error: 'Data tidak ditemukan' });
+    res.json(baris);
+  } catch (err) {
+    console.error(`Detail ${req.params.entitas} error:`, err);
     res.status(500).json({ error: 'Gagal mengambil data' });
   }
 });
@@ -781,11 +856,21 @@ app.put('/api/:entitas/:id', async (req, res) => {
     const punyaUpdatedAt = await punyaKolom(e.tabel, 'updated_at');
     if (punyaUpdatedAt) set.push('updated_at = NOW()');
 
+    // Kalau berkas/gambar diganti, tautan lama dicatat dulu supaya file lamanya
+    // bisa dihapus dari Drive sesudah update berhasil.
+    const kolomTautan = ['url', 'gambar_data'].find(k => k in hasil && punyaKolomDi(e, k));
+    let tautanLama = null;
+    if (kolomTautan) {
+      const lama = await queryDB(`SELECT ${sqlIdent(kolomTautan)} AS t FROM ${e.tabel} WHERE id = $1`, [id]);
+      tautanLama = lama[0]?.t || null;
+    }
+
     const { rowCount } = await pool.query(
       `UPDATE ${e.tabel} SET ${set.join(', ')} WHERE id = $${kolom.length + 1}`,
       [...kolom.map(k => hasil[k]), id]
     );
     if (!rowCount) return res.status(404).json({ error: 'Data tidak ditemukan' });
+    if (tautanLama && tautanLama !== hasil[kolomTautan]) hapusDiDrive(tautanLama).catch(() => {});
 
     res.json({ message: 'Data berhasil diperbarui' });
   } catch (err) {
@@ -823,6 +908,9 @@ app.delete('/api/:entitas/:id', async (req, res) => {
     res.status(500).json({ error: 'Gagal menghapus data' });
   }
 });
+
+// Kolom tautan yang didefinisikan di ENTITAS (bukan tebakan dari skema produksi).
+const punyaKolomDi = (e, k) => e.kolom.some(([n]) => n === k);
 
 const cacheKolom = new Map();
 async function punyaKolom(tabel, kolom) {
@@ -865,7 +953,10 @@ async function hapusDiDrive(url) {
 
 // ── SPA fallback: semua route non-API → index.html (production only) ────────
 if (isProd) {
-  app.get('*', (_, res) => {
+  app.get('*', (req, res) => {
+    // Permintaan berkas (ada ekstensi) yang tidak ditemukan harus 404. Kalau dijawab
+    // index.html, gambar yang hilang tampil sebagai ikon rusak tanpa petunjuk apa pun.
+    if (path.extname(req.path)) return res.status(404).type('text/plain').send('Berkas tidak ditemukan');
     res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
   });
 }
