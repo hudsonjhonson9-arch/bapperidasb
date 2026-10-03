@@ -1,0 +1,102 @@
+/* Desain System Admin BAPPERIDA */
+:root {
+  /* Warna utama */
+  --navi: #0B2447;
+  --navi-dark: #061529;
+  --navi-light: #19376D;
+  --emas: #C9A227;
+  --emas-light: #E3B83A;
+  --putih: #FFFFFF;
+  --abuu-ungu: #F7F4EE;
+  --abu-panas: #E8E3D9;
+  --abu-teks: #8898AA;
+  --text-dark: #0D1B2A;
+  --text-medium: #4A5568;
+  --bahaya: #dc2626;
+  --sukses: #059669;
+}
+
+/* Elemen umum */
+* { box-sizing: border-box; }
+
+/* Header */
+.header { background: var(--navi-dark); color: var(--putih); padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+.header .logo { font-size: 11px; font-weight: 800; letter-spacing: 0.2em; color: var(--emas); }
+.header .title { font-size: 15px; font-weight: 700; margin-left: 12; color: var(--putih); }
+.header a { font-size: 12.5px; color: var(--emas); font-weight: 700; text-decoration: none; }
+.header .logout { background: none; border: none; color: var(--putih); font-size: 11px; font-weight: 700; cursor: pointer; }
+
+/* Navigasi Sidebar */
+.sidebar { background: var(--putih); border-bottom: 1px solid var(--abu-panas); padding: 0 16px; overflow-x: auto; }
+.sidebar .nav { display: flex; gap: 2; max-width: 1300px; margin: 0 auto; }
+.sidebar .nav button { background: none; border: none; padding: 14px 16px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; color: var(--text-medium); border-bottom: 3px solid var(--emas); white-space: nowrap; }
+.sidebar .nav button:hover { color: var(--navi); }
+.sidebar .nav button.active { color: var(--navi); border-color: var(--emas); }
+.sidebar .nav button span { margin-left: 6; background: var(--bahaya); color: var(--putih); font-size: 10.5px; padding: 1px 7px; border-radius: 10; display: inline-block; }
+
+/* Main Content */
+.main { max-width: 1300px; margin: 0 auto; padding: 28px 28px 70px; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: var(--abu-ungu); }
+
+/* Header internal */
+.page-header { background: var(--navi); color: var(--putih); padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+.page-header .subtitle { font-size: 11px; font-weight: 800; letter-spacing: 0.2em; color: var(--emas); }
+.page-header h2 { font-size: 15px; font-weight: 700; color: var(--putih); margin: "8px 0 4px"; }
+.page-header p { font-size: 12.5px; color: var(--text-light); margin: 0; }
+
+/* Kartu */
+.kartu { background: var(--putih); border: 1px solid var(--abu-ungu); border-radius: 12; padding: 20px; }
+.kartu .empty { padding: 40px text-align:center color:var(--text-medium) font-size:13.5; }
+
+/* Tabel */
+.table { width:100% borderCollapsecollapse font-size:13.5; }
+.table thead th { background:var(--abu-ungu) textAlign:left padding:12px 16px font-size:11.5 fontWeight:800 color:var(--text-medium) textTransform:uppercase letterSpacing:0.04em whiteSpace:nowrap; }
+.table tbody tr { borderTop:1px solid var(--abu-ungu); }
+.table tbody td { padding:12px 16px color:var(--text-medium) maxWidth:320 overflow:hidden textOverflow:ellipsis whiteSpace:nowrap; }
+.table tbody .actions { textAlign:right; }
+
+/* Tombol */
+.tombol { background:none border:none borderBottom3px solid var(--emas) padding:11px 20px fontSize:14 fontWeight:700 fontFamily:inherit cursor:pointer; color:var(--navi); white-space:nowrap; }
+.tombol:hover { background:var(--emas-light); }
+.tombol.pria { background:var(--bahaya) color:var(--putih); }
+.tombol.pria:hover { background:#f87171; }
+.tombol.kuning { background:var(--emas) color:var(--navi-dark); }
+.tombol.kuning:hover { background:var(--emas-light); }
+.tombol.sunyi { background:none border:1solid var(--navi) color:var(--navi) fontSize:12.5 fontWeight:700; }
+.tombol.kecil { padding:6px 12px fontSize:12.5; }
+
+/* Modal */
+.modal { position:fixed inset:0 background:rgba(6,21,41,0.6) zIndex:100 display:grid placeItems:center padding:20 overflowY:auto; }
+.modal .content { background:var(--putih) borderRadius:14 padding:26 maxWidth:560 margin:auto; position:relative; }
+.modal .close { position:absolute; top:10 right:10 background:none border:none fontSize:22 color:var(--text-light) cursor:pointer; lineHeight:1; }
+
+/* Form */
+.form .kolom { marginBottom:14; }
+.form .label { display:block fontSize:12 fontWeight:700 color:var(--text-medium) marginBottom:6 letterSpacing:0.02em; }
+.form .input { width:100% padding:10px 12px border:1solid var(--warmGray) borderRadius:8 fontSize:14 fontFamily:inherit background:var(--putih) color:var(--text-dark) boxSizing:border-box; }
+.form .textarea { width:100% padding:10px 12px border:1solid var(--warmGray) borderRadius:8 fontSize:14 fontFamily:inherit background:var(--putih) color:var(--text-dark) boxSizing:border-box minHeight:88px; }
+.form .checkbox { display:flex gap:8 alignItems:center cursor:pointer; fontSize:13.5 color:var(--text-medium); }
+.form .checkbox input { marginRight:8; }
+
+/* Toast */
+.toast { position:fixed top-20 left-1/2 transformtranslateX-50% background:var(--putih) border:1solid var(--abu-ungu) color:var(--text-dark) padding:10px 12px borderRadius:8 fontSize:12.5 marginBottom:14; maxWidth:460; }
+.toast.success { background:var(--sukses) color:var(--putih); border-color:var(--sukses); }
+.toast.error { background:var(--bahaya) color:var(--putih); border-color:var(--bahaya); }
+
+/* Skeleton */
+.skeleton { background:var(--abu-ungu); borderRadius:8; height:12; width:100%; animation:blink1s infinite; }
+@keyframes blink{0%{opacity:1}50%{opacity:0.5}100%{opacity:1}}
+
+/* Kosong */
+.kosong { padding:40px textAlign:center color:var(--text-medium) fontSize:13.5; }
+
+/* Tag/status */
+.tag { display:inline-block padding:3px 10px borderRadius:20 fontSize:11 fontWeight:800 color:var(--text-light); background:var(--navi-light); }
+.tag.success { background:var(--sukses) color:var(--putih); }
+.tag.warning { background:var(--emas) color:var(--navi-dark); }
+
+/* Status approval */
+.status-pending { color:var(--emas); fontWeight:700; }
+.status-approved { color:var(--sukses); fontWeight:700; }
+
+/* Responsive */
+@media (max-width: 768px) { .sidebar .nav button { padding:10px 10px fontSize:11; } .main { padding:16px; } }
