@@ -3,9 +3,10 @@
 Situs publik BAPPERIDA dengan panel admin. Backend-nya Node/Express + PostgreSQL
 native; berkas pengguna disimpan di Google Drive lewat Google Apps Script.
 
-Versi sebelumnya memakai n8n (`n8n-bapperida-workflow.json`) sebagai backend.
-Workflow itu sudah tidak dipakai, tapi file-nya dibiarkan sebagai catatan model
-data yang dulu jadi acuan tabel.
+Versi sebelumnya memakai n8n sebagai backend. Workflow dan skrip perbaikan
+n8n sudah dihapus; kalau masih perlu melihat model data yang dulu jadi acuan
+tabel, ambil dari riwayat git sebelum commit `ganti backend n8n dengan
+Express + PostgreSQL`.
 
 ## Isi
 
