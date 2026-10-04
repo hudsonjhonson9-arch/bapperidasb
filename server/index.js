@@ -319,7 +319,8 @@ const ENTITAS = {
                   layout_size, col_span, row_span`,
     urut: 'priority ASC, id DESC',
     // Daftar admin: tanpa kolom panjang (isi berita, deskripsi, dokumen_dukung).
-    daftar: `id, judul, kategori, tanggal, gambar_data AS gambar_url, is_featured, priority`,
+    daftar: `id, judul, kategori, tanggal, gambar_data AS gambar_url, is_featured, priority,
+                  layout_size, col_span, row_span`,
     cari: ['judul', 'kategori'],
   },
 

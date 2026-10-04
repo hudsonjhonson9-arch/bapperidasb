@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, Fragment } from "react";
 import {
   PanelLeftClose, PanelLeftOpen, LayoutDashboard, Newspaper, FileText, Images, ListChecks, Gauge, Lightbulb, Mail,
   ShieldCheck, LogOut, Search, Plus, X, Pencil, Trash2, ExternalLink, ChevronLeft, ChevronRight, Check,
+  LayoutGrid, Table2,
 } from "lucide-react";
 import {
   api, sesi, login, logout, gantiPin, ringkasan,
@@ -132,6 +133,39 @@ function FieldGambar({ label, wajib, value, onChange }) {
   );
 }
 
+// ── Pemilih tata letak grid ─────────────────────────────────────────────────
+// Grid beranda selalu 4 kolom. Angka saja sulit dibaca, jadi berita ini
+// digambar sebagai miniatur 4×2 dan selnya bisa diklik untuk menentukan
+// berapa kolom × baris yang dipakai.
+const KOLOM_GRID = 4;
+const BARIS_GRID = 2;
+
+function FieldGrid({ col, row, onChange }) {
+  const c = Math.min(Math.max(Number(col) || 1, 1), KOLOM_GRID);
+  const r = Math.min(Math.max(Number(row) || 1, 1), BARIS_GRID);
+  return (
+    <Blok label="Tata letak di beranda"
+      petunjuk={`Klik sel pada miniatur. Berita ini memakai ${c} kolom × ${r} baris dari grid ${KOLOM_GRID} × ${BARIS_GRID}.`}>
+      <div className="grid-pilih" role="group" aria-label="Tata letak berita di grid beranda">
+        {Array.from({ length: KOLOM_GRID * BARIS_GRID }, (_, i) => {
+          const kc = (i % KOLOM_GRID) + 1;
+          const kr = Math.floor(i / KOLOM_GRID) + 1;
+          return (
+            <button
+              type="button"
+              key={i}
+              className={`sel-grid${kc <= c && kr <= r ? " dipakai" : ""}`}
+              aria-pressed={kc === c && kr === r}
+              title={`${kc} kolom × ${kr} baris`}
+              onClick={() => onChange(kc, kr)}
+            />
+          );
+        })}
+      </div>
+    </Blok>
+  );
+}
+
 // ── Definisi modul ──────────────────────────────────────────────────────────
 // `kolom` = isi formulir (server tetap memvalidasi). `detail` = isi lengkap
 // diambil per baris saat formulir dibuka, karena daftar tidak membawanya.
@@ -147,8 +181,7 @@ const FORMULIR = {
       { name: "gambar_url", label: "Gambar berita", gambar: true },
       { name: "priority", label: "Urutan", tipe: "number", petunjuk: "Angka kecil tampil lebih dulu." },
       { name: "is_featured", label: "Jadikan berita unggulan", tipe: "checkbox" },
-      { name: "col_span", label: "Lebar grid", tipe: "number", min: 1, max: 4, petunjuk: "Jumlah kolom yang dipakai di grid beranda (1–4)." },
-      { name: "row_span", label: "Tinggi grid", tipe: "number", min: 1, max: 2, petunjuk: "Jumlah baris yang dipakai di grid beranda (1–2)." },
+      { name: "grid", label: "Tata letak di beranda", virtual: true, grid: true },
       { name: "konten", label: "Isi berita", tipe: "textarea" },
     ],
   },
@@ -268,13 +301,17 @@ function FormItem({ modul, item, onTutup, onSelesai }) {
       }
       if (batal) return;
       const awal = {};
-      for (const k of def.kolom) awal[k.name] = dasar[k.name] ?? def.baru?.[k.name] ?? (k.tipe === "checkbox" ? false : "");
+      for (const k of def.kolom) {
+        if (k.virtual) continue;
+        awal[k.name] = dasar[k.name] ?? def.baru?.[k.name] ?? (k.tipe === "checkbox" ? false : "");
+      }
       setNilai(awal);
     })();
     return () => { batal = true; };
   }, [item, modul, edit, def]);
 
   const ubah = (n, v) => setNilai((s) => ({ ...s, [n]: v }));
+  const ubahGrid = (col, row) => setNilai((s) => ({ ...s, col_span: col, row_span: row }));
 
   const pilihBerkas = (e) => {
     const f = e.target.files?.[0];
@@ -289,6 +326,7 @@ function FormItem({ modul, item, onTutup, onSelesai }) {
     setGalat(null);
     const data = {};
     for (const k of def.kolom) {
+      if (k.virtual) continue;
       const v = nilai[k.name];
       if (k.tipe === "checkbox") data[k.name] = Boolean(v);
       else if (k.tipe === "number") {
@@ -343,6 +381,8 @@ function FormItem({ modul, item, onTutup, onSelesai }) {
             )}
             {def.kolom.map((k) => k.gambar ? (
               <FieldGambar key={k.name} label={k.label} wajib={k.wajib} value={nilai[k.name]} onChange={(v) => ubah(k.name, v)} />
+            ) : k.grid ? (
+              <FieldGrid key={k.name} col={nilai.col_span} row={nilai.row_span} onChange={ubahGrid} />
             ) : (
               <Kolom key={k.name} label={k.tipe === "checkbox" ? "" : k.label} wajib={k.wajib} petunjuk={k.petunjuk}>
                 {k.tipe === "textarea" ? (
@@ -395,6 +435,49 @@ function DetailInovasi({ id, onTutup }) {
   );
 }
 
+// ── Pratinjau grid berita ───────────────────────────────────────────────────
+// Meniru perhitungan grid di beranda (App.jsx) supaya admin melihat hasil
+// akhir yang sama, termasuk fallback untuk berita lama.
+function petakGrid(item, idx) {
+  let col = item.col_span || 1;
+  let row = item.row_span || 1;
+  if (!item.col_span && item.layout_size === "large") { col = 2; row = 2; }
+  else if (!item.col_span && item.layout_size === "wide") { col = 2; row = 1; }
+  else if (!item.col_span && item.layout_size === "tall") { col = 1; row = 2; }
+  else if (!item.col_span && !item.layout_size && idx === 0) { col = 2; row = 2; }
+  return { col: Math.min(Math.max(col, 1), KOLOM_GRID), row: Math.min(Math.max(row, 1), BARIS_GRID) };
+}
+
+function PratinjauGrid({ rows, pilih, onPilih }) {
+  return (
+    <div className="pratinjau-grid">
+      {rows.map((b, idx) => {
+        const { col, row } = petakGrid(b, idx);
+        return (
+          <div
+            key={b.id}
+            className={`kartu-grid${pilih === b.id ? " sel" : ""}`}
+            style={{ gridColumn: `span ${col}`, gridRow: `span ${row}`, cursor: "pointer" }}
+            onClick={() => onPilih(b.id)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onPilih(b.id))}
+            aria-label={`Edit berita ${b.judul || ""}`}
+          >
+            <span className="petak">{col}×{row}</span>
+            <div className="gambar">
+              {b.gambar_url
+                ? <img src={thumbDrive(b.gambar_url, 220)} alt="" loading="lazy" decoding="async" />
+                : <Newspaper size={26} aria-hidden="true" />}
+            </div>
+            <div className="kaki"><b>{b.judul || "Tanpa judul"}</b></div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Modul daftar (berita, dokumen, slider, program, metrik, inovasi) ────────
 
 function Modul({ modul, notif, segarkan, tambahAwal }) {
@@ -405,6 +488,9 @@ function Modul({ modul, notif, segarkan, tambahAwal }) {
   const [form, setForm] = useState(tambahAwal && def ? {} : null);
   const [lihat, setLihat] = useState(null);
   const [hapus, setHapus] = useState(null);
+  // Berita bisa dilihat sebagai tabel atau sebagai pratinjau grid seperti beranda.
+  const [tampil, setTampil] = useState(modul === "berita" ? "grid" : "tabel");
+  const [petak, setPetak] = useState(null);
   const { rows, total, memuat, galat, muatUlang } = useDaftar(modul, { q: cari.trim(), halaman, ukuran: UKURAN });
   const kolom = TABEL[modul];
   const nama = (b) => b.judul || b.title || b.label || b.judul_inovasi || `#${b.id}`;
@@ -432,11 +518,22 @@ function Modul({ modul, notif, segarkan, tambahAwal }) {
               value={cari} onChange={(e) => { setCari(e.target.value); setHalaman(0); }} />
           </div>
           {memuat && rows && <span className="redup" aria-live="polite">Memperbarui…</span>}
+          {modul === "berita" && rows?.length > 0 && (
+            <div className="ganti-tampil" role="group" aria-label="Tampilan daftar berita">
+              <button type="button" className={tampil === "grid" ? "aktif" : ""} aria-pressed={tampil === "grid"} onClick={() => setTampil("grid")}><LayoutGrid size={14} /> Grid</button>
+              <button type="button" className={tampil === "tabel" ? "aktif" : ""} aria-pressed={tampil === "tabel"} onClick={() => setTampil("tabel")}><Table2 size={14} /> Tabel</button>
+            </div>
+          )}
         </div>
 
         {galat && <div className="galat" style={{ margin: 14 }}>{galat} <Tombol kecil variasi="sunyi" onClick={muatUlang}>Coba lagi</Tombol></div>}
         {!rows && !galat ? <Rangka /> : rows && (rows.length === 0 ? (
           <div className="kosong"><b>{cari ? "Tidak ada hasil" : `Belum ada ${judul.toLowerCase()}`}</b>{cari ? "Coba kata kunci lain." : def ? "Pilih Tambah untuk membuat yang pertama." : "Usulan dari OPD akan muncul di sini."}</div>
+        ) : tampil === "grid" ? (
+          <div style={{ padding: 14 }}>
+            <p className="petunjuk" style={{ margin: "0 0 12px" }}>Pratinjau tataletak di beranda. Klik kartu untuk mengubah ukuran.</p>
+            <PratinjauGrid rows={rows} pilih={petak} onPilih={(id) => { setPetak(id); setForm(rows.find((b) => b.id === id)); }} />
+          </div>
         ) : (
           <div className="bungkus">
             <table>
