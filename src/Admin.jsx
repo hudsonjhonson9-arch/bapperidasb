@@ -181,7 +181,8 @@ const FORMULIR = {
       { name: "gambar_url", label: "Gambar berita", gambar: true },
       { name: "priority", label: "Urutan", tipe: "number", petunjuk: "Angka kecil tampil lebih dulu." },
       { name: "is_featured", label: "Jadikan berita unggulan", tipe: "checkbox" },
-      { name: "grid", label: "Tata letak di beranda", virtual: true, grid: true },
+      // `tulis` = kolom yang diisi pemilih visual, bukan lewat input biasa.
+      { name: "grid", label: "Tata letak di beranda", virtual: true, grid: true, tulis: ["col_span", "row_span"] },
       { name: "konten", label: "Isi berita", tipe: "textarea" },
     ],
   },
@@ -300,9 +301,15 @@ function FormItem({ modul, item, onTutup, onSelesai }) {
         catch (e) { if (!batal) setGalat(e.message); return; }
       }
       if (batal) return;
-      const awal = {};
+const awal = {};
       for (const k of def.kolom) {
-        if (k.virtual) continue;
+        if (k.virtual) {
+          // Kolom virtual (mis. pemilih grid) tidak punya input sendiri, tapi
+          // nilai yang ditampilkan batasannya tetap harus terbawa dari data
+          // lama supaya berita 2x2 tidak tampak sebagai 1x1 saat diedit.
+          for (const n of k.tulis || []) awal[n] = dasar[n] ?? def.baru?.[n] ?? 1;
+          continue;
+        }
         awal[k.name] = dasar[k.name] ?? def.baru?.[k.name] ?? (k.tipe === "checkbox" ? false : "");
       }
       setNilai(awal);
@@ -326,7 +333,13 @@ function FormItem({ modul, item, onTutup, onSelesai }) {
     setGalat(null);
     const data = {};
     for (const k of def.kolom) {
-      if (k.virtual) continue;
+      if (k.virtual) {
+        // Kolom virtual menulis ke state di luar daftar kolom, jadi harus
+        // ikut dikirim eksplisit. Tanpa ini col_span/row_span tidak pernah
+        // sampai ke server dan grid di situs tidak berubah.
+        for (const n of k.tulis || []) data[n] = nilai[n];
+        continue;
+      }
       const v = nilai[k.name];
       if (k.tipe === "checkbox") data[k.name] = Boolean(v);
       else if (k.tipe === "number") {
