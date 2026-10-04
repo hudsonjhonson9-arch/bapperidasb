@@ -15,7 +15,7 @@ import {
   Package, Info, Newspaper, Smartphone, Check, Paperclip
 } from "lucide-react";
 
-const NAV = [
+const tgl = (v) => { var d = new Date(v); var day = d.getDate().toString().padStart(2,"0"); var month = (d.getMonth()+1).toString().padStart(2,"0"); var year = d.getFullYear(); return day+"/"+month+"/"+year; };const NAV = [
   { id: "beranda", label: "Beranda" },
   { id: "profil", label: "Profil" },
   { id: "visi-misi", label: "Visi & Misi" },
