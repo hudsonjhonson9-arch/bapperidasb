@@ -31,6 +31,8 @@ html, body { margin: 0; background: #F6F3EC; }
 .nav[aria-current="page"]::before { content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: var(--emas); }
 .nav .lencana { margin-left: auto; background: var(--emas); color: var(--navy-gelap); font-size: 11.5px; font-weight: 800; min-width: 20px; padding: 0 6px; border-radius: 10px; text-align: center; }
 .pengguna { margin-top: auto; padding: 14px 8px 0; border-top: 1px solid rgba(255,255,255,.12); font-size: 12.5px; color: rgba(255,255,255,.7); display: grid; gap: 8px; }
+.adm { transition: grid-template-columns .18s ease; }
+.lipat { margin-bottom: 4px; color: rgba(255,255,255,.62); }
 .pengguna a, .pengguna button { color: #fff; background: none; border: 0; padding: 0; font: inherit; font-weight: 600; cursor: pointer; text-align: left; text-decoration: none; display: flex; gap: 8px; align-items: center; }
 
 /* Isi */
@@ -92,18 +94,18 @@ html, body { margin: 0; background: #F6F3EC; }
 .galat { background: var(--bahaya-latar); color: var(--bahaya); border: 1px solid #FECDCA; padding: 10px 12px; border-radius: 8px; margin-bottom: 14px; font-size: 13px; }
 .pratinjau { margin-top: 10px; max-width: 220px; border-radius: 8px; border: 1px solid var(--garis); display: block; }
 
-/* Laci & dialog */
+/* Modal & dialog */
 .tirai { position: fixed; inset: 0; background: rgba(6,21,41,.55); z-index: 50; display: flex; justify-content: flex-end; }
 .tirai.tengah { justify-content: center; align-items: center; padding: 20px; }
-.laci { width: min(560px, 100%); height: 100%; background: #fff; display: flex; flex-direction: column; animation: geser .18s ease-out; }
-.laci header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--garis); }
-.laci header h2 { font-size: 17px; color: var(--navy); }
-.laci .badan { padding: 20px; overflow-y: auto; flex: 1; }
-.laci footer { padding: 14px 20px; border-top: 1px solid var(--garis); display: flex; justify-content: flex-end; gap: 10px; background: var(--kertas); }
+.modal { width: min(680px, 100%); max-height: calc(100vh - 40px); background: #fff; border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 60px rgba(6,21,41,.35); animation: muncul .16s ease-out; }
+.modal header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--garis); }
+.modal header h2 { font-size: 17px; color: var(--navy); }
+.modal .badan { padding: 20px; overflow-y: auto; flex: 1; }
+.modal footer { padding: 14px 20px; border-top: 1px solid var(--garis); display: flex; justify-content: flex-end; gap: 10px; background: var(--kertas); }
 .dialog { background: #fff; border-radius: 12px; padding: 22px; width: min(420px, 100%); }
 .dialog h2 { font-size: 17px; color: var(--navy); margin-bottom: 8px; }
 .dialog .aksi-d { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
-@keyframes geser { from { transform: translateX(24px); opacity: .6; } }
+@keyframes muncul { from { transform: translateY(8px) scale(.98); opacity: 0; } }
 .rinci { display: grid; grid-template-columns: 150px 1fr; gap: 6px 14px; margin: 0 0 16px; }
 .rinci dt { color: var(--redup); } .rinci dd { margin: 0; overflow-wrap: anywhere; }
 
@@ -147,8 +149,22 @@ html, body { margin: 0; background: #F6F3EC; }
   .nav { width: auto; white-space: nowrap; padding: 8px 10px; }
   .nav[aria-current="page"]::before { left: 8px; right: 8px; top: auto; bottom: 0; width: auto; height: 3px; border-radius: 3px 3px 0 0; }
   .pengguna { margin: 0 0 0 auto; padding: 0 4px; border: 0; flex-direction: row; display: flex; }
-  .pengguna span { display: none; }
+  .pengguna > span { display: none; }
+  .lipat { display: none; }
   .isi { padding: 18px 14px 64px; }
   .rinci { grid-template-columns: 1fr; gap: 0; } .rinci dd { margin-bottom: 8px; }
+}
+/* Sidebar dikecilkan: hanya ikon. Hanya di layar lebar; di ponsel menu sudah berupa bilah. */
+@media (min-width: 861px) {
+  .adm.ringkas { grid-template-columns: 68px minmax(0, 1fr); }
+  .ringkas .teks, .ringkas .grup { display: none; }
+  .ringkas .sisi { padding: 18px 0; align-items: center; }
+  .ringkas .sisi nav { width: 100%; padding: 0 12px; }
+  .ringkas .merek { padding: 4px 0 16px; justify-content: center; }
+  .ringkas .nav { justify-content: center; padding: 10px 0; margin-bottom: 2px; }
+  .ringkas .nav .lencana { position: absolute; top: 2px; right: 2px; margin: 0; min-width: 16px; font-size: 10.5px; padding: 0 4px; line-height: 16px; }
+  .ringkas .nav[aria-current="page"]::before { left: -12px; }
+  .ringkas .lipat { width: 44px; }
+  .ringkas .pengguna { justify-items: center; padding: 14px 0 0; width: 100%; gap: 14px; }
 }
 @media (prefers-reduced-motion: reduce) { .adm * { animation: none !important; } }

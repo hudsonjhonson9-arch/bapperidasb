@@ -2,7 +2,7 @@
 // Navigasi memakai hash (#berita, #pesan, ...) supaya bisa di-bookmark.
 import { useState, useEffect, useCallback, Fragment } from "react";
 import {
-  LayoutDashboard, Newspaper, FileText, Images, ListChecks, Gauge, Lightbulb, Mail,
+  PanelLeftClose, PanelLeftOpen, LayoutDashboard, Newspaper, FileText, Images, ListChecks, Gauge, Lightbulb, Mail,
   ShieldCheck, LogOut, Search, Plus, X, Pencil, Trash2, ExternalLink, ChevronLeft, ChevronRight, Check,
 } from "lucide-react";
 import {
@@ -58,22 +58,22 @@ function Rangka({ baris = 5 }) {
   );
 }
 
-function Laci({ judul, onTutup, children, kaki }) {
+function Modal({ judul, onTutup, children, kaki }) {
   useEffect(() => {
     const esc = (e) => e.key === "Escape" && onTutup();
     window.addEventListener("keydown", esc);
     return () => window.removeEventListener("keydown", esc);
   }, [onTutup]);
   return (
-    <div className="tirai" onMouseDown={(e) => e.target === e.currentTarget && onTutup()}>
-      <aside className="laci" role="dialog" aria-modal="true" aria-label={judul}>
+    <div className="tirai tengah" onMouseDown={(e) => e.target === e.currentTarget && onTutup()}>
+      <div className="modal" role="dialog" aria-modal="true" aria-label={judul}>
         <header>
           <h2>{judul}</h2>
           <Tombol variasi="sunyi ikon" aria-label="Tutup" onClick={onTutup}><X size={16} /></Tombol>
         </header>
         {children}
         {kaki}
-      </aside>
+      </div>
     </div>
   );
 }
@@ -313,7 +313,7 @@ function FormItem({ modul, item, onTutup, onSelesai }) {
   };
 
   return (
-    <Laci judul={`${edit ? "Edit" : "Tambah"} ${def.judul.toLowerCase()}`} onTutup={onTutup}
+    <Modal judul={`${edit ? "Edit" : "Tambah"} ${def.judul.toLowerCase()}`} onTutup={onTutup}
       kaki={<footer>
         <Tombol variasi="sunyi" onClick={onTutup}>Batal</Tombol>
         <button type="submit" form="form-item" className="tbl emas" disabled={sibuk || !nilai}>{sibuk ? "Menyimpan…" : "Simpan"}</button>
@@ -347,7 +347,7 @@ function FormItem({ modul, item, onTutup, onSelesai }) {
           </>
         )}
       </form>
-    </Laci>
+    </Modal>
   );
 }
 
@@ -363,7 +363,7 @@ function DetailInovasi({ id, onTutup }) {
     ["Penerapan", tgl(d.waktu_penerapan)], ["Skor IGA", `${d.skor_iga} (${d.kategori_skor})`],
   ];
   return (
-    <Laci judul={d?.judul_inovasi || "Detail usulan"} onTutup={onTutup}>
+    <Modal judul={d?.judul_inovasi || "Detail usulan"} onTutup={onTutup}>
       <div className="badan">
         {galat && <div className="galat">{galat}</div>}
         {!d && !galat && <Rangka baris={7} />}
@@ -380,7 +380,7 @@ function DetailInovasi({ id, onTutup }) {
           </>
         )}
       </div>
-    </Laci>
+    </Modal>
   );
 }
 
@@ -685,6 +685,13 @@ export default function Admin() {
   const [tab, setTab] = useState(tabDariHash);
   const [ringkas, setRingkas] = useState(null);
   const [toast, setToast] = useState(null);
+  // Sidebar bisa dikecilkan jadi bilah ikon; pilihannya diingat di perangkat ini.
+  const [kecil, setKecil] = useState(() => { try { return localStorage.getItem("adm-sisi") === "kecil"; } catch { return false; } });
+  const ubahSisi = () => setKecil((k) => {
+    const baru = !k;
+    try { localStorage.setItem("adm-sisi", baru ? "kecil" : "besar"); } catch { /* penyimpanan dinonaktifkan */ }
+    return baru;
+  });
 
   const [langsungTambah, setLangsungTambah] = useState(false);
   const buka = useCallback((id, tambah = false) => { setLangsungTambah(tambah); window.location.hash = id; setTab(id); }, []);
@@ -711,9 +718,13 @@ export default function Admin() {
   if (status === "belum") return <div className="adm"><HalamanLogin onMasuk={(u) => { setPengguna(u); setStatus("masuk"); }} /></div>;
 
   return (
-    <div className="adm">
+    <div className={`adm ${kecil ? "ringkas" : ""}`}>
       <aside className="sisi">
-        <div className="merek"><Logo /><div><b>BAPPERIDA</b><small>Sumba Barat</small></div></div>
+        <div className="merek"><Logo /><div className="teks"><b>BAPPERIDA</b><small>Sumba Barat</small></div></div>
+        <button className="nav lipat" onClick={ubahSisi} aria-label={kecil ? "Perbesar menu" : "Kecilkan menu"} title={kecil ? "Perbesar menu" : "Kecilkan menu"}>
+          {kecil ? <PanelLeftOpen size={17} aria-hidden="true" /> : <PanelLeftClose size={17} aria-hidden="true" />}
+          <span className="teks">Kecilkan menu</span>
+        </button>
         <nav aria-label="Menu admin">
           {MENU.map(([grup, item]) => (
             <div key={grup}>
@@ -721,8 +732,9 @@ export default function Admin() {
               {item.map(([id, label, Ikon, kunci]) => {
                 const n = kunci && ringkas?.[kunci];
                 return (
-                  <button key={id} className="nav" aria-current={tab === id ? "page" : undefined} onClick={() => buka(id)}>
-                    <Ikon size={17} aria-hidden="true" />{label}{n > 0 && <span className="lencana">{n}</span>}
+                  <button key={id} className="nav" title={kecil ? label : undefined} aria-label={label}
+                    aria-current={tab === id ? "page" : undefined} onClick={() => buka(id)}>
+                    <Ikon size={17} aria-hidden="true" /><span className="teks">{label}</span>{n > 0 && <span className="lencana">{n}</span>}
                   </button>
                 );
               })}
@@ -730,9 +742,9 @@ export default function Admin() {
           ))}
         </nav>
         <div className="pengguna">
-          <span>{pengguna.nama || pengguna.username}</span>
-          <a href="/" target="_blank" rel="noreferrer"><ExternalLink size={14} /> Lihat situs</a>
-          <button onClick={async () => { try { await logout(); } finally { kosongkanCache(); setStatus("belum"); setPengguna(null); } }}><LogOut size={14} /> Keluar</button>
+          <span className="teks nama">{pengguna.nama || pengguna.username}</span>
+          <a href="/" target="_blank" rel="noreferrer" title="Lihat situs" aria-label="Lihat situs"><ExternalLink size={14} /><span className="teks">Lihat situs</span></a>
+          <button title="Keluar" aria-label="Keluar" onClick={async () => { try { await logout(); } finally { kosongkanCache(); setStatus("belum"); setPengguna(null); } }}><LogOut size={14} /><span className="teks">Keluar</span></button>
         </div>
       </aside>
 

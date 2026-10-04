@@ -118,11 +118,15 @@ export async function unggahFile(file) {
   // 'x-gas-key' sampai ke doPost dalam keadaan kosong, sementara body
   // diteruskan apa adanya. Kunci di body sekaligus menutup upload langsung dari
   // panel admin yang tidak lewat client ini.
+  // Content-Type sengaja text/plain, bukan application/json. JSON memicu preflight
+  // CORS (OPTIONS) yang tidak pernah dijawab Apps Script, sehingga fetch gagal
+  // sebelum request sampai ke doPost. text/plain termasuk "simple request" yang
+  // tidak memakai preflight; doPost tetap membaca isinya lewat e.postData.contents.
   let res;
   try {
     res = await fetch(GAS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action: 'upload',
         name: file.name,
