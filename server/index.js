@@ -194,6 +194,7 @@ const PESAN_PG = {
 const pesanKesalahan = (err, bawaan) => ({
   error: PESAN_PG[err.code] || bawaan,
   ...(err.code ? { kode: err.code } : {}),
+  ...(err.column ? { kolom: err.column } : {}),
 });
 
 app.get('/api/health', async (_, res) => {
@@ -548,6 +549,14 @@ const sqlIdent = (nama) =>
 // bukan JSON. Kolom JSONB akan menolaknya dengan "invalid input syntax for type
 // json". Jadi kolom json harus dikirim sebagai string JSON; di dalam body tetap
 // boleh berupa array supaya hitungSkorIga() bisa membacanya.
+// Placeholder parameter. pg mengirim parameter sebagai OID 0 (unspecified) dan
+// PostgreSQL menyimpulkan tipenya dari konteks; kolom json/jsonb diberi cast
+// eksplisit supaya tidak bergantung pada tebakan itu.
+const sqlTempat = (entitas, nama) => {
+  const tipe = new Map(entitas.kolom.map(([n, t]) => [n, t]));
+  return nama.map((k, i) => (tipe.get(k) === 'json' ? `$${i + 1}::jsonb` : `$${i + 1}`));
+};
+
 const nilaiSql = (entitas, nama, nilai) => {
   const tipe = new Map(entitas.kolom.map(([n, t]) => [n, t]));
   return nama.map((k, i) => (tipe.get(k) === 'json' && nilai[i] != null ? JSON.stringify(nilai[i]) : nilai[i]));
@@ -678,11 +687,11 @@ app.post('/api/inovasi', async (req, res) => {
     if (!kolom.length) return res.status(400).json({ error: 'Tidak ada data yang dikirim' });
 
     const nilai = nilaiSql(ENTITAS.inovasi, kolom, kolom.map(k => hasil[k]));
-    const tempat = kolom.map((_, i) => `${i + 1}`).join(', ');
+    const bagian = await bagianInsert(ENTITAS.inovasi, kolom);
 
     const { rows } = await pool.query(
-      `INSERT INTO bapperida_inovasi (${kolom.join(', ')})
-       VALUES (${tempat})
+      `INSERT INTO bapperida_inovasi (${bagian.kolom})
+       VALUES (${bagian.tempat})
        RETURNING id, status_approval, skor_iga, kategori_skor`,
       nilai
     );
@@ -859,10 +868,10 @@ app.post('/api/:entitas', async (req, res) => {
     if (!kolom.length) return res.status(400).json({ error: 'Tidak ada data yang dikirim' });
 
     const nilai  = nilaiSql(e, kolom, kolom.map(k => hasil[k]));
-    const tempat = kolom.map((_, i) => `$${i + 1}`).join(', ');
+    const bagian = await bagianInsert(e, kolom);
 
     const { rows } = await pool.query(
-      `INSERT INTO ${e.tabel} (${kolom.map(sqlIdent).join(', ')}) VALUES (${tempat}) RETURNING *`,
+      `INSERT INTO ${e.tabel} (${bagian.kolom}) VALUES (${bagian.tempat}) RETURNING *`,
       nilai
     );
     res.status(201).json({ message: 'Data berhasil disimpan', data: rows[0] });
@@ -891,7 +900,7 @@ app.put('/api/:entitas/:id', async (req, res) => {
     // created_at tapi juga updated_at; semuanya konsisten punya updated_at kecuali
     // tabel yang di-seed sebelum kolom ini ada — dicek dari information_schema
     // di bawah, bukan diasumsikan.
-    const set = kolom.map((k, i) => `${sqlIdent(k)} = $${i + 1}`);
+    const set = kolom.map((k, i) => `${sqlIdent(k)} = ${sqlTempat(e, kolom)[i]}`);
     const punyaUpdatedAt = await punyaKolom(e.tabel, 'updated_at');
     if (punyaUpdatedAt) set.push('updated_at = NOW()');
 
@@ -951,6 +960,18 @@ app.delete('/api/:entitas/:id', async (req, res) => {
 
 // Kolom tautan yang didefinisikan di ENTITAS (bukan tebakan dari skema produksi).
 const punyaKolomDi = (e, k) => e.kolom.some(([n]) => n === k);
+
+// updated_at sengaja tidak ada di daftar kolom entitas karena nilainya dibuat
+// database, bukan dikirim klien. Di bapperida_inovasi kolom ini NOT NULL, jadi
+// INSERT wajib mengisinya sendiri: kalau DEFAULT-nya tidak ada, INSERT gagal
+// dengan 23502; kalau ada, mengisinya eksplisit tetap aman karena nilainya sama.
+async function bagianInsert(e, kolom) {
+  const punyaUpdatedAt = await punyaKolom(e.tabel, 'updated_at');
+  return {
+    kolom: kolom.map(sqlIdent).concat(punyaUpdatedAt ? ['updated_at'] : []).join(', '),
+    tempat: sqlTempat(e, kolom).concat(punyaUpdatedAt ? ['NOW()'] : []).join(', '),
+  };
+}
 
 const cacheKolom = new Map();
 async function punyaKolom(tabel, kolom) {
