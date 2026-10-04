@@ -138,27 +138,28 @@ function FieldGambar({ label, wajib, value, onChange }) {
 
 const FORMULIR = {
   berita: {
-    judul: "Berita", detail: true, baru: { is_featured: false },
+    judul: "Berita", detail: true,
+    baru: { is_featured: false, col_span: 1, row_span: 1 },
     kolom: [
       { name: "judul", label: "Judul berita", wajib: true },
       { name: "kategori", label: "Kategori" },
       { name: "tanggal", label: "Tanggal", tipe: "date" },
       { name: "gambar_url", label: "Gambar berita", gambar: true },
-      { name: "emoji", label: "Emoji (jika tanpa gambar)" },
       { name: "priority", label: "Urutan", tipe: "number", petunjuk: "Angka kecil tampil lebih dulu." },
       { name: "is_featured", label: "Jadikan berita unggulan", tipe: "checkbox" },
+      { name: "col_span", label: "Lebar grid", tipe: "number", min: 1, max: 4, petunjuk: "Jumlah kolom yang dipakai di grid beranda (1–4)." },
+      { name: "row_span", label: "Tinggi grid", tipe: "number", min: 1, max: 2, petunjuk: "Jumlah baris yang dipakai di grid beranda (1–2)." },
       { name: "konten", label: "Isi berita", tipe: "textarea" },
     ],
   },
   dokumen: {
-    judul: "Dokumen", baru: { publik: true, tipe: "PDF", icon: "📄" },
+    judul: "Dokumen", baru: { publik: true, tipe: "PDF" },
     kolom: [
       { name: "judul", label: "Judul dokumen", wajib: true },
       { name: "kategori", label: "Kategori" },
       { name: "tipe", label: "Tipe (PDF, XLSX, DOCX)" },
       { name: "ukuran", label: "Ukuran" },
       { name: "tanggal", label: "Tanggal terbit", tipe: "date" },
-      { name: "icon", label: "Emoji ikon" },
       { name: "publik", label: "Tampilkan di situs publik", tipe: "checkbox" },
     ],
   },
@@ -178,7 +179,6 @@ const FORMULIR = {
       { name: "status", label: "Status" },
       { name: "sc", label: "Sasaran" },
       { name: "priority", label: "Urutan", tipe: "number" },
-      { name: "icon", label: "Emoji" },
       { name: "desc", label: "Deskripsi", tipe: "textarea" },
     ],
   },
@@ -187,51 +187,51 @@ const FORMULIR = {
     kolom: [
       { name: "label", label: "Label", wajib: true, petunjuk: "Label tidak bisa diubah setelah dibuat; ubah angkanya saja." },
       { name: "value", label: "Nilai", wajib: true },
-      { name: "icon", label: "Emoji" },
       { name: "priority", label: "Urutan", tipe: "number" },
     ],
   },
 };
 
 // Kolom tabel per modul. `c` menerima satu baris.
-const Ikon = ({ b }) => (
+// Tanpa gambar, sel memakai ikon modul — bukan emoji.
+const Ikon = ({ b, Ikon: IkonDefault }) => (
   b.gambar_url
     ? <img className="mini" src={thumbDrive(b.gambar_url, 96)} alt="" width="48" height="48" loading="lazy" decoding="async" />
-    : <span className="mini" aria-hidden="true">{b.emoji || b.icon || "·"}</span>
+    : <span className="mini" aria-hidden="true">{IkonDefault ? <IkonDefault size={22} /> : <FileText size={22} />}</span>
 );
-const Judul = ({ b, t, sub }) => (
-  <div className="sel-judul"><Ikon b={b} /><div><b>{t}</b>{sub && <small>{sub}</small>}</div></div>
+const Judul = ({ b, t, sub, Ikon: IkonDefault }) => (
+  <div className="sel-judul"><Ikon b={b} Ikon={IkonDefault} /><div><b>{t}</b>{sub && <small>{sub}</small>}</div></div>
 );
 
 const TABEL = {
   berita: [
-    ["Berita", (b) => <Judul b={b} t={b.judul} sub={b.kategori} />],
+    ["Berita", (b) => <Judul b={b} t={b.judul} sub={b.kategori} Ikon={Newspaper} />],
     ["Tanggal", (b) => <span className="num">{tgl(b.tanggal)}</span>],
     ["Status", (b) => b.is_featured ? <span className="lencana-s ok">Unggulan</span> : <span className="redup">—</span>],
     ["Urutan", (b) => <span className="num">{b.priority ?? "—"}</span>],
   ],
   dokumen: [
-    ["Dokumen", (b) => <Judul b={{ icon: b.icon }} t={b.judul} sub={[b.kategori, b.tipe, b.ukuran].filter(Boolean).join(" · ")} />],
+    ["Dokumen", (b) => <Judul b={b} t={b.judul} sub={[b.kategori, b.tipe, b.ukuran].filter(Boolean).join(" · ")} Ikon={FileText} />],
     ["Tanggal", (b) => <span className="num">{tgl(b.tanggal)}</span>],
     ["Tampil", (b) => <span className={`lencana-s ${b.publik ? "ok" : ""}`}>{b.publik ? "Publik" : "Disembunyikan"}</span>],
     ["Berkas", (b) => b.url ? <a href={tautanLangsung(b.url)} target="_blank" rel="noreferrer">Buka <ExternalLink size={12} /></a> : "—"],
   ],
   slider: [
-    ["Slide", (b) => <Judul b={b} t={b.judul || "(tanpa judul)"} sub={b.subjudul} />],
+    ["Slide", (b) => <Judul b={b} t={b.judul || "(tanpa judul)"} sub={b.subjudul} Ikon={Images} />],
   ],
   program: [
-    ["Program", (b) => <Judul b={b} t={b.title} sub={b.cat} />],
+    ["Program", (b) => <Judul b={b} t={b.title} sub={b.cat} Ikon={ListChecks} />],
     ["Status", (b) => b.status ? <span className="lencana-s">{b.status}</span> : "—"],
     ["Sasaran", (b) => b.sc || "—"],
     ["Urutan", (b) => <span className="num">{b.priority ?? "—"}</span>],
   ],
   metrics: [
-    ["Metrik", (b) => <Judul b={b} t={b.label} />],
+    ["Metrik", (b) => <Judul b={b} t={b.label} Ikon={Gauge} />],
     ["Nilai", (b) => <b className="num">{b.value}</b>],
     ["Urutan", (b) => <span className="num">{b.priority ?? "—"}</span>],
   ],
   inovasi: [
-    ["Usulan", (b) => <Judul b={{ icon: "💡" }} t={b.judul_inovasi} sub={[b.opd_nama, b.nama_inovator].filter(Boolean).join(" · ")} />],
+    ["Usulan", (b) => <Judul b={b} t={b.judul_inovasi} sub={[b.opd_nama, b.nama_inovator].filter(Boolean).join(" · ")} Ikon={Lightbulb} />],
     ["Skor IGA", (b) => <span className="num"><b>{b.skor_iga}</b> <span className="lencana-s">{b.kategori_skor}</span></span>],
     ["Status", (b) => <span className={`lencana-s ${b.status_approval === "Approved" ? "ok" : "tunggu"}`}>{b.status_approval === "Approved" ? "Disetujui" : "Menunggu"}</span>],
     ["Masuk", (b) => <span className="num">{tgl(b.created_at)}</span>],
@@ -291,7 +291,17 @@ function FormItem({ modul, item, onTutup, onSelesai }) {
     for (const k of def.kolom) {
       const v = nilai[k.name];
       if (k.tipe === "checkbox") data[k.name] = Boolean(v);
-      else if (k.tipe === "number") data[k.name] = v === "" || v == null ? null : Number(v);
+      else if (k.tipe === "number") {
+        if (v === "" || v == null) data[k.name] = null;
+        else {
+          let n = Number(v);
+          // Batasi rentang yang diizinkan server agar grid tidak pecah.
+          if (!Number.isFinite(n)) return setGalat(`${k.label} harus berupa angka.`);
+          if (k.min != null) n = Math.max(k.min, n);
+          if (k.max != null) n = Math.min(k.max, n);
+          data[k.name] = n;
+        }
+      }
       else data[k.name] = String(v ?? "").trim();
       if (k.gambar && k.wajib && !data[k.name]) return setGalat(`${k.label} wajib diisi.`);
     }
@@ -340,7 +350,8 @@ function FormItem({ modul, item, onTutup, onSelesai }) {
                 ) : k.tipe === "checkbox" ? (
                   <span className="centang"><input type="checkbox" checked={Boolean(nilai[k.name])} onChange={(e) => ubah(k.name, e.target.checked)} /> {k.label}</span>
                 ) : (
-                  <input type={k.tipe || "text"} value={nilai[k.name]} onChange={(e) => ubah(k.name, e.target.value)} required={k.wajib} />
+                  <input type={k.tipe || "text"} value={nilai[k.name]} onChange={(e) => ubah(k.name, e.target.value)} required={k.wajib}
+                    min={k.min} max={k.max} step={k.tipe === "number" ? 1 : undefined} />
                 )}
               </Kolom>
             ))}

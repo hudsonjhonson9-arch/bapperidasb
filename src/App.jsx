@@ -10,7 +10,9 @@ const LOGO_URL = "/logo.png";
 import {
   MapPin, Phone, Mail, ChevronDown, Menu, X,
   ArrowRight, Users, User, Calendar, FileText, Download, Eye, Search,
-  Target, Lightbulb, BarChart2, BookOpen, Globe, Shield, Play
+  Target, Lightbulb, BarChart2, BookOpen, Globe, Shield, Play,
+  AlertCircle, Loader2, Link2, Book, Star, Building2, Scale, Wallet,
+  Package, Info, Newspaper, Smartphone, Check
 } from "lucide-react";
 
 const NAV = [
@@ -50,8 +52,8 @@ const FadeInImage = ({ src, alt, style, className }) => {
         <div className="shimmer" style={{ position: 'absolute', inset: 0, zIndex: 1 }} />
       )}
       {error ? (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: 12 }}>
-          ⚠️
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
+          <AlertCircle size={22} aria-hidden="true" />
         </div>
       ) : (
         <img
@@ -128,14 +130,14 @@ const MultiFileUploadField = ({ name, label, helpText }) => {
           <button type="button" onClick={addLink} style={{ padding: '10px 16px', background: C.navy, color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 12, whiteSpace: 'nowrap' }}>Tambah Link</button>
         </div>
         <input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*" onChange={handleFileChange} className="form-input" disabled={uploading} style={{ padding: '10px 16px', background: '#fff', cursor: 'pointer', border: '1px dashed #ccc' }} />
-        {uploading && <div style={{ fontSize: 12, color: C.gold, fontWeight: 600 }}>⏳ Upload ke Google Drive...</div>}
-        {galat && <div style={{ fontSize: 12, color: '#ef4444', fontWeight: 600 }}>⚠️ {galat}</div>}
+{uploading && <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.gold, fontWeight: 600 }}><Loader2 size={13} className="putar" aria-hidden="true" /> Upload ke Google Drive...</div>}
+        {galat && <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#ef4444', fontWeight: 600 }}><AlertCircle size={13} aria-hidden="true" /> {galat}</div>}
         {files.length > 0 && (
           <div style={{ display: 'grid', gap: 8 }}>
             {files.map((f, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'white', padding: '8px 12px', borderRadius: 8, border: '1px solid #eee' }}>
-                <div style={{ width: 32, height: 32, borderRadius: 6, background: `${C.navy}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
-                  {f.type === 'LINK' ? '🔗' : f.type === 'PDF' ? '📕' : '📄'}
+                <div style={{ width: 32, height: 32, borderRadius: 6, background: `${C.navy}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.navy }}>
+                  {f.type === 'LINK' ? <Link2 size={15} aria-hidden="true" /> : f.type === 'PDF' ? <Book size={15} aria-hidden="true" /> : <FileText size={15} aria-hidden="true" />}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: C.navy, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</div>
@@ -200,13 +202,13 @@ const OrgBox = ({ data, color, isLeader, isBidang }) => {
             background: hovered ? `${color}15` : "#f8fafc", 
             border: `2px solid ${hovered ? color : "#f1f5f9"}`, 
             display: "flex", alignItems: "center", justifyContent: "center", 
-            fontSize: 28, transition: "all 0.4s ease",
+            color: hovered ? color : "#94a3b8", transition: "all 0.4s ease",
             transform: hovered ? "rotate(5deg)" : "rotate(0)"
           }}>
-            👤
+            <User size={30} aria-hidden="true" />
           </div>
           {isLeader && (
-            <div style={{ position: "absolute", top: -5, right: -5, background: C.gold, color: "white", width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, border: "2px solid white" }}>⭐</div>
+            <div style={{ position: "absolute", top: -5, right: -5, background: C.gold, color: "white", width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid white" }} title="Pimpinan"><Star size={12} aria-hidden="true" /></div>
           )}
         </div>
         <div>
@@ -270,15 +272,15 @@ const PublicInovasiCard = ({ inv }) => {
         </h3>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <div style={{ fontSize: 13, color: C.textMid, display: "flex", alignItems: "center", gap: 6, fontWeight: 500 }}>
-            <span>🏢</span> {inv.opd_nama}
+            <Building2 size={14} style={{ flex: "none" }} aria-hidden="true" /> {inv.opd_nama}
           </div>
           <div style={{ fontSize: 13, color: C.textLight, display: "flex", alignItems: "center", gap: 6 }}>
-            <span>👤</span> {inv.nama_inovator || "Tim Inovator"}
+            <User size={14} style={{ flex: "none" }} aria-hidden="true" /> {inv.nama_inovator || "Tim Inovator"}
           </div>
           <div style={{ fontSize: 11, color: C.textLight, display: "flex", flexWrap: "wrap", gap: "8px 16px", marginTop: 4 }}>
-            <span>⚖️ <strong>Regulasi:</strong> {inv.regulasi_inovasi || "SOP"}</span>
-            <span>💰 <strong>Anggaran:</strong> {inv.anggaran_inovasi === "Ada" ? "DPA (Ada)" : "Tidak Ada"}</span>
-            <span>📅 <strong>Penerapan:</strong> {inv.waktu_penerapan || "-"}</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Scale size={12} aria-hidden="true" /> <strong>Regulasi:</strong> {inv.regulasi_inovasi || "SOP"}</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Wallet size={12} aria-hidden="true" /> <strong>Anggaran:</strong> {inv.anggaran_inovasi === "Ada" ? "DPA (Ada)" : "Tidak Ada"}</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Calendar size={12} aria-hidden="true" /> <strong>Penerapan:</strong> {inv.waktu_penerapan || "-"}</span>
           </div>
         </div>
       </div>
@@ -353,7 +355,7 @@ const PublicInovasiCard = ({ inv }) => {
             borderRadius: 4,
             fontWeight: 500
           }}>
-            🔹 {inv.jenis_inovasi}
+            {inv.jenis_inovasi}
           </span>
           <span style={{ 
             fontSize: 11, 
@@ -363,7 +365,7 @@ const PublicInovasiCard = ({ inv }) => {
             borderRadius: 4,
             fontWeight: 500
           }}>
-            🔸 Tahap: {inv.tahapan_inovasi}
+            Tahap: {inv.tahapan_inovasi}
           </span>
         </div>
 
@@ -680,7 +682,7 @@ export default function App() {
           fontWeight: 600,
           fontSize: 14
         }}>
-          {notification.type === "success" ? "✅" : "❌"}
+          {notification.type === "success" ? <Check size={15} aria-hidden="true" /> : <X size={15} aria-hidden="true" />}
           {notification.message}
         </div>
       )}
@@ -704,6 +706,9 @@ export default function App() {
           background-size: 1000px 100%;
           display: block;
         }
+        @keyframes putar { to { transform: rotate(360deg) } }
+        .putar { animation: putar .9s linear infinite; }
+        @media (prefers-reduced-motion: reduce) { .putar { animation: none } }
         .news-img-container { overflow: hidden; position: relative; }
         .news-img-container:hover .news-img { transform: scale(1.05); }
         .news-img { transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -1187,7 +1192,7 @@ export default function App() {
             {metricsList.map(m => (
               <div key={m.id} className="card" style={{ padding: "40px 30px", textAlign: "center", position: "relative", display: "flex", flexDirection: "column", justifyContent: "space-between", background: `linear-gradient(to bottom, #ffffff, ${C.offWhite})`, border: `1px solid ${C.warmGray}`, boxShadow: "0 10px 30px rgba(0,0,0,0.03)" }}>
                 <div>
-                  <div style={{ fontSize: 54, marginBottom: 16, filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.1))" }}>{m.icon}</div>
+                  <div style={{ color: C.gold, marginBottom: 16, display: "flex", justifyContent: "center" }}><BarChart2 size={48} aria-hidden="true" /></div>
                   <h3 style={{ fontSize: 15, fontWeight: 600, color: C.textMid, marginBottom: 20, lineHeight: 1.5 }}>{m.label}</h3>
                 </div>
                 <div>
@@ -1356,7 +1361,7 @@ export default function App() {
             ))}
             {programList.length === 0 && (
               <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "60px 20px", background: "white", borderRadius: 16, border: "1px dashed #ddd" }}>
-                <div style={{ fontSize: 42, marginBottom: 14 }}>📅</div>
+                <div style={{ color: C.gold, marginBottom: 14 }}><Calendar size={40} aria-hidden="true" /></div>
                 <div style={{ fontSize: 16, fontWeight: 600, color: C.navy, marginBottom: 6 }}>Belum ada program tersedia</div>
                 <div style={{ fontSize: 14, color: C.textLight }}>Data sedang dimuat atau belum ditambahkan oleh admin.</div>
               </div>
@@ -1561,8 +1566,8 @@ export default function App() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {items.map(dok => (
                       <div key={dok.id} className="dok-card">
-                        <div style={{ width: 46, height: 46, borderRadius: 10, background: `${C.navy}12`, border: `1px solid ${C.navy}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
-                          {dok.icon || "📄"}
+                        <div style={{ width: 46, height: 46, borderRadius: 10, background: `${C.navy}12`, border: `1px solid ${C.navy}22`, display: "flex", alignItems: "center", justifyContent: "center", color: C.navy, flexShrink: 0 }}>
+                          <FileText size={22} aria-hidden="true" />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 14.5, fontWeight: 600, color: C.navy, marginBottom: 5, lineHeight: 1.4 }}>{dok.judul}</div>
@@ -1570,7 +1575,7 @@ export default function App() {
                             <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: C.textLight }}>
                               <FileText size={11} /> {dok.tipe || "PDF"}
                             </span>
-                            <span style={{ fontSize: 12, color: C.textLight }}>📦 {dok.ukuran || "-"}</span>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, color: C.textLight }}><Package size={12} aria-hidden="true" /> {dok.ukuran || "-"}</span>
                             <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: C.textLight }}>
                               <Calendar size={11} /> {dok.tanggal}
                             </span>
@@ -1604,7 +1609,7 @@ export default function App() {
             (dokSearch === "" || d.judul.toLowerCase().includes(dokSearch.toLowerCase()))
           ).length === 0 && (
             <div style={{ textAlign: "center", padding: "60px 20px", color: C.textLight }}>
-              <div style={{ fontSize: 42, marginBottom: 14 }}>🔍</div>
+              <div style={{ color: "#cbd5e1", marginBottom: 14 }}><Search size={40} aria-hidden="true" /></div>
               <div style={{ fontSize: 16, fontWeight: 500, color: C.textMid, marginBottom: 6 }}>
                 {dokumenList.length === 0 ? "Belum ada dokumen tersedia" : "Dokumen tidak ditemukan"}
               </div>
@@ -1616,7 +1621,7 @@ export default function App() {
 
           {/* Info bar */}
           <div style={{ marginTop: 36, background: `rgba(11,36,71,0.05)`, border: `1px dashed ${C.gold}`, borderRadius: 12, padding: "16px 22px", display: "flex", alignItems: "center", gap: 14 }}>
-            <span style={{ fontSize: 20 }}>ℹ️</span>
+            <span style={{ color: C.gold, display: "flex", flex: "none" }}><Info size={20} aria-hidden="true" /></span>
             <p style={{ fontSize: 13.5, color: C.textMid, lineHeight: 1.75 }}>
               Seluruh dokumen yang tersedia di halaman ini merupakan dokumen resmi yang telah disahkan oleh pejabat berwenang. Untuk permintaan dokumen lain atau versi cetak, silakan menghubungi kantor BAPPERIDA secara langsung atau melalui formulir kontak.
             </p>
@@ -1632,7 +1637,7 @@ export default function App() {
               <div className="gold-bar" style={{ marginBottom: 20 }} />
               <p className="eyebrow" style={{ marginBottom: 14 }}>Informasi Terkini</p>
               <h2 className="section-title">Berita &amp; Kegiatan</h2>
-              {fetchError && <div style={{ color: "red", fontSize: 13, marginTop: 10 }}>⚠️ {fetchError}</div>}
+              {fetchError && <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#dc2626", fontSize: 13, marginTop: 10 }}><AlertCircle size={14} aria-hidden="true" /> {fetchError}</div>}
             </div>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
               <button className="btn-gold" onClick={() => { setBeritaPage(1); setShowAllBeritaModal(true); }}>Lihat Semua Berita <ArrowRight size={14} /></button>
@@ -1647,7 +1652,13 @@ export default function App() {
             gap: 32, 
             marginBottom: 60 
           }}>
-            {beritaList.slice(0, 6).map((item, idx) => {
+            {beritaList.length === 0 ? (
+              <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "56px 20px", background: "white", borderRadius: 16, border: "1px dashed #ddd" }}>
+                <div style={{ color: "#cbd5e1", marginBottom: 14 }}><Newspaper size={40} aria-hidden="true" /></div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: C.navy, marginBottom: 6 }}>Belum ada berita</div>
+                <div style={{ fontSize: 14, color: C.textLight }}>Berita dan kegiatan terbaru akan tampil di sini setelah ditambahkan dari panel admin.</div>
+              </div>
+            ) : beritaList.slice(0, 6).map((item, idx) => {
               // Priority: col_span/row_span from DB, fallback to legacy layout_size, fallback to default
               let col = item.col_span || 1;
               let row = item.row_span || 1;
@@ -1697,7 +1708,9 @@ export default function App() {
                         <FadeInImage src={getDriveThumb(item.gambar_url)} alt={item.judul} style={{ width: "100%", height: "100%" }} />
                       ) : (
                         <div style={{ width: "100%", height: "100%", background: `linear-gradient(135deg, ${C.navy} 0%, #1e40af 100%)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <span style={{ fontSize: row === 1 ? 32 : 48 }}>{item.emoji || "📋"}</span>
+                          <span style={{ color: "rgba(255,255,255,.85)", display: "flex" }}>
+                          <Newspaper size={row === 1 ? 34 : 50} aria-hidden="true" />
+                        </span>
                         </div>
                       )}
                     </div>
@@ -1937,7 +1950,7 @@ export default function App() {
               {previewDokumen.url ? (
                 isMobile ? (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: C.textLight, padding: 40, textAlign: "center" }}>
-                    <div style={{ fontSize: 48, marginBottom: 16 }}>📱</div>
+                    <div style={{ color: C.textLight, marginBottom: 16 }}><Smartphone size={46} aria-hidden="true" /></div>
                     <div style={{ fontSize: 16, color: C.navy, fontWeight: 600, marginBottom: 8 }}>Pratinjau Tidak Didukung</div>
                     <div style={{ marginBottom: 20 }}>Pratinjau dokumen PDF langsung tidak selalu didukung di browser mobile. Silakan buka dokumen di tab baru.</div>
                     <button onClick={() => window.open(previewDokumen.url, '_blank')} className="btn-gold" style={{ padding: "10px 20px" }}>
@@ -1955,7 +1968,7 @@ export default function App() {
                 )
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: C.textLight, padding: 40, textAlign: "center" }}>
-                  <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+                  <div style={{ color: C.textLight, marginBottom: 16 }}><AlertCircle size={46} aria-hidden="true" /></div>
                   <div style={{ fontSize: 16, color: C.navy, fontWeight: 600, marginBottom: 8 }}>Tautan Dokumen Tidak Tersedia</div>
                   <div>Dokumen ini belum memiliki tautan file untuk dipratinjau.</div>
                 </div>
@@ -1990,18 +2003,18 @@ export default function App() {
                     <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
                       {items.map(item => (
                         <div key={item.id} onClick={() => { setShowAllBeritaModal(false); setSelectedBerita(item); }} className="card" style={{ padding: "16px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 16 }}>
-                          <div style={{ width: 60, height: 60, borderRadius: 10, background: `${C.navy}14`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0, overflow: "hidden" }}>
+                          <div style={{ width: 60, height: 60, borderRadius: 10, background: `${C.navy}14`, display: "flex", alignItems: "center", justifyContent: "center", color: C.navy, flexShrink: 0, overflow: "hidden" }}>
                             {item.gambar_url ? (
                               <FadeInImage src={getDriveThumb(item.gambar_url)} alt={item.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                             ) : (
-                              item.emoji || "📰"
+                              <Newspaper size={26} aria-hidden="true" />
                             )}
                           </div>
                           <div style={{ flex: 1 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                               <span style={{ background: `${C.navy}14`, color: C.navy, fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20 }}>{item.kategori}</span>
                               <span style={{ color: C.textLight, fontSize: 12 }}>{item.tanggal}</span>
-                              {item.is_featured && <span style={{ color: C.gold, fontSize: 11, fontWeight: 700 }}>★ Unggulan</span>}
+                              {item.is_featured && <span style={{ display: "inline-flex", alignItems: "center", gap: 3, color: C.gold, fontSize: 11, fontWeight: 700 }}><Star size={12} aria-hidden="true" /> Unggulan</span>}
                             </div>
                             <h4 style={{ fontSize: 15, fontWeight: 600, color: C.navy, lineHeight: 1.4 }}>{item.judul}</h4>
                           </div>
@@ -2026,7 +2039,7 @@ export default function App() {
               {selectedBerita.gambar_url ? (
                 <FadeInImage src={getDriveThumb(selectedBerita.gambar_url)} alt={selectedBerita.judul} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />
               ) : (
-                <span style={{ fontSize: 120 }}>{selectedBerita.emoji || "📰"}</span>
+                <span style={{ color: "rgba(255,255,255,.75)", display: "flex" }}><Newspaper size={110} aria-hidden="true" /></span>
               )}
               <button onClick={() => setSelectedBerita(null)} style={{ position: "absolute", top: 20, right: 20, background: "rgba(0,0,0,0.4)", border: "none", color: "white", padding: 8, borderRadius: "50%", cursor: "pointer", backdropFilter: "blur(4px)" }}><X size={20} /></button>
             </div>
@@ -2223,7 +2236,7 @@ export default function App() {
               </div>
               <div className="modal-footer">
                 <button type="submit" className="btn-gold" disabled={isSaving} onClick={() => setIsSaving(true)}>
-                  {isSaving ? "⏳ Sedang Mengirim..." : "Kirim Inovasi ke BAPPERIDA"}
+                  {isSaving ? "Sedang Mengirim..." : "Kirim Inovasi ke BAPPERIDA"}
                 </button>
               </div>
             </form>
