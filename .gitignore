@@ -3,3 +3,7 @@ dist/
 .env
 .env.local
 *.log
+
+# Dump/ekspor data produksi. Berisi data pribadi (nama OPD, nama inovator)
+# dan tidak boleh masuk repo publik.
+bapperida_*.csv

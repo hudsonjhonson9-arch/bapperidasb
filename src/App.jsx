@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ambilInit, ambilTautanDokumen, kirimKontak, kirimInovasi,
   unggahFile, formatBytes,
@@ -79,11 +79,71 @@ const FadeInImage = ({ src, alt, style, className }) => {
 // untuk OPD, jadi tetap tinggal di halaman publik. Form admin punya versinya sendiri
 // di panel admin karena butuh kontrol tambahan (ganti file, hapus file lama).
 
-const MultiFileUploadField = ({ name, label, helpText }) => {
+// ── Skor IGA ────────────────────────────────────────────────────────────────
+// Aturan ini WAJIB sama dengan hitungSkorIga() dan kategoriIga() di
+// server/index.js. Form publik hanya menampilkan estimasi, tapi kalau aturannya
+// berbeda, angka yang terlihat di form tidak akan cocok dengan yang tersimpan.
+const SKOR_IGA = {
+  rancang: 20, // rancang bangun >= 300 kata
+  tahapan: { Penerapan: 20, 'Uji Coba': 10, Inisiatif: 5 },
+  regulasi: { Perbup: 15, 'SK Kepala OPD': 10, SOP: 5 },
+  anggaran: { Ada: 15 },
+  video: 10,
+  dokumen: 20,
+};
+
+function skorIga(d) {
+  const kata = String(d.rancang_bangun || '').trim().split(/\s+/).filter(Boolean).length;
+  const dokumen = Array.isArray(d.dokumen_dukung) ? d.dokumen_dukung : [];
+  let skor = 0;
+  if (kata >= 300) skor += SKOR_IGA.rancang;
+  skor += SKOR_IGA.tahapan[d.tahapan_inovasi] || 0;
+  skor += SKOR_IGA.regulasi[d.regulasi_inovasi] || 0;
+  skor += SKOR_IGA.anggaran[d.anggaran_inovasi] || 0;
+  if (String(d.link_video || '').length > 10) skor += SKOR_IGA.video;
+  if (dokumen.length > 0) skor += SKOR_IGA.dokumen;
+  return Math.min(100, skor);
+}
+
+function kategoriIga(skor) {
+  if (skor >= 80) return 'Sangat Inovatif';
+  if (skor >= 50) return 'Inovatif';
+  return 'Kurang Inovatif';
+}
+
+// Tulis estimasi ke display form. Dipanggil dari onChange form dan dari widget
+// dokumen: input dokumen disimpan di hidden input yang nilainya berubah tanpa
+// memicu event change, jadi 20 poinnya bisa hilang sampai pengguna mengubah
+// field lain.
+function perbaruiEstimasiIga(idForm = 'inovasi-form') {
+  const form = document.getElementById(idForm);
+  const el = (suffix) => document.getElementById(`iga-${suffix}`);
+  if (!form || !el('score-display') || !el('cat-display')) return;
+  const d = Object.fromEntries(new FormData(form).entries());
+  try { d.dokumen_dukung = JSON.parse(d.dokumen_dukung || '[]'); }
+  catch { d.dokumen_dukung = []; }
+  const skor = skorIga(d);
+  const kategori = kategoriIga(skor);
+  el('score-display').innerText = skor;
+  el('score-input').value = skor;
+  el('cat-display').innerText = kategori;
+  el('cat-input').value = kategori;
+}
+
+const MultiFileUploadField = ({ name, label, helpText, onUbah }) => {
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [linkInput, setLinkInput] = useState('');
   const [galat, setGalat] = useState('');
+
+  // Unggah, tambah link, dan hapus file semuanya mengubah hidden input tanpa
+  // memicu event change, jadi form tidak tahu skornya harus dihitung ulang.
+  // Efek ini yang menutup celah itu. Callback disimpan di ref supaya efek hanya
+  // bergantung pada files: parent sering me-render dan callback-nya dibuat anew
+  // setiap kali, jadi andalkan deps langsung akan memicu efek tiap render.
+  const refUbah = useRef(onUbah);
+  refUbah.current = onUbah;
+  useEffect(() => { refUbah.current?.(); }, [files]);
 
   const handleFileChange = async (e) => {
     const selectedFiles = Array.from(e.target.files);
@@ -2072,6 +2132,11 @@ export default function App() {
             </div>
             <form id="inovasi-form" onSubmit={(e) => {
               e.preventDefault();
+              // Set status kirim di sini, bukan di onClick tombol. Kalau ada 10
+              // field wajib yang belum terisi, browser memblokir submit dan
+              // onSubmit tidak pernah dipanggil — kalau status sudah diubah dari
+              // onClick, tombolnya jadi nonaktif permanen dan pendingin.
+              setIsSaving(true);
               const fd = new FormData(e.target);
               const data = Object.fromEntries(fd.entries());
               data.skor_iga = parseInt(data.skor_iga || 0);
@@ -2098,51 +2163,8 @@ export default function App() {
                   showNotification(err.message || "Gagal mengirim inovasi.", "error");
                 })
                 .finally(() => setIsSaving(false));
-            }} onChange={() => {
-              let score = 0;
-              const form = document.getElementById('inovasi-form');
-              if (!form) return;
-              const fd = new FormData(form);
-              
-              // 1. Rancang Bangun (>=300 words) = +20 points
-              const rbText = fd.get('rancang_bangun')?.trim() || "";
-              const rbWordsCount = rbText ? rbText.split(/\s+/).filter(Boolean).length : 0;
-              if (rbWordsCount >= 300) score += 20;
-              
-              // 2. Tahapan Inovasi: Penerapan = +20, Uji Coba = +10, Inisiatif = +5
-              const tahapan = fd.get('tahapan_inovasi');
-              if (tahapan === 'Penerapan') score += 20;
-              else if (tahapan === 'Uji Coba') score += 10;
-              else if (tahapan === 'Inisiatif') score += 5;
-              
-              // 3. Regulasi / Dasar Hukum: Perbup = +15, SK Kepala OPD = +10, SOP = +5
-              const regulasi = fd.get('regulasi_inovasi');
-              if (regulasi === 'Perbup') score += 15;
-              else if (regulasi === 'SK Kepala OPD') score += 10;
-              else if (regulasi === 'SOP') score += 5;
-              
-              // 4. Anggaran Pendukung: Ada = +15, Tidak Ada = +0
-              const anggaran = fd.get('anggaran_inovasi');
-              if (anggaran === 'Ada') score += 15;
-              
-              // 5. Link Video YouTube = +10 points
-              if (fd.get('link_video')?.length > 10) score += 10;
-              
-              // 6. Cek dokumen = +20 points
-              try {
-                const docs = JSON.parse(fd.get('dokumen_dukung') || "[]");
-                if (docs.length > 0) score += 20;
-              } catch (e) {}
-              
-              document.getElementById('iga-score-display').innerText = score;
-              document.getElementById('iga-score-input').value = score;
-              
-              let cat = "Kurang Inovatif";
-              if (score >= 80) cat = "Sangat Inovatif";
-              else if (score >= 50) cat = "Inovatif";
-              document.getElementById('iga-cat-input').value = cat;
-              document.getElementById('iga-cat-display').innerText = cat;
-            }}>
+}} onChange={() => perbaruiEstimasiIga()}>
+
               <div className="modal-body">
                 <div style={{ background: `${C.gold}12`, border: `1px solid ${C.gold}44`, padding: 15, borderRadius: 8, marginBottom: 20 }}>
                   <div style={{ fontSize: 12, color: C.gold, fontWeight: 700 }}>Estimasi Skor Inovasi: <span id="iga-score-display" style={{ fontSize: 18 }}>0</span>/100 (<span id="iga-cat-display">Kurang Inovatif</span>)</div>
@@ -2170,7 +2192,7 @@ export default function App() {
                   <div>
                     <label className="form-label">Urusan Inovasi</label>
                     <select name="jenis_inovasi" className="form-input" required>
-                      <option>--Pilih Urusan Inovasi--</option>
+                      <option value="">--Pilih Urusan Inovasi--</option>
                       <option>Pelayanan Publik</option>
                       <option>Tata Kelola Pemerintahan</option>
                       <option>Bentuk Lainnya</option>
@@ -2179,7 +2201,7 @@ export default function App() {
                   <div>
                     <label className="form-label">Tahapan Inovasi</label>
                     <select name="tahapan_inovasi" className="form-input" required>
-                      <option>--Pilih Tahapan Inovasi--</option>
+                      <option value="">--Pilih Tahapan Inovasi--</option>
                       <option value="Inisiatif">Inisiatif (+5 Poin)</option>
                       <option value="Uji Coba">Uji Coba (+10 Poin)</option>
                       <option value="Penerapan">Penerapan (+20 Point)</option>
@@ -2191,7 +2213,7 @@ export default function App() {
                   <div>
                     <label className="form-label">Regulasi / Dasar Hukum Inovasi</label>
                     <select name="regulasi_inovasi" className="form-input" required>
-                      <option>--Pilih Regulasi Inovasi--</option>
+                      <option value="">--Pilih Regulasi Inovasi--</option>
                       <option value="Perbup">Peraturan Daerah / Perbup (+15 Poin)</option>
                       <option value="SK Kepala OPD">SK Kepala OPD (+10 Poin)</option>
                       <option value="SOP">SOP Pelaksanaan (+5 Poin)</option>
@@ -2200,7 +2222,7 @@ export default function App() {
                   <div>
                     <label className="form-label">Ketersediaan Anggaran Pendukung</label>
                     <select name="anggaran_inovasi" className="form-input" required>
-                      <option>--Pilih Ketersediaan Anggaran Pendukung--</option>
+                      <option value="">--Pilih Ketersediaan Anggaran Pendukung--</option>
                       <option value="Ada">Ada Anggaran Khusus (DPA-OPD) (+15 Poin)</option>
                       <option value="Tidak Ada">Tidak Ada Anggaran khusus (+0 Poin)</option>
                     </select>
@@ -2230,12 +2252,12 @@ export default function App() {
 
                 <div className="form-group">
                   <label className="form-label">Upload Dokumen Pendukung (SK/SOP/dll) (+20 Poin)</label>
-                  <MultiFileUploadField name="dokumen_dukung" label="Klik untuk Upload Dokumen PDF / Gambar" />
+                  <MultiFileUploadField name="dokumen_dukung" label="Klik untuk Upload Dokumen PDF / Gambar" onUbah={() => perbaruiEstimasiIga()} />
                 </div>
 
               </div>
               <div className="modal-footer">
-                <button type="submit" className="btn-gold" disabled={isSaving} onClick={() => setIsSaving(true)}>
+                <button type="submit" className="btn-gold" disabled={isSaving}>
                   {isSaving ? "Sedang Mengirim..." : "Kirim Inovasi ke BAPPERIDA"}
                 </button>
               </div>
