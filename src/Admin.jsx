@@ -1,10 +1,10 @@
 // Panel admin BAPPERIDA. Dimuat sebagai chunk terpisah dari situs publik.
 // Navigasi memakai hash (#berita, #pesan, ...) supaya bisa di-bookmark.
-import { useState, useEffect, useCallback, Fragment } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   PanelLeftClose, PanelLeftOpen, LayoutDashboard, Newspaper, FileText, Images, ListChecks, Gauge, Lightbulb, Mail,
   ShieldCheck, LogOut, Search, Plus, X, Pencil, Trash2, ExternalLink, ChevronLeft, ChevronRight, Check,
-  LayoutGrid, Table2,
+  LayoutGrid, Table2, Play,
 } from "lucide-react";
 import {
   api, sesi, login, logout, gantiPin, ringkasan,
@@ -59,7 +59,7 @@ function Rangka({ baris = 5 }) {
   );
 }
 
-function Modal({ judul, onTutup, children, kaki }) {
+function Modal({ judul, sub, tag, lebar, onTutup, children, kaki }) {
   useEffect(() => {
     const esc = (e) => e.key === "Escape" && onTutup();
     window.addEventListener("keydown", esc);
@@ -67,10 +67,16 @@ function Modal({ judul, onTutup, children, kaki }) {
   }, [onTutup]);
   return (
     <div className="tirai tengah" onMouseDown={(e) => e.target === e.currentTarget && onTutup()}>
-      <div className="modal" role="dialog" aria-modal="true" aria-label={judul}>
+      <div className={`modal${lebar ? " lebar" : ""}`} role="dialog" aria-modal="true" aria-label={judul}>
         <header>
-          <h2>{judul}</h2>
-          <Tombol variasi="sunyi ikon" aria-label="Tutup" onClick={onTutup}><X size={16} /></Tombol>
+          <div className="kepala-m">
+            <h2>{judul}</h2>
+            {sub && <p className="sub">{sub}</p>}
+          </div>
+          <div className="aksi-m">
+            {tag}
+            <Tombol variasi="sunyi ikon" aria-label="Tutup" onClick={onTutup}><X size={16} /></Tombol>
+          </div>
         </header>
         {children}
         {kaki}
@@ -415,34 +421,159 @@ const awal = {};
   );
 }
 
-function DetailInovasi({ id, onTutup }) {
+// ── Detail usulan inovasi ───────────────────────────────────────────────────
+// Redesain: admin memutuskan di dalam modal ini, jadi aksi Setujui pindah ke kaki
+// modal — sebelumnya harus menutup modal dulu lalu menekan tombol di baris tabel.
+// Isi proposal dibaca, bukan diisi, jadi tampilannya dipisahkan dari form.
+
+const bandskor = (skor) => (skor >= 80 ? "tinggi" : skor >= 50 ? "sedang" : "rendah");
+const dokumenOf = (d) => (Array.isArray(d?.dokumen_dukung) ? d.dokumen_dukung : []);
+const disetujuiOf = (d) => d?.status_approval === "Approved";
+
+// Satu pasangan label/nilai. Nilai kosong diberi "—" supaya tetap terbaca
+// sebagai celah yang perlu diisi, bukan sekadar hilang.
+function Pasangan({ label, nilai }) {
+  return (
+    <div className="di-pasangan">
+      <dt>{label}</dt>
+      <dd>{nilai || "—"}</dd>
+    </div>
+  );
+}
+
+// Pemaroian saja, tanpa pengambilan data. Dipisah dari DetailInovasi supaya
+// bagian yang menentukan tampilan bisa diuji tanpa jaringan.
+function IsiDetailInovasi({ d }) {
+  const dokumen = dokumenOf(d);
+  const skor = Number(d.skor_iga) || 0;
+
+  return (
+    <div className="di-tata">
+      <div className="di-utama">
+        <section className="di-kartu">
+          <h3>Rancang bangun</h3>
+          {d.rancang_bangun
+            ? <p className="di-prosa">{d.rancang_bangun}</p>
+            : <p className="redup">Tidak diisi pengusul.</p>}
+        </section>
+
+        <section className="di-kartu">
+          <h3>Dokumen pendukung{dokumen.length > 0 && <span className="redup"> · {dokumen.length}</span>}</h3>
+          {dokumen.length > 0 ? (
+            <ul className="di-dok">
+              {dokumen.map((x, i) => (
+                <li key={i}>
+                  <a href={tautanLangsung(x.url)} target="_blank" rel="noreferrer">
+                    <span className={`jenis${x.type === "LINK" ? " tautan" : ""}`}>{x.type || "BERKAS"}</span>
+                    <span className="isi-dok">
+                      <b>{x.name || `Dokumen ${i + 1}`}</b>
+                      {x.size && x.size !== "-" && <small>{x.size}</small>}
+                    </span>
+                    <ExternalLink size={14} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : <p className="redup">Tidak ada dokumen dilampirkan.</p>}
+        </section>
+
+        {d.link_video && (
+          <section className="di-kartu">
+            <h3>Video</h3>
+            <a className="di-video" href={d.link_video} target="_blank" rel="noreferrer">
+              <span className="main"><Play size={15} /> Buka video usulan</span>
+              <span className="alamat">{d.link_video}</span>
+            </a>
+          </section>
+        )}
+      </div>
+
+      <div className="di-sisi">
+        <section className={`di-iskor ${bandskor(skor)}`}>
+          <div className="angka">{skor}<small>/100</small></div>
+          <div className="kategori">{d.kategori_skor || "Belum ada kategori"}</div>
+          <div className="meter" role="img" aria-label={`Skor IGA ${skor} dari 100`}>
+            <div className="isi" style={{ width: `${Math.min(100, Math.max(0, skor))}%` }} />
+          </div>
+        </section>
+
+        <section className="di-kartu">
+          <h3>Pengusul</h3>
+          <dl className="di-meta">
+            <Pasangan label="OPD" nilai={d.opd_nama} />
+            <Pasangan label="Inovator" nilai={d.nama_inovator} />
+          </dl>
+        </section>
+
+        <section className="di-kartu">
+          <h3>Klasifikasi</h3>
+          <dl className="di-meta">
+            <Pasangan label="Jenis" nilai={d.jenis_inovasi} />
+            <Pasangan label="Tahapan" nilai={d.tahapan_inovasi} />
+          </dl>
+        </section>
+
+        <section className="di-kartu">
+          <h3>Pelaksanaan</h3>
+          <dl className="di-meta">
+            <Pasangan label="Uji coba" nilai={tgl(d.waktu_uji_coba)} />
+            <Pasangan label="Penerapan" nilai={tgl(d.waktu_penerapan)} />
+            <Pasangan label="Anggaran" nilai={d.anggaran_inovasi} />
+            <Pasangan label="Regulasi" nilai={d.regulasi_inovasi} />
+          </dl>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function DetailInovasi({ id, onTutup, onSetujui }) {
   const [d, setD] = useState(null);
   const [galat, setGalat] = useState(null);
+  const [sibuk, setSibuk] = useState(false);
+
   useEffect(() => {
+    setD(null);
+    setGalat(null);
     jalankan(() => api.get(`/inovasi/${id}`)).then(setD).catch((e) => setGalat(e.message));
   }, [id]);
-  const baris = d && [
-    ["OPD", d.opd_nama], ["Inovator", d.nama_inovator], ["Jenis", d.jenis_inovasi], ["Tahapan", d.tahapan_inovasi],
-    ["Regulasi", d.regulasi_inovasi], ["Anggaran", d.anggaran_inovasi], ["Uji coba", tgl(d.waktu_uji_coba)],
-    ["Penerapan", tgl(d.waktu_penerapan)], ["Skor IGA", `${d.skor_iga} (${d.kategori_skor})`],
-  ];
+
+  // onSetujui sudah menangani notifikasi dan penyegaran daftar di induk, jadi di
+  // sini cukup status lokal yang diperbarui setelah berhasil.
+  const setujui = async () => {
+    setSibuk(true);
+    try {
+      await onSetujui(d);
+      setD((v) => ({ ...v, status_approval: "Approved" }));
+    } finally {
+      setSibuk(false);
+    }
+  };
+
+  const disetujui = disetujuiOf(d);
+
   return (
-    <Modal judul={d?.judul_inovasi || "Detail usulan"} onTutup={onTutup}>
+    <Modal
+      lebar
+      judul={d?.judul_inovasi || "Detail usulan"}
+      sub={d ? `Diajukan ${tgl(d.created_at)}` : "Memuat data usulan…"}
+      tag={d && <span className={`lencana-s ${disetujui ? "ok" : "tunggu"}`}>{disetujui ? "Disetujui" : "Menunggu"}</span>}
+      onTutup={onTutup}
+      kaki={
+        <footer>
+          <Tombol variasi="sunyi" onClick={onTutup}>Tutup</Tombol>
+          {d && !disetujui && (
+            <Tombol variasi="emas" disabled={sibuk} onClick={setujui}>
+              <Check size={16} /> {sibuk ? "Menyetujui…" : "Setujui usulan"}
+            </Tombol>
+          )}
+        </footer>
+      }
+    >
       <div className="badan">
-        {galat && <div className="galat">{galat}</div>}
+        {galat && <div className="galat" role="alert">{galat}</div>}
         {!d && !galat && <Rangka baris={7} />}
-        {d && (
-          <>
-            <dl className="rinci">{baris.map(([k, v]) => <Fragment key={k}><dt>{k}</dt><dd>{v || "—"}</dd></Fragment>)}</dl>
-            <Blok label="Rancang bangun"><p style={{ whiteSpace: "pre-wrap", maxWidth: "65ch" }}>{d.rancang_bangun || "—"}</p></Blok>
-            {d.link_video && <p><a href={d.link_video} target="_blank" rel="noreferrer">Buka video <ExternalLink size={12} /></a></p>}
-            {Array.isArray(d.dokumen_dukung) && d.dokumen_dukung.length > 0 && (
-              <Blok label="Dokumen pendukung">
-                {d.dokumen_dukung.map((x, i) => <div key={i}><a href={tautanLangsung(x.url)} target="_blank" rel="noreferrer">{x.name || `Dokumen ${i + 1}`}</a></div>)}
-              </Blok>
-            )}
-          </>
-        )}
+        {d && <IsiDetailInovasi d={d} />}
       </div>
     </Modal>
   );
@@ -589,7 +720,7 @@ function Modul({ modul, notif, segarkan, tambahAwal }) {
       </div>
 
       {form && <FormItem modul={modul} item={form} onTutup={() => setForm(null)} onSelesai={sesudahUbah} />}
-      {lihat && <DetailInovasi id={lihat} onTutup={() => setLihat(null)} />}
+      {lihat && <DetailInovasi id={lihat} onTutup={() => setLihat(null)} onSetujui={setujui} />}
       {hapus && (
         <Konfirmasi judul={`Hapus ${judul.toLowerCase()}?`} onBatal={() => setHapus(null)}
           isi={<><strong>{nama(hapus)}</strong> akan dihapus permanen.{["dokumen", "berita", "slider"].includes(modul) && " Berkas di Google Drive ikut dihapus."}</>}

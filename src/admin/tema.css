@@ -131,8 +131,58 @@ html, body { margin: 0; background: #F6F3EC; }
 .dialog h2 { font-size: 17px; color: var(--navy); margin-bottom: 8px; }
 .dialog .aksi-d { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 @keyframes muncul { from { transform: translateY(8px) scale(.98); opacity: 0; } }
-.rinci { display: grid; grid-template-columns: 150px 1fr; gap: 6px 14px; margin: 0 0 16px; }
-.rinci dt { color: var(--redup); } .rinci dd { margin: 0; overflow-wrap: anywhere; }
+
+/* Modal detail usulan inovasi
+   Dua kolom di layar lebar: proposal di kiri, identitas dan skor di kanan.
+   min-width:0 dipakai di setiap anak grid karena 1fr memakai min-width auto —
+   tanpa itu tautan Drive yang panjang memaksa kolom melebar dan scroll
+   horizontal muncul lagi. */
+.modal.lebar { width: min(900px, 100%); }
+.modal header .kepala-m { min-width: 0; }
+.modal header .kepala-m h2 { overflow-wrap: anywhere; line-height: 1.35; }
+.modal header .sub { color: var(--redup); font-size: 12.5px; margin-top: 2px; }
+.modal header .aksi-m { display: flex; align-items: center; gap: 10px; flex: none; }
+
+.di-tata { display: grid; grid-template-columns: minmax(0, 1fr) 272px; gap: 16px; align-items: start; }
+.di-utama, .di-sisi { display: grid; gap: 14px; min-width: 0; }
+
+.di-kartu { background: var(--putih); border: 1px solid var(--garis); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.adm .di-kartu h3 { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--redup); margin-bottom: 10px; }
+
+.di-meta { display: grid; gap: 10px; margin: 0; }
+.di-pasangan { display: grid; gap: 1px; min-width: 0; }
+.adm .di-pasangan dt { font-size: 12px; color: var(--redup); }
+.adm .di-pasangan dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+
+/* Skor: angka besar + meter. Warna isi mengikuti kategori IGA supaya keputusan
+   terbaca sekilas tanpa membaca labelnya. */
+.di-iskor { border-radius: 10px; padding: 16px 18px; color: #fff; background: var(--navy); }
+.adm .di-iskor .angka { font-size: 38px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.adm .di-iskor .angka small { font-size: 14px; font-weight: 600; opacity: .55; margin-left: 4px; }
+.adm .di-iskor .kategori { font-size: 13px; font-weight: 700; margin-top: 5px; color: var(--emas-muda); }
+.adm .di-iskor .meter { height: 7px; border-radius: 4px; background: rgba(255,255,255,.16); margin-top: 13px; overflow: hidden; }
+.adm .di-iskor .meter .isi { height: 100%; border-radius: 4px; background: var(--emas); transition: width .25s ease; }
+.di-iskor.tinggi .meter .isi { background: #4ADE80; }
+.di-iskor.sedang .meter .isi { background: var(--emas-muda); }
+.di-iskor.rendah .meter .isi { background: #F87171; }
+
+/* Isi proposal dibaca, bukan diisi: batas lebar baca dan pemenggalan kata. */
+.di-prosa { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 70ch; }
+
+.di-dok { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.adm .di-dok a { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border: 1px solid var(--garis); border-radius: 8px; text-decoration: none; color: var(--teks); min-width: 0; }
+.adm .di-dok a:hover { background: var(--kertas); border-color: var(--navy-muda); }
+.adm .di-dok .jenis { flex: none; font-size: 10px; font-weight: 800; letter-spacing: .05em; padding: 3px 7px; border-radius: 5px; background: var(--navy); color: #fff; max-width: 88px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm .di-dok .jenis.tautan { background: var(--emas); color: var(--navy-gelap); }
+.adm .di-dok .isi-dok { flex: 1; min-width: 0; }
+.adm .di-dok .isi-dok b { display: block; font-weight: 600; overflow-wrap: anywhere; }
+.adm .di-dok .isi-dok small { color: var(--redup); font-size: 12px; }
+.adm .di-dok svg { flex: none; color: var(--redup); }
+
+.adm .di-video { display: grid; gap: 3px; padding: 12px 14px; border: 1px solid var(--garis); border-radius: 8px; text-decoration: none; color: var(--teks); }
+.adm .di-video:hover { background: var(--kertas); border-color: var(--navy-muda); }
+.adm .di-video .main { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--navy); }
+.adm .di-video .alamat { color: var(--redup); font-size: 12.5px; overflow-wrap: anywhere; }
 
 /* Ringkasan */
 .perlu { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-bottom: 22px; }
@@ -177,7 +227,7 @@ html, body { margin: 0; background: #F6F3EC; }
   .pengguna > span { display: none; }
   .lipat { display: none; }
   .isi { padding: 18px 14px 64px; }
-  .rinci { grid-template-columns: 1fr; gap: 0; } .rinci dd { margin-bottom: 8px; }
+  .di-tata { grid-template-columns: minmax(0, 1fr); }
 }
 /* Sidebar dikecilkan: hanya ikon. Hanya di layar lebar; di ponsel menu sudah berupa bilah. */
 @media (min-width: 861px) {
