@@ -1,10 +1,10 @@
 // Panel admin BAPPERIDA. Dimuat sebagai chunk terpisah dari situs publik.
 // Navigasi memakai hash (#berita, #pesan, ...) supaya bisa di-bookmark.
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   PanelLeftClose, PanelLeftOpen, LayoutDashboard, Newspaper, FileText, Images, ListChecks, Gauge, Lightbulb, Mail,
   ShieldCheck, LogOut, Search, Plus, X, Pencil, Trash2, ExternalLink, ChevronLeft, ChevronRight, Check,
-  LayoutGrid, Table2, Play,
+  LayoutGrid, Table2, Play, Upload, Loader2, Image as IkonGambar,
 } from "lucide-react";
 import {
   api, sesi, login, logout, gantiPin, ringkasan,
@@ -108,33 +108,126 @@ function Konfirmasi({ judul, isi, label = "Hapus", onBatal, onYa }) {
   );
 }
 
-// ── Unggah gambar ───────────────────────────────────────────────────────────
+// ── Unggah: dropzone untuk gambar dan berkas ────────────────────────────────
+// Dua tempat memakai ini: gambar berita (langsung diunggah saat dipilih) dan
+// berkas dokumen (menunggu tombol Simpan). Yang membedakan hanya kapan file
+// dikirim ke Drive, jadi validasi, seret-lepas, dan tampilannya dipakai bersama.
+
+const tipeBerkas = (nama = "") => {
+  const potong = String(nama).split(".");
+  const akhir = potong[potong.length - 1];
+  // Nama tanpa titik ("MYSK2026") tidak boleh dipakai mentah sebagai badge.
+  return potong.length > 1 && akhir.length <= 5 ? akhir.toUpperCase() : "BERKAS";
+};
+
+function ZonaKosong({ ikon: Ikon, judul, petunjuk }) {
+  return (
+    <span className="zona-kosong">
+      <Ikon size={22} aria-hidden="true" />
+      <b>{judul}</b>
+      <small>{petunjuk}</small>
+    </span>
+  );
+}
+
+function ZonaBukti({ badge, nama, ukuran, catatan }) {
+  return (
+    <span className="zona-bukti">
+      <span className="jenis">{badge}</span>
+      <span className="isi">
+        <b>{nama}</b>
+        {(ukuran || catatan) && <small>{[ukuran, catatan].filter(Boolean).join(" · ")}</small>}
+      </span>
+    </span>
+  );
+}
+
+// Dropzone. Klik tombol di tengah membuka pemilih berkas; berkas juga bisa
+// dijatuhkan di area mana pun di dalam kotak. Area aksi dan pesan galat berada
+// di luar <button> supaya tidak ada elemen interaktif di dalam elemen interaktif.
+function ZonaUnggah({ accept, onAmbil, sibuk, ada, galat, aksi, children }) {
+  const [seret, setSeret] = useState(false);
+  const ref = useRef(null);
+
+  const serah = (files) => { const f = files?.[0]; if (f) onAmbil(f); };
+
+  return (
+    <div
+      className={`zona${seret ? " seret" : ""}`}
+      onDragOver={(e) => { e.preventDefault(); setSeret(true); }}
+      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setSeret(false); }}
+      onDrop={(e) => { e.preventDefault(); setSeret(false); serah(e.dataTransfer.files); }}
+    >
+      <button type="button" className="zona-tombol" disabled={sibuk}
+        onClick={() => ref.current?.click()}
+        aria-label={ada ? "Ganti berkas" : "Pilih berkas"}>
+        {children}
+      </button>
+      <input ref={ref} type="file" accept={accept} hidden
+        onChange={(e) => { serah(e.target.files); e.target.value = ""; }} />
+      {aksi && <div className="zona-aksi">{aksi}</div>}
+      {galat && <div className="galat" role="alert" style={{ marginTop: 8 }}>{galat}</div>}
+    </div>
+  );
+}
 
 function FieldGambar({ label, wajib, value, onChange }) {
   const [sibuk, setSibuk] = useState(false);
   const [galat, setGalat] = useState(null);
+  const [terpilih, setTerpilih] = useState(null);
 
-  const pilih = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    setGalat(null); setSibuk(true);
-    try { onChange((await unggahFile(file)).url); }
-    catch (err) { setGalat(err.message); }
-    finally { setSibuk(false); }
+  const pilih = async (file) => {
+    setGalat(null);
+    // Ukuran dicek sebelum memanggil unggahFile(): berkas diubah jadi base64 dan
+    // encode-nya memblokir thread, jadi file sebesar ini akan membekukan tab
+    // sebelum ada permintaan yang sempat terkirim.
+    if (file.size > MAKS_UPLOAD) {
+      setGalat(`Ukuran file terlalu besar (${formatBytes(file.size)}). Maksimal ${formatBytes(MAKS_UPLOAD)}.`);
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setGalat("Berkas yang dipilih bukan gambar.");
+      return;
+    }
+    setSibuk(true);
+    try {
+      const h = await unggahFile(file);
+      setTerpilih({ nama: h.name || file.name, ukuran: formatBytes(h.size ?? file.size) });
+      onChange(h.url);
+    } catch (err) {
+      setGalat(err.message);
+    } finally {
+      setSibuk(false);
+    }
   };
+
+  const lepas = () => { setTerpilih(null); setGalat(null); onChange(""); };
 
   return (
     <Blok label={label} wajib={wajib} petunjuk={`Maksimal ${formatBytes(MAKS_UPLOAD)}. Dikirim langsung ke Google Drive.`}>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <label className="tbl sunyi" style={{ cursor: sibuk ? "wait" : "pointer" }}>
-          {sibuk ? "Mengunggah…" : value ? "Ganti gambar" : "Pilih gambar"}
-          <input type="file" accept="image/*" onChange={pilih} disabled={sibuk} hidden />
-        </label>
-        {value && !sibuk && <Tombol variasi="sunyi" onClick={() => onChange("")}>Lepas gambar</Tombol>}
-      </div>
-      {value && <img className="pratinjau" src={thumbDrive(value, 440)} alt="Pratinjau gambar" loading="lazy" />}
-      {galat && <div className="galat" style={{ marginTop: 8 }}>{galat}</div>}
+      <ZonaUnggah
+        accept="image/*"
+        onAmbil={pilih}
+        sibuk={sibuk}
+        ada={Boolean(value)}
+        galat={galat}
+        aksi={value && !sibuk && <Tombol kecil variasi="sunyi" onClick={lepas}>Lepas gambar</Tombol>}
+      >
+        {sibuk ? (
+          <span className="zona-sibuk"><Loader2 size={17} className="putar" aria-hidden="true" /> Mengunggah…</span>
+        ) : value ? (
+          <>
+            <img className="zona-gambar" src={thumbDrive(value, 440)} alt={terpilih?.nama || "Pratinjau gambar"} />
+            <span className="zona-keterangan">
+              <b>{terpilih?.nama || "Gambar saat ini"}</b>
+              <small>{[terpilih?.ukuran, "klik untuk mengganti"].filter(Boolean).join(" · ")}</small>
+            </span>
+          </>
+        ) : (
+          <ZonaKosong ikon={IkonGambar} judul="Pilih gambar atau seret ke sini"
+            petunjuk={`JPG, PNG, atau WebP · maksimal ${formatBytes(MAKS_UPLOAD)}`} />
+        )}
+      </ZonaUnggah>
     </Blok>
   );
 }
@@ -297,6 +390,9 @@ function FormItem({ modul, item, onTutup, onSelesai }) {
   const [galat, setGalat] = useState(null);
   const [sibuk, setSibuk] = useState(false);
   const urlLama = item.url || "";
+  // Nilai tipe dan ukuran milik berkas yang tersimpan. Tanpa ini, memilih lalu
+  // membuang berkas baru akan meninggalkan ukuran berkas yang sudah dibuang.
+  const asli = useRef({});
 
   useEffect(() => {
     let batal = false;
@@ -318,6 +414,7 @@ const awal = {};
         }
         awal[k.name] = dasar[k.name] ?? def.baru?.[k.name] ?? (k.tipe === "checkbox" ? false : "");
       }
+      asli.current = { tipe: awal.tipe ?? "", ukuran: awal.ukuran ?? "" };
       setNilai(awal);
     })();
     return () => { batal = true; };
@@ -332,6 +429,13 @@ const awal = {};
     setBerkas(f);
     const ext = (f.name.split(".").pop() || "").toUpperCase();
     setNilai((s) => ({ ...s, tipe: ext || s.tipe, ukuran: formatBytes(f.size), judul: s.judul || f.name.replace(/\.[^.]+$/, "") }));
+  };
+
+  // Memembalikan kolom berkas ke nilai semula. Judul tidak dikembalikan: nama
+  // berkas baru hanya dipakai sebagai cadangan, jadi tidak ikut dibuang.
+  const buangBerkas = () => {
+    setBerkas(null);
+    setNilai((s) => ({ ...s, ...asli.current }));
   };
 
   const kirim = async (e) => {
@@ -392,10 +496,33 @@ const awal = {};
             {modul === "dokumen" && (
               <Blok label={edit ? "Ganti berkas" : "Berkas"} wajib={!edit}
                 petunjuk={edit
-                  ? `Kosongkan jika berkas tidak diganti. Berkas lama di Google Drive dihapus setelah disimpan.${urlLama ? "" : " Dokumen ini belum punya berkas."}`
+                  ? `Kosongkan jika berkas tidak diganti. Berkas lama di Google Drive dihapus setelah menyimpan.${urlLama ? "" : " Dokumen ini belum punya berkas."}`
                   : `Maksimal ${formatBytes(MAKS_UPLOAD)}. Tipe dan ukuran terisi otomatis.`}>
-                <input type="file" required={!edit} onChange={pilihBerkas} />
-                {edit && urlLama && !berkas && <p style={{ marginTop: 6 }}><a href={tautanLangsung(urlLama)} target="_blank" rel="noreferrer">Buka berkas saat ini <ExternalLink size={12} /></a></p>}
+                {/* Input file native dengan required dihapus: berkas sekarang
+                    divalidasi di kirim(), jadi pesannya bisa ditulis sendiri dan
+                    satu jalur galat berlaku untuk klik maupun seret-lepas. */}
+                <ZonaUnggah
+                  onAmbil={pilihBerkas}
+                  ada={Boolean(berkas)}
+                  aksi={berkas ? (
+                    <Tombol kecil variasi="sunyi" onClick={buangBerkas}>Buang pilihan</Tombol>
+                  ) : edit && urlLama ? (
+                    <a className="tbl kecil sunyi" href={tautanLangsung(urlLama)} target="_blank" rel="noreferrer">
+                      Buka berkas saat ini <ExternalLink size={12} />
+                    </a>
+                  ) : null}
+                >
+                  {berkas ? (
+                    <ZonaBukti badge={tipeBerkas(berkas.name)} nama={berkas.name}
+                      ukuran={formatBytes(berkas.size)} catatan="siap diunggah saat disimpan" />
+                  ) : edit && urlLama ? (
+                    <ZonaBukti badge={(nilai.tipe || "BERKAS").toUpperCase()}
+                      nama={nilai.judul || "Berkas saat ini"} ukuran={nilai.ukuran} catatan="tidak diubah" />
+                  ) : (
+                    <ZonaKosong ikon={FileText} judul="Pilih berkas atau seret ke sini"
+                      petunjuk={`Maksimal ${formatBytes(MAKS_UPLOAD)}`} />
+                  )}
+                </ZonaUnggah>
               </Blok>
             )}
             {def.kolom.map((k) => k.gambar ? (

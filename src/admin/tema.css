@@ -117,7 +117,35 @@ html, body { margin: 0; background: #F6F3EC; }
 .sel-grid.dipakai { background: var(--navy); border: 0; box-shadow: inset 0 0 0 2px var(--emas); }
 .sel-grid:focus-visible { outline: 2px solid var(--emas-muda); outline-offset: 2px; }
 .galat { background: var(--bahaya-latar); color: var(--bahaya); border: 1px solid #FECDCA; padding: 10px 12px; border-radius: 8px; margin-bottom: 14px; font-size: 13px; }
-.pratinjau { margin-top: 10px; max-width: 220px; border-radius: 8px; border: 1px solid var(--garis); display: block; }
+/* Unggah: dropzone untuk gambar dan berkas.
+   min-width:0 di .isi-wadah supaya nama berkas panjang tidak memaksa kotak
+   melebar di dalam modal — modal ini sudah pernah kena scroll horizontal. */
+.zona { border: 1.5px dashed #CFC8B8; border-radius: 10px; background: var(--kertas); padding: 8px; transition: border-color .15s, background .15s; }
+.zona.seret { border-color: var(--navy-muda); border-style: solid; background: #F1F5FC; }
+.adm .zona-tombol { display: grid; gap: 8px; width: 100%; padding: 16px 14px; border: 0; border-radius: 8px; background: none; font: inherit; color: inherit; cursor: pointer; text-align: center; justify-items: center; }
+.adm .zona-tombol:hover:not(:disabled) { background: var(--putih); }
+.adm .zona-tombol:disabled { cursor: wait; opacity: .75; }
+.zona-aksi { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+
+.zona-kosong { display: grid; gap: 3px; justify-items: center; color: var(--redup); }
+.zona-kosong svg { color: var(--navy-muda); }
+.adm .zona-kosong b { color: var(--teks); font-weight: 700; font-size: 13.5px; }
+.adm .zona-kosong small { font-size: 12.5px; }
+
+.zona-sibuk { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--navy); }
+.putar { animation: putar .9s linear infinite; }
+@keyframes putar { to { transform: rotate(360deg); } }
+
+.adm .zona-gambar { display: block; width: 100%; max-height: 220px; object-fit: contain; border: 1px solid var(--garis); border-radius: 8px; background: var(--putih); }
+.zona-keterangan { display: grid; gap: 1px; min-width: 0; max-width: 100%; }
+.adm .zona-keterangan b { font-weight: 600; overflow-wrap: anywhere; }
+.adm .zona-keterangan small { color: var(--redup); font-size: 12.5px; }
+
+.zona-bukti { display: flex; gap: 12px; align-items: center; width: 100%; min-width: 0; text-align: left; padding: 10px 12px; background: var(--putih); border: 1px solid var(--garis); border-radius: 8px; }
+.adm .zona-bukti .jenis { flex: none; font-size: 10px; font-weight: 800; letter-spacing: .05em; padding: 4px 8px; border-radius: 5px; background: var(--navy); color: #fff; max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm .zona-bukti .isi { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.adm .zona-bukti .isi b { font-weight: 600; overflow-wrap: anywhere; }
+.adm .zona-bukti .isi small { color: var(--redup); font-size: 12.5px; }
 
 /* Modal & dialog */
 .tirai { position: fixed; inset: 0; background: rgba(6,21,41,.55); z-index: 50; display: flex; justify-content: flex-end; }
