@@ -480,7 +480,11 @@ function PratinjauGrid({ rows, pilih, onPilih }) {
             <span className="petak">{col}×{row}</span>
             <div className="gambar">
               {b.gambar_url
-                ? <img src={thumbDrive(b.gambar_url, 220)} alt="" loading="lazy" decoding="async" />
+                // Kartu pratinjau selebar 225–385px tergantung lebar monitor
+                // (sidebar 236px + padding, 4 kolom). 800px menutup 385px di
+                // layar retina; 220px membuat pratinjau buram justru di monitor
+                // besar.
+                ? <img src={thumbDrive(b.gambar_url, 800)} alt="" loading="lazy" decoding="async" />
                 : <Newspaper size={26} aria-hidden="true" />}
             </div>
             <div className="kaki"><b>{b.judul || "Tanpa judul"}</b></div>
