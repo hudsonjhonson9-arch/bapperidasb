@@ -516,6 +516,15 @@ const SQL_KEYWORD = new Set([
 const sqlIdent = (nama) =>
   /^[a-z_][a-z0-9_]*$/.test(nama) && !SQL_KEYWORD.has(nama) ? nama : `"${nama}"`;
 
+// pg mengubah Array JavaScript menjadi literal array Postgres ({"{...}"}),
+// bukan JSON. Kolom JSONB akan menolaknya dengan "invalid input syntax for type
+// json". Jadi kolom json harus dikirim sebagai string JSON; di dalam body tetap
+// boleh berupa array supaya hitungSkorIga() bisa membacanya.
+const nilaiSql = (entitas, nama, nilai) => {
+  const tipe = new Map(entitas.kolom.map(([n, t]) => [n, t]));
+  return nama.map((k, i) => (tipe.get(k) === 'json' && nilai[i] != null ? JSON.stringify(nilai[i]) : nilai[i]));
+};
+
 // Ubah body request menjadi { kolom: nilai } sesuai definisi entitas.
 function normalisasi(entitas, body) {
   const { kolom } = entitas;
@@ -640,8 +649,8 @@ app.post('/api/inovasi', async (req, res) => {
     const kolom = Object.keys(hasil);
     if (!kolom.length) return res.status(400).json({ error: 'Tidak ada data yang dikirim' });
 
-    const nilai = kolom.map(k => hasil[k]);
-    const tempat = kolom.map((_, i) => `$${i + 1}`).join(', ');
+    const nilai = nilaiSql(ENTITAS.inovasi, kolom, kolom.map(k => hasil[k]));
+    const tempat = kolom.map((_, i) => `${i + 1}`).join(', ');
 
     const { rows } = await pool.query(
       `INSERT INTO bapperida_inovasi (${kolom.join(', ')})
@@ -821,7 +830,7 @@ app.post('/api/:entitas', async (req, res) => {
     const kolom = Object.keys(hasil);
     if (!kolom.length) return res.status(400).json({ error: 'Tidak ada data yang dikirim' });
 
-    const nilai  = kolom.map(k => hasil[k]);
+    const nilai  = nilaiSql(e, kolom, kolom.map(k => hasil[k]));
     const tempat = kolom.map((_, i) => `$${i + 1}`).join(', ');
 
     const { rows } = await pool.query(
@@ -868,7 +877,7 @@ app.put('/api/:entitas/:id', async (req, res) => {
 
     const { rowCount } = await pool.query(
       `UPDATE ${e.tabel} SET ${set.join(', ')} WHERE id = $${kolom.length + 1}`,
-      [...kolom.map(k => hasil[k]), id]
+      [...nilaiSql(e, kolom, kolom.map(k => hasil[k])), id]
     );
     if (!rowCount) return res.status(404).json({ error: 'Data tidak ditemukan' });
     if (tautanLama && tautanLama !== hasil[kolomTautan]) hapusDiDrive(tautanLama).catch(() => {});

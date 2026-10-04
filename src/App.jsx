@@ -12,7 +12,7 @@ import {
   ArrowRight, Users, User, Calendar, FileText, Download, Eye, Search,
   Target, Lightbulb, BarChart2, BookOpen, Globe, Shield, Play,
   AlertCircle, Loader2, Link2, Book, Star, Building2, Scale, Wallet,
-  Package, Info, Newspaper, Smartphone, Check
+  Package, Info, Newspaper, Smartphone, Check, Paperclip
 } from "lucide-react";
 
 const NAV = [
@@ -185,12 +185,15 @@ const MultiFileUploadField = ({ name, label, helpText, onUbah }) => {
     <div className="form-group">
       <label className="form-label">{label}</label>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input type="url" placeholder="Atau tempel link dokumen..." value={linkInput} onChange={e => setLinkInput(e.target.value)} className="form-input" style={{ flex: 1, padding: '10px 16px' }} />
-          <button type="button" onClick={addLink} style={{ padding: '10px 16px', background: C.navy, color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 12, whiteSpace: 'nowrap' }}>Tambah Link</button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <input type="url" placeholder="Atau tempel link dokumen..." value={linkInput} onChange={e => setLinkInput(e.target.value)} className="form-input" style={{ flex: '1 1 200px', minWidth: 0 }} />
+          <button type="button" onClick={addLink} disabled={!linkInput.trim()} className={`btn-garis${linkInput.trim() ? '' : ' nonaktif'}`}><Link2 size={15} aria-hidden="true" /> Tambah Link</button>
         </div>
-        <input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*" onChange={handleFileChange} className="form-input" disabled={uploading} style={{ padding: '10px 16px', background: '#fff', cursor: 'pointer', border: '1px dashed #ccc' }} />
-{uploading && <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.gold, fontWeight: 600 }}><Loader2 size={13} className="putar" aria-hidden="true" /> Upload ke Google Drive...</div>}
+        <label className={`btn-zona${uploading ? ' nonaktif' : ''}`} htmlFor={`zona-${name}`}>
+          <input id={`zona-${name}`} type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*" onChange={handleFileChange} disabled={uploading} hidden />
+          {uploading ? <Loader2 size={16} className="putar" aria-hidden="true" /> : <Paperclip size={16} aria-hidden="true" />}
+          {uploading ? 'Mengunggah ke Google Drive...' : 'Pilih file PDF, gambar, atau dokumen'}
+        </label>
         {galat && <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#ef4444', fontWeight: 600 }}><AlertCircle size={13} aria-hidden="true" /> {galat}</div>}
         {files.length > 0 && (
           <div style={{ display: 'grid', gap: 8 }}>
@@ -199,7 +202,7 @@ const MultiFileUploadField = ({ name, label, helpText, onUbah }) => {
                 <div style={{ width: 32, height: 32, borderRadius: 6, background: `${C.navy}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.navy }}>
                   {f.type === 'LINK' ? <Link2 size={15} aria-hidden="true" /> : f.type === 'PDF' ? <Book size={15} aria-hidden="true" /> : <FileText size={15} aria-hidden="true" />}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: C.navy, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</div>
                   <div style={{ fontSize: 11, color: C.textLight }}>{f.size} • {f.type}</div>
                 </div>
@@ -910,8 +913,9 @@ export default function App() {
         }
         .modal-content {
           background: white; border-radius: 20px; width: 100%; max-width: 600px;
-          max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          max-height: 90vh; overflow-y: auto; overflow-x: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         }
+        .modal-content * { min-width: 0; }
         .modal-header { padding: 24px 32px; border-bottom: 1px solid ${C.warmGray}; display: flex; align-items: center; justify-content: space-between; }
         .modal-body { padding: 32px; }
         .modal-footer { padding: 24px 32px; border-top: 1px solid ${C.warmGray}; display: flex; justify-content: flex-end; gap: 12px; }
@@ -938,6 +942,35 @@ export default function App() {
           font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s;
         }
         .form-input:focus { border-color: ${C.gold}; }
+
+        /* Dua kolom di dalam modal. minmax(0,...) wajib: 1fr saja memakai
+           min-width auto, jadi isi panjang seperti URL panjang meny pushes
+           kolom melebar dan memunculkan scroll horizontal. */
+        .form-dua { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        @media (max-width: 620px) { .form-dua { grid-template-columns: minmax(0, 1fr); } }
+
+        /* Pilihan file: dropzone putus-putus, mengikuti radius .form-input. */
+        .btn-zona {
+          display: flex; align-items: center; justify-content: center; gap: 10px;
+          width: 100%; padding: 16px; background: ${C.offWhite};
+          border: 2px dashed ${C.warmGray}; border-radius: 10px;
+          font-size: 13px; font-weight: 600; color: ${C.navy}; font-family: 'DM Sans', sans-serif;
+          cursor: pointer; text-align: center;
+          transition: border-color 0.2s, background 0.2s, color 0.2s;
+        }
+        .btn-zona:hover { border-color: ${C.gold}; background: ${C.white}; color: ${C.gold}; }
+        .btn-zona.nonaktif { opacity: 0.55; cursor: progress; }
+
+        /* Tombol aksi sekunder di modal, garis penuh (bukan putus-putus). */
+        .btn-garis {
+          display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+          background: ${C.white}; color: ${C.navy};
+          border: 1.5px solid ${C.warmGray}; border-radius: 10px;
+          padding: 12px 18px; font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+          cursor: pointer; white-space: nowrap; transition: border-color 0.2s, color 0.2s;
+        }
+        .btn-garis:hover:not(.nonaktif) { border-color: ${C.gold}; color: ${C.gold}; }
+        .btn-garis.nonaktif { opacity: 0.5; cursor: not-allowed; }
 
         .org-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding-top: 20px; padding-bottom: 80px; display: flex; justify-content: flex-start; }
         .org-container { position: relative; width: 1200px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 0 40px; }
@@ -2172,7 +2205,7 @@ export default function App() {
                   <input type="hidden" id="iga-cat-input" name="kategori_skor" value="Kurang Inovatif" />
                 </div>
                 
-                <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="form-group form-dua">
                   <div>
                     <label className="form-label">Nama Instansi / OPD</label>
                     <input name="opd_nama" className="form-input" placeholder="Contoh: Dinas Kesehatan" required />
@@ -2188,7 +2221,7 @@ export default function App() {
                   <input name="judul_inovasi" className="form-input" required />
                 </div>
 
-                <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="form-group form-dua">
                   <div>
                     <label className="form-label">Urusan Inovasi</label>
                     <select name="jenis_inovasi" className="form-input" required>
@@ -2209,7 +2242,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="form-group form-dua">
                   <div>
                     <label className="form-label">Regulasi / Dasar Hukum Inovasi</label>
                     <select name="regulasi_inovasi" className="form-input" required>
@@ -2229,7 +2262,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="form-group form-dua">
                   <div>
                     <label className="form-label">Tanggal Uji Coba</label>
                     <input name="waktu_uji_coba" type="date" className="form-input" required />
