@@ -1670,7 +1670,7 @@ export default function App() {
                             </span>
                             <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, color: C.textLight }}><Package size={12} aria-hidden="true" /> {dok.ukuran || "-"}</span>
                             <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: C.textLight }}>
-                              <Calendar size={11} /> {dok.tanggal}
+                              <Calendar size={11} /> {tgl(dok.tanggal)}
                             </span>
                           </div>
                         </div>
@@ -1812,7 +1812,7 @@ export default function App() {
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", flexGrow: 1, padding: "20px 24px" }}>
-                    <div style={{ color: C.textLight, fontSize: 11, marginBottom: 8, fontWeight: 500 }}>{item.tanggal}</div>
+                    <div style={{ color: C.textLight, fontSize: 11, marginBottom: 8, fontWeight: 500 }}>{tgl(item.tanggal)}</div>
                     <h3 style={{ 
                       fontSize: col === 1 ? 15 : 22, 
                       fontWeight: 800, 
@@ -2106,7 +2106,7 @@ export default function App() {
                           <div style={{ flex: 1 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                               <span style={{ background: `${C.navy}14`, color: C.navy, fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20 }}>{item.kategori}</span>
-                              <span style={{ color: C.textLight, fontSize: 12 }}>{item.tanggal}</span>
+                              <span style={{ color: C.textLight, fontSize: 12 }}>{tgl(item.tanggal)}</span>
                               {item.is_featured && <span style={{ display: "inline-flex", alignItems: "center", gap: 3, color: C.gold, fontSize: 11, fontWeight: 700 }}><Star size={12} aria-hidden="true" /> Unggulan</span>}
                             </div>
                             <h4 style={{ fontSize: 15, fontWeight: 600, color: C.navy, lineHeight: 1.4 }}>{item.judul}</h4>
@@ -2139,7 +2139,7 @@ export default function App() {
             <div style={{ padding: "40px 50px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 15, marginBottom: 20 }}>
                 <span style={{ background: `${C.navy}12`, color: C.navy, fontSize: 12, fontWeight: 700, padding: "5px 15px", borderRadius: 20, textTransform: "uppercase" }}>{selectedBerita.kategori}</span>
-                <span style={{ color: C.textLight, fontSize: 14, display: "flex", alignItems: "center", gap: 6 }}><Calendar size={14} /> {selectedBerita.tanggal}</span>
+                <span style={{ color: C.textLight, fontSize: 14, display: "flex", alignItems: "center", gap: 6 }}><Calendar size={14} /> {tgl(selectedBerita.tanggal)}</span>
               </div>
               <h2 className="display" style={{ fontSize: 32, fontWeight: 700, color: C.navy, marginBottom: 24, lineHeight: 1.3 }}>{selectedBerita.judul}</h2>
               <div style={{ fontSize: 16, color: C.textMid, lineHeight: 1.9, whiteSpace: "pre-wrap" }}>
