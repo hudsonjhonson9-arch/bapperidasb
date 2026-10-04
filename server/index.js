@@ -168,10 +168,38 @@ async function seedAdmin() {
 }
 
 // ── Health check ────────────────────────────────────────────────────────────
+// Cap build. Endpoint /api/health memakainya supaya jelas apakah proses
+// server yang sedang berjalan sudah versi terbaru atau belum. Tanpa ini,
+// "sudah di-deploy tapi tetap sama" tidak bisa dibedakan dengan "deploy belum
+// jalan" -- dan itu sudah beberapa kali jadi sumber kebingungan.
+const BUILD = process.env.APP_VERSION || process.env.SOURCE_COMMIT || process.env.GIT_COMMIT || 'dev';
+
+// Codec error PostgreSQL yang paling sering muncul di endpoint tulis.
+// Dipetakan ke pesan Bahasa Indonesia, bukan err.message mentah: pesan asli
+// bisa memuat nama kolom, nama constraint, atau isi data, dan endpoint ini
+// bisa dipanggil publik. Detail lengkap tetap ditulis ke log server.
+const PESAN_PG = {
+  '22P02': 'Format data tidak sesuai jenis kolomnya (tanggal atau angka).',
+  '22P05': 'Kolom yang dikirim tidak ada di database.',
+  '23502': 'Ada kolom wajib yang belum diisi.',
+  '23503': 'Data masih terhubung ke data lain.',
+  '23505': 'Data sudah ada, tidak boleh duplikat.',
+  '23514': 'Nilai tidak memenuhi aturan kolom.',
+  '40001': 'Database sedang sibuk, coba lagi sebentar.',
+  '57014': 'Permintaan terlalu lama diproses.',
+  'ECONNREFUSED': 'Server tidak berhasil menghubungi database.',
+  'ETIMEDOUT': 'Database tidak menjawab, coba lagi.',
+};
+
+const pesanKesalahan = (err, bawaan) => ({
+  error: PESAN_PG[err.code] || bawaan,
+  ...(err.code ? { kode: err.code } : {}),
+});
+
 app.get('/api/health', async (_, res) => {
   try {
     await pool.query('SELECT 1');
-    res.json({ status: 'ok', email: emailSiap() });
+    res.json({ status: 'ok', build: BUILD, email: emailSiap() });
   } catch {
     res.status(500).json({ status: 'db error' });
   }
@@ -665,7 +693,7 @@ app.post('/api/inovasi', async (req, res) => {
     });
   } catch (err) {
     console.error('Inovasi submit error:', err);
-    res.status(500).json({ error: 'Gagal mengirim usulan inovasi' });
+    res.status(500).json(pesanKesalahan(err, 'Gagal mengirim usulan inovasi'));
   }
 });
 
@@ -840,7 +868,8 @@ app.post('/api/:entitas', async (req, res) => {
     res.status(201).json({ message: 'Data berhasil disimpan', data: rows[0] });
   } catch (err) {
     console.error(`Create ${req.params.entitas} error:`, err);
-    res.status(err.status || 500).json({ error: err.message || 'Gagal menyimpan data' });
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    res.status(500).json(pesanKesalahan(err, 'Gagal menyimpan data'));
   }
 });
 
@@ -885,7 +914,8 @@ app.put('/api/:entitas/:id', async (req, res) => {
     res.json({ message: 'Data berhasil diperbarui' });
   } catch (err) {
     console.error(`Update ${req.params.entitas} error:`, err);
-    res.status(err.status || 500).json({ error: err.message || 'Gagal memperbarui data' });
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    res.status(500).json(pesanKesalahan(err, 'Gagal memperbarui data'));
   }
 });
 
