@@ -160,6 +160,26 @@ export function thumbDrive(url, ukuran = 400) {
   return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=s${ukuran}` : url;
 }
 
+// Ukuran thumbnail untuk sebuah kartu di grid beranda.
+//
+// Grid beranda memakai 4 kolom dalam container 1300px (padding 28px, gap 32px),
+// jadi lebar satu kolom = (1300 - 56 - 96) / 4 = 287px. Ukuran kartu:
+//   kolom 1 = 287px | kolom 2 = 606px | kolom 3 = 925px | kolom 4 = 1148px
+//   tinggi = 180px (1 baris) atau 380px (2 baris)
+//
+// Drive menskalakan gambar sampai sisi terpanjang sama dengan ukuran yang
+// diminta. Kalau semua kartu memakai satu ukuran baku, kartu selebar 1148px
+// hanya mendapat gambar 400px lalu di-zoom hampir tiga kali — foto jadi buram.
+// Jadi ukuran diambil dari ukuran kartu, dikali dua untuk layar retina,minimal
+// 800px agar tetap tajam di ponsel yang memakai satu kolom, dan dibatasi 1600px
+// karena di atas itu Drive tidak memberi gambar yang lebih tajam.
+export function ukuranThumb(col = 1, row = 1) {
+  const KOLOM = 287;
+  const tinggi = row > 1 ? 380 : 180;
+  const sisi = Math.max(KOLOM * Math.min(Math.max(col, 1), 4), tinggi) * 2;
+  return Math.min(Math.max(Math.ceil(sisi / 100) * 100, 800), 1600);
+}
+
 // Ubah tautan Drive menjadi URL yang bisa dibuka langsung di browser.
 // drive.google.com/file/d/<id>/view jadi /uc?export=download; tanpa ini
 // tautan /view menampilkan halaman HTML, bukan berkas.

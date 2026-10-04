@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   ambilInit, ambilTautanDokumen, kirimKontak, kirimInovasi,
   unggahFile, formatBytes,
-  thumbDrive as getDriveThumb,
+  thumbDrive as getDriveThumb, ukuranThumb,
 } from "./api";
 
 const LOGO_URL = "/logo.png"; 
@@ -960,7 +960,7 @@ export default function App() {
                 zIndex: 0
               }}
             >
-              <FadeInImage src={getDriveThumb(slide.gambar_url)} alt={slide.judul} style={{ width: "100%", height: "100%" }} />
+              <FadeInImage src={getDriveThumb(slide.gambar_url, 1600)} alt={slide.judul} style={{ width: "100%", height: "100%" }} />
             </div>
           ))
         ) : (
@@ -1705,7 +1705,7 @@ export default function App() {
                   }}>
                     <div className="berita-thumb-zoom" style={{ position: "absolute", inset: 0 }}>
                       {item.gambar_url ? (
-                        <FadeInImage src={getDriveThumb(item.gambar_url)} alt={item.judul} style={{ width: "100%", height: "100%" }} />
+                        <FadeInImage src={getDriveThumb(item.gambar_url, ukuranThumb(col, row))} alt={item.judul} style={{ width: "100%", height: "100%" }} />
                       ) : (
                         <div style={{ width: "100%", height: "100%", background: `linear-gradient(135deg, ${C.navy} 0%, #1e40af 100%)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <span style={{ color: "rgba(255,255,255,.85)", display: "flex" }}>
@@ -2005,7 +2005,7 @@ export default function App() {
                         <div key={item.id} onClick={() => { setShowAllBeritaModal(false); setSelectedBerita(item); }} className="card" style={{ padding: "16px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 16 }}>
                           <div style={{ width: 60, height: 60, borderRadius: 10, background: `${C.navy}14`, display: "flex", alignItems: "center", justifyContent: "center", color: C.navy, flexShrink: 0, overflow: "hidden" }}>
                             {item.gambar_url ? (
-                              <FadeInImage src={getDriveThumb(item.gambar_url)} alt={item.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              <FadeInImage src={getDriveThumb(item.gambar_url, 200)} alt={item.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                             ) : (
                               <Newspaper size={26} aria-hidden="true" />
                             )}
@@ -2037,7 +2037,7 @@ export default function App() {
           <div className="modal-content" style={{ maxWidth: 800, padding: 0 }} onClick={e => e.stopPropagation()}>
             <div style={{ height: 300, background: `linear-gradient(135deg, ${C.navy}, #1A527A)`, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
               {selectedBerita.gambar_url ? (
-                <FadeInImage src={getDriveThumb(selectedBerita.gambar_url)} alt={selectedBerita.judul} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />
+                <FadeInImage src={getDriveThumb(selectedBerita.gambar_url, 1600)} alt={selectedBerita.judul} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />
               ) : (
                 <span style={{ color: "rgba(255,255,255,.75)", display: "flex" }}><Newspaper size={110} aria-hidden="true" /></span>
               )}
